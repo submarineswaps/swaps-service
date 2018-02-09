@@ -1,0 +1,8 @@
+{
+  "generate": "generate",
+  "getBlock": "getblock",
+  "getBlockCount": "getblockcount",
+  "getRawTransaction": "getrawtransaction",
+  "sendRawTransaction": "sendrawtransaction",
+  "stop": "stop"
+}

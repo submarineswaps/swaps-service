@@ -1,0 +1,7 @@
+{
+  "rpc_host": "127.0.0.1",
+  "rpc_pass": "pass",
+  "rpc_port": 18335,
+  "rpc_user": "user"
+}
+
