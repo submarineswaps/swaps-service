@@ -2,10 +2,30 @@ const chainRpc = require('node-bitcoin-rpc');
 
 const chainServer = require('./../conf/chain_server');
 
+const credentials = {
+  host: {
+    regtest: chainServer.rpc_host,
+    testnet: '127.0.0.1',
+  },
+  pass: {
+    regtest: chainServer.rpc_pass,
+    testnet: process.env.OCW_CHAIN_RPC_PASS
+  },
+  port: {
+    regtest: chainServer.rpc_port,
+    testnet: 18332,
+  },
+  user: {
+    regtest: chainServer.rpc_user,
+    testnet: 'bitcoinrpc',
+  },
+};
+
 /** Execute Chain RPC command
 
   {
     cmd: <Chain RPC Command String>
+    network: <Network Name String>
     [params]: <RPC Arguments Array>
   }
 
@@ -13,10 +33,14 @@ const chainServer = require('./../conf/chain_server');
   <Result Object>
 */
 module.exports = (args, cbk) => {
-  const host = chainServer.rpc_host;
-  const pass = chainServer.rpc_pass;
-  const port = chainServer.rpc_port;
-  const user = chainServer.rpc_user;
+  if (!args.network) {
+    return cbk([0, 'Expected network']);
+  }
+
+  const host = credentials.host[args.network];
+  const pass = credentials.pass[args.network];
+  const port = credentials.port[args.network];
+  const user = credentials.user[args.network];
 
   chainRpc.init(host, port, user, pass);
 

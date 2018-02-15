@@ -4,8 +4,8 @@ const {Transaction} = require('bitcoinjs-lib');
 
 const addressToOutputScript = bitcoinjsLib.address.toOutputScript;
 const hashAll = Transaction.SIGHASH_ALL;
-const {sha256} = bitcoinjsLib.crypto;
 const {testnet} = bitcoinjsLib.networks;
+const {sha256} = bitcoinjsLib.crypto;
 const {witnessScriptHash} = bitcoinjsLib.script;
 
 /** Sweep chain swap output
@@ -17,8 +17,11 @@ const {witnessScriptHash} = bitcoinjsLib.script;
     preimage: <Payment Preimage Hex String>
     private_key: <Claim Private Key WIF String>
     redeem_script: <Redeem Script Hex Serialized String>
-    spend_transaction: <Spend Transaction Serialized Hex String>
-    tokens: <Claim Tokens Number>
+    utxos: [{
+      tokens: <Tokens Number>
+      transaction_id: <Transaction Id String>
+      vout: <Vout Number>
+    }]
   }
 
   @returns via cbk
@@ -27,30 +30,45 @@ const {witnessScriptHash} = bitcoinjsLib.script;
   }
 */
 module.exports = (args, cbk) => {
-  const fundingTx = Transaction.fromHex(args.spend_transaction);
+  if (!args.utxos.length) {
+    return cbk([0, 'Expected funding tx utxos']);
+  }
+
   const lockTime = bip65Encode({blocks: args.current_block_height});
   const preimage = Buffer.from(args.preimage, 'hex');
   const redeemScript = Buffer.from(args.redeem_script, 'hex');
   const scriptPub = addressToOutputScript(args.destination, testnet);
   const signingKey = bitcoinjsLib.ECPair.fromWIF(args.private_key, testnet);
-  const {tokens} = args;
+  const tokens = args.utxos.reduce((sum, n) => n.tokens + sum, 0) - 20000;
   const transaction = new Transaction();
 
-  [fundingTx.getHash()].forEach((txId, i) => transaction.addInput(txId, i));
+  args.utxos.forEach(n => {
+    return transaction.addInput(Buffer.from(n.transaction_id, 'hex').reverse(), n.vout);
+  });
 
-  transaction.addOutput(scriptPub, args.tokens);
+  transaction.addOutput(scriptPub, tokens);
 
   transaction.lockTime = lockTime;
 
   const prevPub = witnessScriptHash.output.encode(sha256(redeemScript));
 
-  const sigHash = transaction.hashForWitnessV0(0, prevPub, tokens, hashAll);
+  args.utxos.forEach((n, i) => {
+    const sigHash = transaction.hashForWitnessV0(i, redeemScript, n.tokens, hashAll);
 
-  const sig = signingKey.sign(sigHash).toScriptSignature(hashAll);
+    const sig = signingKey.sign(sigHash);
 
-  const witnesses = [[sig, preimage, redeemScript]];
+    const signature = sig.toScriptSignature(hashAll);
 
-  witnesses.forEach((witness, i) => transaction.setWitness(i, witness));
+    const witnesses = [[
+      signature,
+      preimage,
+      redeemScript,
+    ]];
+
+    witnesses.forEach((witness, i) => transaction.setWitness(i, witness));
+
+    return;
+  });
 
   return cbk(null, {transaction: transaction.toHex()});
 };

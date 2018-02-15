@@ -32,6 +32,7 @@ module.exports = (args, cbk) => {
     '--miningaddr', keyPair.getAddress(),
     '--notls',
     '--regtest',
+    '--relaynonstd',
     '--rpclisten', `${rpcHost}:${rpcPort}`,
     '--rpcpass', rpcPass,
     '--rpcuser', rpcUser,

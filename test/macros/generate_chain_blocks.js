@@ -7,13 +7,13 @@ const returnResult = require('./return_result');
 
 const {generate} = require('./../conf/rpc_commands');
 
-const maturityBlockCount = 100;
+const maturityBlockCount = 400;
 
 /** Generate blocks on the chain
 
   {
     blocks_count: <Number of Blocks to Generate Number>
-    reward_public_key: <Assign Coinbase Award to Serialized Public Key String>
+    network: <Network Name String>
   }
 
   @returns via cbk
@@ -32,13 +32,22 @@ module.exports = (args, cbk) => {
   return asyncAuto({
     // Make blocks to maturity
     generateBlocks: cbk => {
-      return chainRpc({cmd: generate, params: [maturityBlockCount]}, cbk);
+      return chainRpc({
+        cmd: generate,
+        network: args.network,
+        params: [maturityBlockCount],
+      },
+      cbk);
     },
 
     // Grab the full details of each blocks, including transaction info
     getBlockDetails: ['generateBlocks', (res, cbk) => {
       return asyncMapSeries(res.generateBlocks, (blockHash, cbk) => {
-        return getBlockDetails({block_hash: blockHash}, cbk);
+        return getBlockDetails({
+          block_hash: blockHash,
+          network: args.network,
+        },
+        cbk);
       },
       cbk);
     }],

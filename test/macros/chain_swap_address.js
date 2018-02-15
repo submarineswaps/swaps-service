@@ -20,9 +20,9 @@ const chainSwapScript = require('./chain_swap_script');
 
   @returns via cbk
   {
-    p2sh_p2wsh_address: <Nested Pay to Witness Script Address>
-    p2wsh_address: <Pay to Witness Script Hash Address>
-    redeem_script_hex: <Redeem Script Hex>
+    p2sh_p2wsh_address: <Nested Pay to Witness Script Address String>
+    p2wsh_address: <Pay to Witness Script Hash Address String>
+    redeem_script: <Redeem Script Hex String>
   }
 */
 module.exports = (args, cbk) => {
@@ -44,7 +44,7 @@ module.exports = (args, cbk) => {
   return cbk(null, {
     p2sh_p2wsh_address: p2shAddr,
     p2wsh_address: addressFromOutputScript(witnessScript, testnet),
-    redeem_script_hex: redeemScriptHex.toString('hex'),
+    redeem_script: redeemScriptHex.toString('hex'),
   });
 };
 

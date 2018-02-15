@@ -1,4 +1,5 @@
 const bitcoinjsLib = require('bitcoinjs-lib');
+const network = require('bitcoinjs-lib').networks.testnet;
 
 /** Generate a keypair
 
@@ -11,8 +12,6 @@ const bitcoinjsLib = require('bitcoinjs-lib');
   }
 */
 module.exports = (args, cbk) => {
-  const network = bitcoinjsLib.networks.testnet;
-
   const keyPair = bitcoinjsLib.ECPair.makeRandom({network});
 
   return cbk(null, {

@@ -1,7 +1,8 @@
 const asyncAuto = require('async/auto');
+const asyncConstant = require('async/constant');
 
 const macros = './macros/';
-//
+
 const addressForPublicKey = require(`${macros}address_for_public_key`);
 const chainSwapAddress = require(`${macros}chain_swap_address`);
 const generateChainBlocks = require(`${macros}generate_chain_blocks`);
@@ -9,6 +10,7 @@ const getBlockchainInfo = require(`${macros}get_blockchain_info`);
 const generateInvoice = require(`${macros}generate_invoice`);
 const generateKeyPair = require(`${macros}generate_keypair`);
 const mineTransaction = require(`${macros}mine_transaction`);
+const outputScriptInTransaction = require(`${macros}output_script_in_tx`);
 const returnResult = require(`${macros}return_result`);
 const sendChainTokensTransaction = require(`${macros}send_chain_tokens_tx`);
 const spawnChainDaemon = require(`${macros}spawn_chain_daemon`);
@@ -25,16 +27,24 @@ const swapTimeoutBlockCount = 200;
 */
 module.exports = (args, cbk) => {
   return asyncAuto({
-    // Setup a mocked up Lightning invoice preimage
-    generatePaymentPreimage: cbk => generateInvoice({}, cbk),
-
     // Make a keypair for Alice for the claim output
     generateAliceKeyPair: cbk => generateKeyPair({}, cbk),
 
     // Make a keypair for Bob for the refund output
     generateBobKeyPair: cbk => generateKeyPair({}, cbk),
 
-    // Make an address for alice to claim back her coins
+    // Network to use for this test
+    network: asyncConstant('regtest'),
+
+    // Setup a mocked up Lightning invoice preimage
+    generatePaymentPreimage: ['generateAliceKeyPair', (res, cbk) => {
+      return generateInvoice({
+        private_key: res.generateAliceKeyPair.private_key,
+      },
+      cbk);
+    }],
+
+    // Make an address for Alice to claim back her coins
     createAliceAddress: ['generateAliceKeyPair', (res, cbk) => {
       return addressForPublicKey({
         public_key: res.generateAliceKeyPair.public_key,
@@ -46,19 +56,16 @@ module.exports = (args, cbk) => {
     spawnChainDaemon: ['generateBobKeyPair', (res, cbk) => {
       return spawnChainDaemon({
         mining_public_key: res.generateBobKeyPair.public_key,
+        network: res.network,
       },
       cbk);
     }],
 
     // Make a bunch of blocks so that we can spend a coinbase output
-    generateToMaturity: [
-      'generateBobKeyPair',
-      'spawnChainDaemon',
-      (res, cbk) =>
-    {
+    generateToMaturity: ['network', 'spawnChainDaemon', (res, cbk) => {
       return generateChainBlocks({
         blocks_count: maturityBlockCount,
-        reward_public_key: res.generateBobKeyPair.public_key,
+        network: res.network,
       },
       cbk);
     }],
@@ -109,7 +116,7 @@ module.exports = (args, cbk) => {
     // Mine the swap funding transaction
     mineFundingTx: ['fundSwapAddress', (res, cbk) => {
       return mineTransaction({
-        block_reward_public_key: res.generateBobKeyPair.public_key,
+        network: res.network,
         transaction: res.fundSwapAddress.transaction,
       },
       cbk);
@@ -117,14 +124,26 @@ module.exports = (args, cbk) => {
 
     // Grab the current height to use in the sweep tx
     getHeightForSweepTransaction: ['mineFundingTx', (res, cbk) => {
-      return getBlockchainInfo({}, cbk);
+      return getBlockchainInfo({network: res.network}, cbk);
+    }],
+
+    fundingTransactionUtxos: [
+      'createChainSwapAddress',
+      'fundSwapAddress',
+      (res, cbk) =>
+    {
+      return outputScriptInTransaction({
+        redeem_script: res.createChainSwapAddress.redeem_script,
+        transaction: res.fundSwapAddress.transaction,
+      },
+      cbk);
     }],
 
     // Alice will claim the tokens with the payment preimage
     sweepTransaction: [
-      'bobUtxo',
       'createAliceAddress',
       'createChainSwapAddress',
+      'fundingTransactionUtxos',
       'fundSwapAddress',
       'generateAliceKeyPair',
       'generatePaymentPreimage',
@@ -137,9 +156,8 @@ module.exports = (args, cbk) => {
         destination: res.createAliceAddress.p2wpkh_address,
         preimage: res.generatePaymentPreimage.payment_preimage,
         private_key: res.generateAliceKeyPair.private_key,
-        redeem_script: res.createChainSwapAddress.redeem_script_hex,
-        spend_transaction: res.fundSwapAddress.transaction,
-        tokens: res.bobUtxo.tokens,
+        redeem_script: res.createChainSwapAddress.redeem_script,
+        utxos: res.fundingTransactionUtxos.matching_outputs,
       },
       cbk);
     }],
@@ -147,21 +165,21 @@ module.exports = (args, cbk) => {
     // Mine the sweep transaction into a block
     mineSweepTransaction: ['sweepTransaction', (res, cbk) => {
       return mineTransaction({
-        block_reward_public_key: res.generateBobKeyPair.public_key,
+        network: res.network,
         transaction: res.sweepTransaction.transaction,
       },
       cbk);
     }],
   },
-  returnResult({}, cbk));
+  returnResult({of: 'network'}, cbk));
 };
 
-module.exports({}, (err, res) => {
+module.exports({}, (err, network) => {
   if (!!err) {
     console.log('CLAIM SUCCESS ERROR', err);
   }
 
-  stopChainDaemon({}, (err, res) => {});
+  stopChainDaemon({network}, (err, res) => {});
 
   console.log('CLAIM SUCCESS TEST COMPLETE!');
 

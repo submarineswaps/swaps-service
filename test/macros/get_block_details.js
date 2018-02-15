@@ -11,6 +11,7 @@ const {getBlock, getRawTransaction} = require('./../conf/rpc_commands');
 
   {
     block_hash: <Block Hash Hex String>
+    network: <Network Name String>
   }
 
   @returns via cbk
@@ -26,12 +27,22 @@ const {getBlock, getRawTransaction} = require('./../conf/rpc_commands');
 module.exports = (args, cbk) => {
   return asyncAuto({
     getBlock: cbk => {
-      return chainRpc({cmd: getBlock, params: [args.block_hash, true]}, cbk);
+      return chainRpc({
+        cmd: getBlock,
+        network: args.network,
+        params: [args.block_hash, true],
+      },
+      cbk);
     },
 
     getTransactions: ['getBlock', (res, cbk) => {
       return asyncMapSeries(res.getBlock.tx, (txId, cbk) => {
-        return chainRpc({cmd: getRawTransaction, params: [txId]}, cbk);
+        return chainRpc({
+          cmd: getRawTransaction,
+          network: args.network,
+          params: [txId],
+        },
+        cbk);
       },
       (err, rawTxs) => {
         if (!!err) {
