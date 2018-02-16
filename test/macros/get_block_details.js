@@ -49,15 +49,10 @@ module.exports = (args, cbk) => {
           return cbk(err);
         }
 
-        const transactions = rawTxs.map(txHex => {
-          const tx = Transaction.fromHex(txHex);
-
-          const outputs = tx.outs.map((out, i) => {
-            return {tokens: out.value};
-          });
-
-          return {outputs, id: tx.getId()};
-        });
+        const transactions = rawTxs
+        .map(txHex => Transaction.fromHex(txHex))
+        .map(tx => ({id: tx.getId(), o: tx.outs}))
+        .map(tx => ({id: tx.id, outputs: tx.o.map(o => ({tokens: o.value}))}));
 
         return cbk(null, {transactions});
       });

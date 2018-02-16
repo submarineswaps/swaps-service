@@ -22,7 +22,8 @@ const stopChainDaemon = require(`${macros}stop_chain_daemon`);
 const sweepTransaction = require(`${macros}sweep_transaction`);
 
 const coinbaseIndex = 0;
-const maturityBlockCount = 100;
+const intBase = 10;
+const maturityBlockCount = 300;
 const timeoutBlockCount = 100;
 
 /** Run an interactive claim success scenario.
@@ -297,6 +298,21 @@ module.exports = (args, cbk) => {
       cbk);
     }],
 
+    // Ask Bob how many tokens per vbyte in fees he'd like to pay to sweep
+    promptForFees: ['promptForPaymentPreimage', (res, cbk) => {
+      return promptForInput({
+        default_value: '100',
+        explain: 'What fee-per-vbyte rate would you like to use to sweep?',
+        role: 'Bob',
+      },
+      cbk);
+    }],
+
+    // Tokens per vbyte
+    tokensPerVirtualByte: ['promptForFees', (res, cbk) => {
+      return cbk(null, parseInt(res.promptForFees.value, intBase));
+    }],
+
     // Bob can now sweep the UTXO to his address
     sweepTransaction: [
       'createChainSwapAddress',
@@ -304,11 +320,13 @@ module.exports = (args, cbk) => {
       'getHeightForSweepTransaction',
       'promptForClaimSuccessAddress',
       'promptForPaymentPreimage',
+      'tokensPerVirtualByte',
       (res, cbk) =>
     {
       return sweepTransaction({
         current_block_height: res.getHeightForSweepTransaction.current_height,
         destination: res.promptForClaimSuccessAddress.value,
+        fee_tokens_per_vbyte: res.tokensPerVirtualByte,
         preimage: res.promptForPaymentPreimage.value,
         private_key: res.generateBobKeyPair.private_key,
         redeem_script: res.createChainSwapAddress.redeem_script,

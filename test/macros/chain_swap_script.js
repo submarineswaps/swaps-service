@@ -51,14 +51,14 @@ module.exports = (args, cbk) => {
     OP_ENDIF,
     OP_CHECKSIG,
   ]
-  .map(element => { // Convert numbers to buffers and hex data to push buffers
-    if (Buffer.isBuffer(element)) {
-      return Buffer.concat([numberAsBuf({number: element.length}), element]);
-    } else {
-      return Buffer.from(element.toString(hexBase), 'hex');
-    }
-  })
-  .reduce((element, script) => Buffer.concat([element, script]));
+    .map(element => { // Convert numbers to buffers and hex data to pushdata
+      if (Buffer.isBuffer(element)) {
+        return Buffer.concat([numberAsBuf({number: element.length}), element]);
+      } else {
+        return Buffer.from(element.toString(hexBase), 'hex');
+      }
+    })
+    .reduce((element, script) => Buffer.concat([element, script]));
 
   return chainSwapScript;
 };

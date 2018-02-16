@@ -19,6 +19,7 @@ const sweepTransaction = require(`${macros}sweep_transaction`);
 
 const coinbaseIndex = 0;
 const maturityBlockCount = 100;
+const staticFeePerVirtualByte = 100;
 const swapTimeoutBlockCount = 200;
 
 /** Test a claim success script against regtest
@@ -154,6 +155,7 @@ module.exports = (args, cbk) => {
       return sweepTransaction({
         current_block_height: res.getHeightForSweepTransaction.current_height,
         destination: res.createAliceAddress.p2wpkh_address,
+        fee_tokens_per_vbyte: staticFeePerVirtualByte,
         preimage: res.generatePaymentPreimage.payment_preimage,
         private_key: res.generateAliceKeyPair.private_key,
         redeem_script: res.createChainSwapAddress.redeem_script,
