@@ -1,6 +1,9 @@
 const chainRpc = require('./chain_rpc');
 
 const {sendRawTransaction} = require('./../conf/rpc_commands');
+const {serviceUnavailable} = require('./../conf/error_codes');
+
+const cmd = sendRawTransaction;
 
 /** Broadcast a transaction
 
@@ -10,18 +13,15 @@ const {sendRawTransaction} = require('./../conf/rpc_commands');
   }
 */
 module.exports = ({network, transaction}, cbk) => {
-  return chainRpc({
-    network,
-    cmd: sendRawTransaction,
-    params: [transaction],
-  },
-  (err, transactionId) => {
+  const params = [transaction];
+
+  return chainRpc({cmd, network, params}, (err, transactionId) => {
     if (!!err) {
       return cbk(err);
     }
 
     if (!transactionId) {
-      return cbk([503, 'Transaction failed to broadcast']);
+      return cbk([serviceUnavailable, 'Transaction failed to broadcast']);
     }
 
     return cbk(null, transactionId);

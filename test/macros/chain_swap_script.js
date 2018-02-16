@@ -1,22 +1,14 @@
-const opCodes = require('bitcoin-ops');
+const {OP_CHECKLOCKTIMEVERIFY, OP_CHECKSIG, OP_DROP} = require('bitcoin-ops');
+const {OP_ELSE, OP_ENDIF, OP_EQUAL, OP_IF, OP_SHA256} = require('bitcoin-ops');
 const pushdataEncode = require('pushdata-bitcoin').encode;
 const pushdataEncodingLen = require('pushdata-bitcoin').encodingLength;
 
 const numberAsBuf = require('./number_as_buffer');
 
-const hexBase = 16;
+const {hexBase} = require('./../conf/math');
 
-// Take opcodes used for the script
-const {
-  OP_CHECKLOCKTIMEVERIFY,
-  OP_CHECKSIG,
-  OP_DROP,
-  OP_ELSE,
-  OP_ENDIF,
-  OP_EQUAL,
-  OP_IF,
-  OP_SHA256,
-} = opCodes;
+const bip65Encode = require('bip65').encode;
+const {script} = require('bitcoinjs-lib');
 
 /** Generate a chain swap redeem script
 
@@ -31,16 +23,12 @@ const {
   <Hex Serialized Redeem Script String>
 */
 module.exports = (args, cbk) => {
-  const cltvValue = new Buffer(pushdataEncodingLen(args.timeout_block_count));
   const destinationPublicKey = Buffer.from(args.destination_public_key, 'hex');
+  const numberEncode = script.number.encode;
   const paymentHash = Buffer.from(args.payment_hash, 'hex');
   const refundPublicKey = Buffer.from(args.refund_public_key, 'hex');
 
-  pushdataEncode(cltvValue, args.timeout_block_count);
-
-  const cltvHexEncoded = cltvValue.toString('hex').replace(/(00)*$/, '');
-
-  const cltv = Buffer.from(cltvHexEncoded, 'hex');
+  const cltv = numberEncode(bip65Encode({blocks: args.timeout_block_count}));
 
   const chainSwapScript = [
     OP_SHA256, paymentHash, OP_EQUAL,

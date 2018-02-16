@@ -35,15 +35,17 @@ module.exports = (args, cbk) => {
 
   const redeemScript = Buffer.from(redeemScriptHex, 'hex');
 
-  const witnessScript = witnessScriptHash.output.encode(sha256(redeemScript));
+  // The witness program is part of the scriptPub: "pay to this script hash"
+  const witnessProgram = witnessScriptHash.output.encode(sha256(redeemScript));
 
-  const p2shWrappedWitnessScript = encodeScriptHash(hash160(witnessScript));
+  // When wrapping for legacy p2sh, the program is hashed more and with RIPE160
+  const p2shWrappedWitnessProgram = encodeScriptHash(hash160(witnessProgram));
 
-  const p2shAddr = addressFromOutputScript(p2shWrappedWitnessScript, testnet);
+  const p2shAddr = addressFromOutputScript(p2shWrappedWitnessProgram, testnet);
 
   return cbk(null, {
     p2sh_p2wsh_address: p2shAddr,
-    p2wsh_address: addressFromOutputScript(witnessScript, testnet),
+    p2wsh_address: addressFromOutputScript(witnessProgram, testnet),
     redeem_script: redeemScriptHex.toString('hex'),
   });
 };

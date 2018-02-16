@@ -2,10 +2,12 @@ const bitcoinjsLib = require('bitcoinjs-lib');
 const {createHash} = require('crypto');
 const {encode, sign} = require('bolt11');
 const {testnet} = require('bitcoinjs-lib').networks;
-
 const uuidv4 = require('uuid/v4');
 
+const errCode = require('./../conf/error_codes');
+
 const preimageByteCount = 32;
+const privKeySize = 32;
 const uuidv4ByteCount = 16;
 
 /** Generate a fake invoice payment preimage and payment hash pair
@@ -23,7 +25,7 @@ const uuidv4ByteCount = 16;
 */
 module.exports = (args, cbk) => {
   if (!args.private_key) {
-    return cbk([0, 'Expected private key']);
+    return cbk([errCode.local_err, 'Expected private key']);
   }
 
   const keyPair = bitcoinjsLib.ECPair.fromWIF(args.private_key, testnet);
@@ -33,14 +35,14 @@ module.exports = (args, cbk) => {
   uuidv4({}, preimage);
   uuidv4({}, preimage, uuidv4ByteCount);
 
+  // The invoice requires a payment hash and is signed with a private key.
   const payHash = createHash('sha256').update(preimage).digest('hex');
+  const privKey = keyPair.d.toBuffer(privKeySize).toString('hex');
 
   const invoice = encode({tags: [{tagName: 'payment_hash', data: payHash}]});
 
-  const signedInvoice = sign(invoice, keyPair.d.toBuffer(32).toString('hex'));
-
   return cbk(null, {
-    invoice: signedInvoice.paymentRequest,
+    invoice: sign(invoice, privKey).paymentRequest,
     payment_hash: payHash,
     payment_preimage: preimage.toString('hex'),
   });

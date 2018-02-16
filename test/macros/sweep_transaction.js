@@ -1,12 +1,12 @@
 const bip65Encode = require('bip65').encode;
-const bitcoinjsLib = require('bitcoinjs-lib');
+const {address, crypto, ECPair, networks, script} = require('bitcoinjs-lib');
 const {Transaction} = require('bitcoinjs-lib');
 
-const addressToOutputScript = bitcoinjsLib.address.toOutputScript;
+const addressToOutputScript = address.toOutputScript;
 const hashAll = Transaction.SIGHASH_ALL;
-const {testnet} = bitcoinjsLib.networks;
-const {sha256} = bitcoinjsLib.crypto;
-const {witnessScriptHash} = bitcoinjsLib.script;
+const {testnet} = networks;
+const {sha256} = crypto;
+const {witnessScriptHash} = script;
 
 const ecdsaSignatureLength = 72;
 const sequenceLength = 4;
@@ -44,7 +44,7 @@ module.exports = (args, cbk) => {
   const preimage = Buffer.from(args.preimage, 'hex');
   const script = Buffer.from(args.redeem_script, 'hex');
   const scriptPub = addressToOutputScript(args.destination, testnet);
-  const signingKey = bitcoinjsLib.ECPair.fromWIF(args.private_key, testnet);
+  const signingKey = ECPair.fromWIF(args.private_key, testnet);
   const tokens = args.utxos.reduce((sum, n) => n.tokens + sum, 0);
   const tokensPerVirtualByte = args.fee_tokens_per_vbyte;
   const transaction = new Transaction();
@@ -56,7 +56,9 @@ module.exports = (args, cbk) => {
   transaction.addOutput(scriptPub, tokens);
 
   const prevPub = witnessScriptHash.output.encode(sha256(script));
+  transaction.locktime = lockTime;
 
+  // Anticipate the final weight of the transaction
   const anticipatedWeight = args.utxos.reduce((sum, n) => {
     return [
       shortPushdataLength,
@@ -70,11 +72,10 @@ module.exports = (args, cbk) => {
   },
   transaction.weight());
 
+  // Reduce the final output value to give some tokens over to fees
   const [out] = transaction.outs;
 
   out.value -= tokensPerVirtualByte * Math.ceil(anticipatedWeight / vRatio);
-
-  transaction.locktime = lockTime;
 
   // Sign each input
   args.utxos.forEach(({tokens}, i) => {

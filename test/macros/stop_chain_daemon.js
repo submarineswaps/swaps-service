@@ -1,6 +1,6 @@
 const chainRpc = require('./chain_rpc');
 
-const stop = require('./../conf/rpc_commands').stop;
+const {stop} = require('./../conf/rpc_commands');
 
 /** Stop the chain daemon
 
@@ -8,7 +8,5 @@ const stop = require('./../conf/rpc_commands').stop;
     network: <Network Name String>
   }
 */
-module.exports = (args, cbk) => {
-  return chainRpc({cmd: stop, network: args.network}, cbk);
-};
+module.exports = ({network}, cbk) => chainRpc({network, cmd: stop}, cbk);
 

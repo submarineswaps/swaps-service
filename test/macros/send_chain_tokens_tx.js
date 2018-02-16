@@ -1,7 +1,6 @@
-const bitcoinjsLib = require('bitcoinjs-lib');
+const {ECPair, networks, TransactionBuilder} = require('bitcoinjs-lib');
 
-const {testnet} = bitcoinjsLib.networks;
-const {TransactionBuilder} = bitcoinjsLib;
+const {testnet} = networks;
 
 /** Send some tokens to an address
 
@@ -19,15 +18,14 @@ const {TransactionBuilder} = bitcoinjsLib;
   }
 */
 module.exports = (args, cbk) => {
-  const keyPair = bitcoinjsLib.ECPair.fromWIF(args.private_key, testnet);
+  const keyPair = ECPair.fromWIF(args.private_key, testnet);
+  const txBuilder = new TransactionBuilder(testnet);
 
-  const transactionBuilder = new TransactionBuilder(testnet);
+  txBuilder.addInput(args.spend_transaction_id, args.spend_vout);
+  txBuilder.addOutput(args.destination, args.tokens);
 
-  transactionBuilder.addInput(args.spend_transaction_id, args.spend_vout);
-  transactionBuilder.addOutput(args.destination, args.tokens);
+  [keyPair].forEach((k, i) => txBuilder.sign(i, k));
 
-  transactionBuilder.sign(0, keyPair);
-
-  return cbk(null, {transaction: transactionBuilder.build().toHex()});
+  return cbk(null, {transaction: txBuilder.build().toHex()});
 };
 

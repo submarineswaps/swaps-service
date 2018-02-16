@@ -1,8 +1,13 @@
 const bitcoinjsLib = require('bitcoinjs-lib');
+const {address, crypto, networks, script} = require('bitcoinjs-lib');
+
+const knownNetworks = ['regtest', 'testnet'];
+const notFound = -1;
 
 /** Get a chain address for a public key
 
   {
+    network: <Network Name String>
     public_key: <Public Key String>
   }
 
@@ -12,15 +17,19 @@ const bitcoinjsLib = require('bitcoinjs-lib');
   }
 */
 module.exports = (args, cbk) => {
-  const network = bitcoinjsLib.networks.testnet;
+  if (knownNetworks.indexOf(args.network) === notFound) {
+    return cbk([0, 'Unknown network']);
+  }
+
+  const network = networks.testnet;
   const publicKey = Buffer.from(args.public_key, 'hex');
 
-  const hash = bitcoinjsLib.crypto.hash160(publicKey);
+  const hash = crypto.hash160(publicKey);
 
-  const scriptPub = bitcoinjsLib.script.witnessPubKeyHash.output.encode(hash);
+  const scriptPub = script.witnessPubKeyHash.output.encode(hash);
 
-  const address = bitcoinjsLib.address.fromOutputScript(scriptPub, network);
+  const p2wpkhAddress = address.fromOutputScript(scriptPub, network);
 
-  return cbk(null, {p2wpkh_address: address});
+  return cbk(null, {p2wpkh_address: p2wpkhAddress});
 };
 

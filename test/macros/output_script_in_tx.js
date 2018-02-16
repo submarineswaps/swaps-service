@@ -15,7 +15,7 @@ const {witnessScriptHash} = script;
     matching_outputs: [{
       script: <ScriptPub Buffer>
       tokens: <Tokens Number>
-      transaction_id: <Transaction Id String>
+      transaction_id: <Transaction Id Hex String>
       vout: <Vout Number>
     }]
   }
@@ -31,16 +31,13 @@ module.exports = (args, cbk) => {
 
   const transaction = Transaction.fromHex(args.transaction);
 
+  const txId = transaction.getId();
+
   const matchingVouts = transaction.outs
-  .map((out, i) => {
-    return {
-      script: out.script,
-      tokens: out.value,
-      transaction_id: transaction.getId(),
-      vout: i,
-    };
-  })
-  .filter(n => n.script.equals(witnessScript));
+    .map(({script, value}, vout) => {
+      return {script, vout, tokens: value, transaction_id: txId};
+    })
+    .filter(n => n.script.equals(witnessScript));
 
   return cbk(null, {matching_outputs: matchingVouts});
 };

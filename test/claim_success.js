@@ -18,24 +18,33 @@ const stopChainDaemon = require(`${macros}stop_chain_daemon`);
 const sweepTransaction = require(`${macros}sweep_transaction`);
 
 const coinbaseIndex = 0;
-const maturityBlockCount = 100;
+const maturityBlockCount = 400;
 const staticFeePerVirtualByte = 100;
 const swapTimeoutBlockCount = 200;
 
 /** Test a claim success script against regtest
 
   {}
+
+  @returns via cbk
+  {
+    network: <Network Name String>
+  }
 */
 module.exports = (args, cbk) => {
   return asyncAuto({
-    // Make a keypair for Alice for the claim output
-    generateAliceKeyPair: cbk => generateKeyPair({}, cbk),
-
-    // Make a keypair for Bob for the refund output
-    generateBobKeyPair: cbk => generateKeyPair({}, cbk),
-
     // Network to use for this test
     network: asyncConstant('regtest'),
+
+    // Make a keypair for Alice for the claim output
+    generateAliceKeyPair: ['network', ({network}, cbk) => {
+      return generateKeyPair({network}, cbk);
+    }],
+
+    // Make a keypair for Bob for the refund output
+    generateBobKeyPair: ['network', ({network}, cbk) => {
+      return generateKeyPair({network}, cbk);
+    }],
 
     // Setup a mocked up Lightning invoice preimage
     generatePaymentPreimage: ['generateAliceKeyPair', (res, cbk) => {
@@ -48,6 +57,7 @@ module.exports = (args, cbk) => {
     // Make an address for Alice to claim back her coins
     createAliceAddress: ['generateAliceKeyPair', (res, cbk) => {
       return addressForPublicKey({
+        network: res.network,
         public_key: res.generateAliceKeyPair.public_key,
       },
       cbk);

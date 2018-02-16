@@ -1,23 +1,24 @@
 const chainRpc = require('node-bitcoin-rpc');
 
 const chainServer = require('./../conf/chain_server');
+const errCode = require('./../conf/error_codes');
 
 const credentials = {
   host: {
-    regtest: chainServer.rpc_host,
-    testnet: '127.0.0.1',
+    regtest: chainServer.regtest.rpc_host,
+    testnet: chainServer.testnet.rpc_host,
   },
   pass: {
-    regtest: chainServer.rpc_pass,
+    regtest: chainServer.regtest.rpc_pass,
     testnet: process.env.OCW_CHAIN_RPC_PASS
   },
   port: {
-    regtest: chainServer.rpc_port,
-    testnet: 18332,
+    regtest: chainServer.regtest.rpc_port,
+    testnet: chainServer.testnet.rpc_port,
   },
   user: {
-    regtest: chainServer.rpc_user,
-    testnet: 'bitcoinrpc',
+    regtest: chainServer.regtest.rpc_user,
+    testnet: chainServer.testnet.rpc_user,
   },
 };
 
@@ -34,7 +35,7 @@ const credentials = {
 */
 module.exports = (args, cbk) => {
   if (!args.network) {
-    return cbk([0, 'Expected network']);
+    return cbk([errCode.local_err, 'Expected network']);
   }
 
   const host = credentials.host[args.network];
@@ -44,12 +45,12 @@ module.exports = (args, cbk) => {
 
   chainRpc.init(host, port, user, pass);
 
-  return chainRpc.call(args.cmd, args.params || [], (err, r) => {
+  return chainRpc.call(args.cmd, args.params || [], (err, {result}) => {
     if (!!err) {
-      return cbk([0, 'Error with RPC command', err]);
+      return cbk([errCode.service_unavailable, 'Error with RPC command', err]);
     }
 
-    return cbk(null, r.result);
+    return cbk(null, result);
   });
 };
 

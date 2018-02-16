@@ -1,5 +1,7 @@
 const {get, start} = require('prompt');
 
+const errCode = require('./../conf/error_codes');
+
 /** Prompt at the command line for a value
 
   {
@@ -20,7 +22,7 @@ module.exports = ({default_value, explain, role}, cbk) => {
 
   return get([key], (err, res) => {
     if (!!err) {
-      return cbk([0, 'Error prompting for value', err]);
+      return cbk([errCode.local_err, 'Error prompting for value', err]);
     }
 
     return cbk(null, {value: res[key] || default_value});

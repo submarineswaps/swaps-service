@@ -43,12 +43,6 @@ const timeoutBlockCount = 100;
 */
 module.exports = (args, cbk) => {
   return asyncAuto({
-    // Alice will need a new keypair to get back refunded coins
-    generateAliceKeyPair: cbk => generateKeyPair({}, cbk),
-
-    // Bob will need a keypair to lock coins for the success case
-    generateBobKeyPair: cbk => generateKeyPair({}, cbk),
-
     // Determine which network to run the test against
     promptForNetwork: cbk => promptForInput({
       default_value: 'regtest',
@@ -65,14 +59,6 @@ module.exports = (args, cbk) => {
       cbk);
     }],
 
-    // Default sweep address for Bob to sweep claimed coins to
-    defaultBobSweepAddress: ['generateBobKeyPair', (res, cbk) => {
-      return addressForPublicKey({
-        public_key: res.generateBobKeyPair.public_key,
-      },
-      cbk);
-    }],
-
     // Make sure the network is a known network
     network: ['promptForNetwork', (res, cbk) => {
       const network = res.promptForNetwork.value;
@@ -82,6 +68,25 @@ module.exports = (args, cbk) => {
       }
 
       return cbk(null, network);
+    }],
+
+    // Alice will need a new keypair to get back refunded coins
+    generateAliceKeyPair: ['network', ({network}, cbk) => {
+      return generateKeyPair({network}, cbk);
+    }],
+
+    // Bob will need a keypair to lock coins for the success case
+    generateBobKeyPair: ['network', ({network}, cbk) => {
+      return generateKeyPair({network}, cbk);
+    }],
+
+    // Default sweep address for Bob to sweep claimed coins to
+    defaultBobSweepAddress: ['generateBobKeyPair', 'network', (res, cbk) => {
+      return addressForPublicKey({
+        network: res.network,
+        public_key: res.generateBobKeyPair.public_key,
+      },
+      cbk);
     }],
 
     // Alice needs to give a payment hash in order to get this started

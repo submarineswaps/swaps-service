@@ -49,6 +49,7 @@ module.exports = (args, cbk) => {
           return cbk(err);
         }
 
+        // Convert raw tx hexes into ids and output values
         const transactions = rawTxs
         .map(txHex => Transaction.fromHex(txHex))
         .map(tx => ({id: tx.getId(), o: tx.outs}))

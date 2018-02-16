@@ -1,5 +1,7 @@
 const {decode} = require('bolt11');
 
+const errCode = require('./../conf/error_codes');
+
 /** Parse a Lightning invoice
 
   {
@@ -13,7 +15,7 @@ const {decode} = require('bolt11');
 */
 module.exports = ({invoice}, cbk) => {
   if (!invoice) {
-    return cbk([0, 'Expected invoice']);
+    return cbk([errCode.local_err, 'Expected invoice']);
   }
 
   try {
@@ -23,7 +25,7 @@ module.exports = ({invoice}, cbk) => {
 
     return cbk(null, {payment_hash: paymentHashTag.data});
   } catch (e) {
-    return cbk([0, 'Error parsing invoice', e]);
+    return cbk([errCode.local_err, 'Error parsing invoice', e]);
   }
 };
 

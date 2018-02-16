@@ -13,12 +13,8 @@ const {getBlockCount} = require('./../conf/rpc_commands');
     current_height: <Block Height Number>
   }
 */
-module.exports = (args, cbk) => {
-  return chainRpc({
-    cmd: getBlockCount,
-    network: args.network,
-  },
-  (err, height) => {
+module.exports = ({network}, cbk) => {
+  return chainRpc({network, cmd: getBlockCount}, (err, height) => {
     if (!!err) {
       return cbk(err);
     }

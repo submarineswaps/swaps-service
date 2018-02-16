@@ -1,3 +1,4 @@
+const byteLength = 1;
 const scriptNumberMax = 75;
 
 /** Number as a Buffer for script pushdata
@@ -16,7 +17,7 @@ module.exports = (args) => {
     throw new Error('Expected low number to convert to script buffer');
   }
 
-  const buf = Buffer(1);
+  const buf = Buffer(byteLength);
 
   buf.writeUInt8(args.number);
 

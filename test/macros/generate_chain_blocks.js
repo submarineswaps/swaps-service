@@ -5,9 +5,8 @@ const chainRpc = require('./chain_rpc');
 const getBlockDetails = require('./get_block_details');
 const returnResult = require('./return_result');
 
+const chain = require('./../conf/chain');
 const {generate} = require('./../conf/rpc_commands');
-
-const maturityBlockCount = 400;
 
 /** Generate blocks on the chain
 
@@ -35,7 +34,7 @@ module.exports = (args, cbk) => {
       return chainRpc({
         cmd: generate,
         network: args.network,
-        params: [maturityBlockCount],
+        params: [chain.maturity_block_count],
       },
       cbk);
     },
