@@ -45,12 +45,12 @@ module.exports = (args, cbk) => {
 
   chainRpc.init(host, port, user, pass);
 
-  return chainRpc.call(args.cmd, args.params || [], (err, {result}) => {
+  return chainRpc.call(args.cmd, args.params || [], (err, r) => {
     if (!!err) {
       return cbk([errCode.service_unavailable, 'Error with RPC command', err]);
     }
 
-    return cbk(null, result);
+    return cbk(null, r.result);
   });
 };
 

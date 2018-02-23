@@ -1,3 +1,4 @@
 {
-  "hexBase": 16
+  "dec_base": 10,
+  "hex_base": 16
 }

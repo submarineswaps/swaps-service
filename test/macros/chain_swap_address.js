@@ -15,7 +15,7 @@ const chainSwapScript = require('./chain_swap_script');
     destination_public_key: <Destination Public Key Serialized String>
     payment_hash: <Payment Hash String>
     refund_public_key: <Refund Public Key Serialized String>
-    timeout_block_count: <Swap Expiration Date Number>
+    timeout_block_height: <Swap Expiration Date Number>
   }
 
   @returns via cbk
@@ -30,7 +30,7 @@ module.exports = (args, cbk) => {
     destination_public_key: args.destination_public_key,
     payment_hash: args.payment_hash,
     refund_public_key: args.refund_public_key,
-    timeout_block_count: args.timeout_block_count,
+    timeout_block_height: args.timeout_block_height,
   });
 
   const redeemScript = Buffer.from(redeemScriptHex, 'hex');

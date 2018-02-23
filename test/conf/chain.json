@@ -1,3 +1,9 @@
 {
-  "maturity_block_count": 400
+  "coinbase_tx_index": 0,
+  "ecdsa_sig_max_byte_length": 72,
+  "maturity_block_count": 432,
+  "min_sequence_value": 0,
+  "sequence_byte_length": 4,
+  "short_push_data_length": 1,
+  "witness_byte_discount_denominator": 4
 }

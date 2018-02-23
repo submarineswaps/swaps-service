@@ -1,17 +1,20 @@
 const asyncAuto = require('async/auto');
 const asyncMapSeries = require('async/mapSeries');
+const asyncTimesSeries = require('async/timesSeries');
 
 const chainRpc = require('./chain_rpc');
 const getBlockDetails = require('./get_block_details');
 const returnResult = require('./return_result');
 
-const chain = require('./../conf/chain');
 const {generate} = require('./../conf/rpc_commands');
+
+const noDelay = 0;
 
 /** Generate blocks on the chain
 
   {
-    blocks_count: <Number of Blocks to Generate Number>
+    [blocks_count]: <Number of Blocks to Generate Number>
+    [delay]: <Delay Between Blocks Ms> = 0
     network: <Network Name String>
   }
 
@@ -31,10 +34,21 @@ module.exports = (args, cbk) => {
   return asyncAuto({
     // Make blocks to maturity
     generateBlocks: cbk => {
-      return chainRpc({
-        cmd: generate,
-        network: args.network,
-        params: [chain.maturity_block_count],
+      return asyncTimesSeries(args.blocks_count, (_, cbk) => {
+        return chainRpc({
+          cmd: generate,
+          network: args.network,
+          params: [[args.delay].length],
+        },
+        (err, blockHashes) => {
+          if (!!err) {
+            return cbk(err);
+          }
+
+          const [blockHash] = blockHashes;
+
+          return setTimeout(() => cbk(null, blockHash), args.delay || noDelay);
+        });
       },
       cbk);
     },

@@ -90,10 +90,22 @@ All cases:
     OP_ENDIF
     OP_CHECKSIG # Fails check against <badSig> = 0
 
+`claim_fail_preimage`
+
+    <aliceSig> <badPaymentPreimage>
+    OP_SHA256 <paymentHash> OP_EQUAL # <preimage> doesn't match, stack -> OP_0
+    OP_IF
+      # Path Not Taken
+    OP_ELSE
+      <cltvExpiry> OP_CHECKLOCKTIMEVERIFY OP_DROP # Maybe fail here, or...
+      <bobPubKey> # <bobPubKey> is pushed onto the stack
+    OP_ENDIF
+    OP_CHECKSIG # Fails check against <aliceSig> -> OP_0
+
 `refund_too_early`:
 
-    <bobSig> OP_1
-    OP_SHA256 <paymentHash> OP_EQUAL # <preimage> matches, leaves OP_1 on stack
+    <bobSig> OP_0
+    OP_SHA256 <paymentHash> OP_EQUAL # <preimage> doesn't match
     OP_IF
       # Path not taken
     OP_ELSE
@@ -102,12 +114,13 @@ All cases:
 
 `refund_success`:
 
-    <bobSig> OP_1
-    OP_SHA256 <paymentHash> OP_EQUAL
+    <bobSig> OP_0
+    OP_SHA256 <paymentHash> OP_EQUAL # <preimage> doesn't match
     OP_IF
       # Path not taken
     OP_ELSE
-      <cltvExpiry> OP_CHECKLOCKTIMEVERIFY OP_DROP <bobPubKey>
+      <cltvExpiry> OP_CHECKLOCKTIMEVERIFY OP_DROP
+      <bobPubKey> # <bobPubKey> is pushed onto the stack
     OP_ENDIF
     OP_CHECKSIG # Only <bobPubKey> on the stack, check against <bobSig> = 1
 

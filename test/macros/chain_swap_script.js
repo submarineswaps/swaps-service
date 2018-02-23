@@ -5,7 +5,7 @@ const pushdataEncodingLen = require('pushdata-bitcoin').encodingLength;
 
 const numberAsBuf = require('./number_as_buffer');
 
-const {hexBase} = require('./../conf/math');
+const hexBase = require('./../conf/math').hex_base;
 
 const bip65Encode = require('bip65').encode;
 const {script} = require('bitcoinjs-lib');
@@ -16,7 +16,7 @@ const {script} = require('bitcoinjs-lib');
     destination_public_key: <Destination Public Key Serialized String>
     payment_hash: <Payment Hash String>
     refund_public_key: <Refund Public Key Serialized String>
-    timeout_block_count: <Swap Expiration Date Number>
+    timeout_block_height: <Swap Expiration Height Number>
   }
 
   @returns
@@ -28,14 +28,15 @@ module.exports = (args, cbk) => {
   const paymentHash = Buffer.from(args.payment_hash, 'hex');
   const refundPublicKey = Buffer.from(args.refund_public_key, 'hex');
 
-  const cltv = numberEncode(bip65Encode({blocks: args.timeout_block_count}));
+  const cltv = numberEncode(bip65Encode({blocks: args.timeout_block_height}));
 
   const chainSwapScript = [
     OP_SHA256, paymentHash, OP_EQUAL,
     OP_IF,
       destinationPublicKey,
     OP_ELSE,
-      cltv, OP_CHECKLOCKTIMEVERIFY, OP_DROP, refundPublicKey,
+      cltv, OP_CHECKLOCKTIMEVERIFY, OP_DROP,
+      refundPublicKey,
     OP_ENDIF,
     OP_CHECKSIG,
   ]

@@ -54,6 +54,13 @@ module.exports = (args, cbk) => {
 
   daemon.on('close', code => removeDir(tmpDir, () => {}));
 
+  process.on('uncaughtException', err => {
+    console.log(err);
+    daemon.kill();
+
+    process.exit(1)
+  });
+
   return;
 };
 

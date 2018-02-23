@@ -2,18 +2,20 @@ const bip65Encode = require('bip65').encode;
 const {address, crypto, ECPair, networks, script} = require('bitcoinjs-lib');
 const {Transaction} = require('bitcoinjs-lib');
 
-const addressToOutputScript = address.toOutputScript;
+const chain = require('./../conf/chain');
+
 const hashAll = Transaction.SIGHASH_ALL;
 const {testnet} = networks;
+const {toOutputScript} = address;
 const {sha256} = crypto;
 const {witnessScriptHash} = script;
 
-const ecdsaSignatureLength = 72;
-const sequenceLength = 4;
-const shortPushdataLength = 1;
-const vRatio = 4;
+const ecdsaSignatureLength = chain.ecdsa_sig_max_byte_length;
+const sequenceLength = chain.sequence_byte_length;
+const shortPushdataLength = chain.short_push_data_length;
+const vRatio = chain.witness_byte_discount_denominator;
 
-/** Sweep chain swap output
+/** Make a claim chain swap output transaction that completes a swap
 
   {
     current_block_height: <Current Block Height Number>
@@ -43,7 +45,7 @@ module.exports = (args, cbk) => {
   const lockTime = bip65Encode({blocks: args.current_block_height});
   const preimage = Buffer.from(args.preimage, 'hex');
   const script = Buffer.from(args.redeem_script, 'hex');
-  const scriptPub = addressToOutputScript(args.destination, testnet);
+  const scriptPub = toOutputScript(args.destination, testnet);
   const signingKey = ECPair.fromWIF(args.private_key, testnet);
   const tokens = args.utxos.reduce((sum, n) => n.tokens + sum, 0);
   const tokensPerVirtualByte = args.fee_tokens_per_vbyte;
