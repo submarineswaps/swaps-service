@@ -140,7 +140,7 @@ The altered script for a pkhash looks like:
     OP_ELSE
       <cltvExpiry> OP_CHECKLOCKTIMEVERIFY OP_DROP
       OP_DUP # Save another copy of the pubKey for use after the hash check
-      OP_HASH160 <bobPkHash> OP_EQUAL
+      OP_HASH160 <bobPkHash> OP_EQUALVERIFY
     OP_ENDIF
     OP_CHECKSIG
 

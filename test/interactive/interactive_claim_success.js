@@ -179,13 +179,12 @@ module.exports = (args, cbk) => {
       'swapRefundHeight',
       (res, cbk) =>
     {
-      return chainSwapAddress({
+      return cbk(null, chainSwapAddress({
         destination_public_key: res.generateBobKeyPair.public_key,
         payment_hash: res.parseLightningInvoice.payment_hash,
         refund_public_key: res.generateAliceKeyPair.public_key,
         timeout_block_height: res.swapRefundHeight,
-      },
-      cbk);
+      }));
     }],
 
     // Send the tokens to the swap address

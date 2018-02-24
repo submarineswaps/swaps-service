@@ -1,5 +1,6 @@
 const asyncAuto = require('async/auto');
 const asyncConstant = require('async/constant');
+const {test} = require('tap');
 
 const macros = './macros/';
 
@@ -30,7 +31,9 @@ const swapTimeoutBlockCount = 25;
   hash plus Bob's key. But something goes wrong and Bob never claims his funds.
   Alice waits out the timeout and takes her tokens back.
 
-  {}
+  {
+    is_refund_to_public_key_hash: <Is Refund to PK Hash Bool>
+  }
 
   @returns via cbk
   {
@@ -107,13 +110,22 @@ module.exports = (args, cbk) => {
       'swapRefundHeight',
       (res, cbk) =>
     {
-      return chainSwapAddress({
-        destination_public_key: res.generateBobKeyPair.public_key,
-        payment_hash: res.generatePaymentPreimage.payment_hash,
-        refund_public_key: res.generateAliceKeyPair.public_key,
-        timeout_block_height: res.swapRefundHeight,
-      },
-      cbk);
+      const isPkHash = !!args.is_refund_to_public_key_hash;
+
+      const refundPkHash = !isPkHash ? null : res.generateAliceKeyPair.pk_hash;
+      const refundPk = !isPkHash ? res.generateAliceKeyPair.public_key : null;
+
+      try {
+        return cbk(null, chainSwapAddress({
+          destination_public_key: res.generateBobKeyPair.public_key,
+          payment_hash: res.generatePaymentPreimage.payment_hash,
+          refund_public_key: refundPk,
+          refund_public_key_hash: refundPkHash,
+          timeout_block_height: res.swapRefundHeight,
+        }));
+      } catch (e) {
+        return cbk([errCode.local_err, 'Expected chain swap addr', e]);
+      }
     }],
 
     // Alice selects a UTXO to send to the swap address
@@ -163,13 +175,16 @@ module.exports = (args, cbk) => {
     }],
 
     // Alice makes a transaction to claim her refund too early
-    tooEarlyRefundTx: ['getHeightAfterFunding', (res, cbk) => {
+    tooEarlyRefundTx: [
+      'fundingTransactionUtxos',
+      'getHeightAfterFunding',
+      (res, cbk) =>
+    {
       return refundTransaction({
         current_block_height: res.getHeightAfterFunding.current_height,
         destination: res.createAliceAddress.p2wpkh_address,
         fee_tokens_per_vbyte: staticFeePerVirtualByte,
         private_key: res.generateAliceKeyPair.private_key,
-        redeem_script: res.createChainSwapAddress.redeem_script,
         utxos: res.fundingTransactionUtxos.matching_outputs,
       },
       cbk);
@@ -232,7 +247,6 @@ module.exports = (args, cbk) => {
         destination: res.createAliceAddress.p2wpkh_address,
         fee_tokens_per_vbyte: staticFeePerVirtualByte,
         private_key: res.generateAliceKeyPair.private_key,
-        redeem_script: res.createChainSwapAddress.redeem_script,
         utxos: res.fundingTransactionUtxos.matching_outputs,
       },
       cbk);
@@ -250,15 +264,38 @@ module.exports = (args, cbk) => {
   returnResult({of: 'network'}, cbk));
 };
 
-module.exports({}, (err, network) => {
-  if (!!err) {
-    console.log('REFUND SUCCESS ERROR', err);
-  }
+test('perform swap and refund with a pkhash', t => {
+  return module.exports({
+    is_refund_to_public_key_hash: true,
+  },
+  (err, network) => {
+    if (!!err) {
+      throw err;
+    }
 
-  stopChainDaemon({network}, (err, res) => {});
+    return stopChainDaemon({network}, err => {
+      if (!!err) {
+        throw err;
+      }
 
-  console.log('REFUND SUCCESS TEST COMPLETE!');
+      return t.end();
+    });
+  });
+});
 
-  return;
+test('perform swap and refund with refund key', t => {
+  return module.exports({}, (err, network) => {
+    if (!!err) {
+      throw err;
+    }
+
+    return stopChainDaemon({network}, err => {
+      if (!!err) {
+        throw err;
+      }
+
+      return t.end();
+    });
+  });
 });
 

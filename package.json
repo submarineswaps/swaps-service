@@ -14,6 +14,9 @@
     "uuid": "3.2.1"
   },
   "description": "Tools for swaps with Lightning",
+  "devDependencies": {
+    "tap": "11.1.1"
+  },
   "directories": {
     "doc": "docs",
     "test": "test"

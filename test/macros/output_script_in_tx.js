@@ -13,6 +13,7 @@ const {witnessScriptHash} = script;
   @returns via cbk
   {
     matching_outputs: [{
+      redeem: <Redeem Script Buffer>
       script: <ScriptPub Buffer>
       tokens: <Tokens Number>
       transaction_id: <Transaction Id Hex String>
@@ -25,17 +26,15 @@ module.exports = (args, cbk) => {
     return cbk([0, 'Expected redeem script, transaction']);
   }
 
-  const redeemScript = Buffer.from(args.redeem_script, 'hex');
-
-  const witnessScript = witnessScriptHash.output.encode(sha256(redeemScript));
-
+  const redeem = Buffer.from(args.redeem_script, 'hex');
   const transaction = Transaction.fromHex(args.transaction);
 
   const txId = transaction.getId();
+  const witnessScript = witnessScriptHash.output.encode(sha256(redeem));
 
   const matchingVouts = transaction.outs
     .map(({script, value}, vout) => {
-      return {script, vout, tokens: value, transaction_id: txId};
+      return {redeem, script, vout, tokens: value, transaction_id: txId};
     })
     .filter(n => n.script.equals(witnessScript));
 

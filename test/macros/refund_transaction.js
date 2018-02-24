@@ -25,10 +25,10 @@ const vRatio = chain.witness_byte_discount_denominator;
     current_block_height: <Current Block Height Number>
     destination: <Send Tokens to Address String>
     fee_tokens_per_vbyte: <Fee Per Virtual Byte Token Rate Number>
-    redeem_script: <Redeem Script Hex>
+    [is_public_key_hash_refund]: <Is Public Key Hash Refund Bool> = false
     private_key: <Refund Private Key WIF String>
-    redeem_script: <Redeem Script Hex Serialized String>
     utxos: [{
+      redeem: <Redeem Script Buffer>
       tokens: <Tokens Number>
       transaction_id: <Transaction Id String>
       vout: <Vout Number>
@@ -46,16 +46,13 @@ module.exports = (args, cbk) => {
   }
 
   const dummy = Buffer.from(OP_FALSE.toString(hexBase), 'hex');
-  const script = Buffer.from(args.redeem_script, 'hex');
-  const scriptPub = toOutputScript(args.destination, testnet);
+  const isPkHashRefund = !!args.is_public_key_hash_refund;
   const signingKey = ECPair.fromWIF(args.private_key, testnet);
   const tokens = args.utxos.reduce((sum, n) => n.tokens + sum, 0);
   const tokensPerVirtualByte = args.fee_tokens_per_vbyte;
   const tx = new Transaction();
 
-  const prevPub = witnessScriptHash.output.encode(sha256(script));
-
-  tx.addOutput(scriptPub, tokens);
+  tx.addOutput(toOutputScript(args.destination, testnet), tokens);
 
   // Plug all the utxos into the transaction as inputs
   args.utxos
@@ -67,14 +64,18 @@ module.exports = (args, cbk) => {
 
   tx.locktime = bip65Encode({blocks: args.current_block_height});
 
+  // In place of the preimage a dummy spacer byte or a public key is placed
+  const space = isPkHashRefund ? dummy : signingKey.getPublicKeyBuffer();
+
   // Anticipate the final weight of the transaction
-  const anticipatedWeight = args.utxos.reduce((sum, n) => {
+  const anticipatedWeight = args.utxos.reduce((sum, utxo) => {
     return [
       shortPushdataLength,
       ecdsaSignatureLength,
       sequenceLength,
-      dummy.length,
-      script.length,
+      (isPkHashRefund ? shortPushdataLength : 0),
+      space.length,
+      utxo.redeem.length,
       sum,
     ].reduce((sum, n) => sum + n);
   },
@@ -86,12 +87,12 @@ module.exports = (args, cbk) => {
   out.value -= tokensPerVirtualByte * Math.ceil(anticipatedWeight / vRatio);
 
   // Sign each input. We need the dummy to fail the preimage test
-  args.utxos.forEach(({tokens}, i) => {
-    const sigHash = tx.hashForWitnessV0(i, script, tokens, SIGHASH_ALL);
+  args.utxos.forEach(({redeem, tokens}, i) => {
+    const sigHash = tx.hashForWitnessV0(i, redeem, tokens, SIGHASH_ALL);
 
     const signature = signingKey.sign(sigHash).toScriptSignature(SIGHASH_ALL);
 
-    return [[signature, dummy, script]].forEach((w, i) => tx.setWitness(i, w));
+    return [[signature, space, redeem]].forEach((w, i) => tx.setWitness(i, w));
   });
 
   return cbk(null, {transaction: tx.toHex()});

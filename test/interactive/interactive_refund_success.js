@@ -188,13 +188,12 @@ module.exports = (args, cbk) => {
       'timeoutBlockHeight',
       (res, cbk) =>
     {
-      return chainSwapAddress({
+      return cbk(null, chainSwapAddress({
         destination_public_key: res.generateBobKeyPair.public_key,
         payment_hash: res.parseLightningInvoice.payment_hash,
         refund_public_key: res.generateAliceKeyPair.public_key,
         timeout_block_height: res.timeoutBlockHeight,
-      },
-      cbk);
+      }));
     }],
 
     // Alice creates a transaction that sends tokens to the swap address

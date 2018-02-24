@@ -1,5 +1,6 @@
 const asyncAuto = require('async/auto');
 const asyncConstant = require('async/constant');
+const {test} = require('tap');
 
 const macros = './macros/';
 
@@ -28,7 +29,9 @@ const swapTimeoutBlockCount = 200;
 
 /** Test a claim success script against regtest
 
-  {}
+  {
+    [is_refund_to_public_key_hash]: <Is Refund to PKHash Flow Bool>
+  }
 
   @returns via cbk
   {
@@ -92,13 +95,22 @@ module.exports = (args, cbk) => {
       'generatePaymentPreimage',
       (res, cbk) =>
     {
-      return chainSwapAddress({
-        destination_public_key: res.generateAliceKeyPair.public_key,
-        payment_hash: res.generatePaymentPreimage.payment_hash,
-        refund_public_key: res.generateBobKeyPair.public_key,
-        timeout_block_height: maturityBlockCount + swapTimeoutBlockCount,
-      },
-      cbk);
+      const isPkHash = !!args.is_refund_to_public_key_hash;
+
+      const refundPkHash = !isPkHash ? null : res.generateBobKeyPair.pk_hash;
+      const refundPk = !isPkHash ? res.generateBobKeyPair.public_key : null;
+
+      try {
+        return cbk(null, chainSwapAddress({
+          destination_public_key: res.generateAliceKeyPair.public_key,
+          payment_hash: res.generatePaymentPreimage.payment_hash,
+          refund_public_key: refundPk,
+          refund_public_key_hash: refundPkHash,
+          timeout_block_height: maturityBlockCount + swapTimeoutBlockCount,
+        }));
+      } catch (e) {
+        return cbk([errCode.local_err, 'Chain swap addr creation fail', e]);
+      }
     }],
 
     // Bob needs to go get a block to spend his block reward to the swap
@@ -168,7 +180,6 @@ module.exports = (args, cbk) => {
         fee_tokens_per_vbyte: staticFeePerVirtualByte,
         preimage: res.generatePaymentPreimage.payment_preimage,
         private_key: res.generateAliceKeyPair.private_key,
-        redeem_script: res.createChainSwapAddress.redeem_script,
         utxos: res.fundingTransactionUtxos.matching_outputs,
       });
     }],
@@ -181,7 +192,6 @@ module.exports = (args, cbk) => {
         fee_tokens_per_vbyte: readyToClaim.fee_tokens_per_vbyte,
         preimage: readyToClaim.preimage.replace(/\d/g, '0'),
         private_key: readyToClaim.private_key,
-        redeem_script: readyToClaim.redeem_script,
         utxos: readyToClaim.utxos,
       },
       cbk);
@@ -210,7 +220,6 @@ module.exports = (args, cbk) => {
         fee_tokens_per_vbyte: res.readyToClaim.fee_tokens_per_vbyte,
         preimage: res.readyToClaim.preimage,
         private_key: res.generateBobKeyPair.private_key, // Using the wrong key
-        redeem_script: res.readyToClaim.redeem_script,
         utxos: res.readyToClaim.utxos,
       },
       cbk);
@@ -239,7 +248,6 @@ module.exports = (args, cbk) => {
         fee_tokens_per_vbyte: readyToClaim.fee_tokens_per_vbyte,
         preimage: readyToClaim.preimage,
         private_key: readyToClaim.private_key,
-        redeem_script: readyToClaim.redeem_script,
         utxos: readyToClaim.utxos,
       },
       cbk);
@@ -257,15 +265,34 @@ module.exports = (args, cbk) => {
   returnResult({of: 'network'}, cbk));
 };
 
-module.exports({}, (err, network) => {
-  if (!!err) {
-    console.log('CLAIM SUCCESS ERROR', err);
-  }
+test('perform swap with pkhash', t => {
+  return module.exports({
+    is_refund_to_public_key_hash: true,
+  },
+  (err, network) => {
+    return stopChainDaemon({network}, err => {
+      if (!!err) {
+        throw err;
+      }
 
-  stopChainDaemon({network}, (err, res) => {});
+      return t.end();
+    });
+  });
+});
 
-  console.log('CLAIM SUCCESS TEST COMPLETE!');
+test('perform swap with public key refund', t => {
+  return module.exports({}, (err, network) => {
+    if (!!err) {
+      throw err;
+    }
 
-  return;
+    return stopChainDaemon({network}, err => {
+      if (!!err) {
+        throw err;
+      }
+
+      return t.end();
+    });
+  });
 });
 

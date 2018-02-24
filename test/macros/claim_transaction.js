@@ -21,11 +21,10 @@ const vRatio = chain.witness_byte_discount_denominator;
     current_block_height: <Current Block Height Number>
     destination: <Send Tokens to Address String>
     fee_tokens_per_vbyte: <Fee Per Virtual Byte Token Rate Number>
-    redeem_script: <Redeem Script Hex>
     preimage: <Payment Preimage Hex String>
     private_key: <Claim Private Key WIF String>
-    redeem_script: <Redeem Script Hex Serialized String>
     utxos: [{
+      redeem: <Redeem Script Buffer>
       tokens: <Tokens Number>
       transaction_id: <Transaction Id String>
       vout: <Vout Number>
@@ -42,53 +41,49 @@ module.exports = (args, cbk) => {
     return cbk([0, 'Expected funding tx utxos']);
   }
 
-  const lockTime = bip65Encode({blocks: args.current_block_height});
   const preimage = Buffer.from(args.preimage, 'hex');
-  const script = Buffer.from(args.redeem_script, 'hex');
-  const scriptPub = toOutputScript(args.destination, testnet);
   const signingKey = ECPair.fromWIF(args.private_key, testnet);
   const tokens = args.utxos.reduce((sum, n) => n.tokens + sum, 0);
   const tokensPerVirtualByte = args.fee_tokens_per_vbyte;
-  const transaction = new Transaction();
+  const tx = new Transaction();
 
   args.utxos
     .map(n => ({txId: Buffer.from(n.transaction_id, 'hex'), vout: n.vout}))
-    .forEach(n => transaction.addInput(n.txId.reverse(), n.vout));
+    .forEach(n => tx.addInput(n.txId.reverse(), n.vout));
 
-  transaction.addOutput(scriptPub, tokens);
+  tx.addOutput(toOutputScript(args.destination, testnet), tokens);
 
-  const prevPub = witnessScriptHash.output.encode(sha256(script));
-  transaction.locktime = lockTime;
+  tx.locktime = bip65Encode({blocks: args.current_block_height});
 
   // Anticipate the final weight of the transaction
-  const anticipatedWeight = args.utxos.reduce((sum, n) => {
+  const anticipatedWeight = args.utxos.reduce((sum, utxo) => {
     return [
       shortPushdataLength,
       ecdsaSignatureLength,
       shortPushdataLength,
       preimage.length,
       sequenceLength,
-      script.length,
+      utxo.redeem.length,
       sum,
     ].reduce((sum, n) => sum + n);
   },
-  transaction.weight());
+  tx.weight());
 
   // Reduce the final output value to give some tokens over to fees
-  const [out] = transaction.outs;
+  const [out] = tx.outs;
 
   out.value -= tokensPerVirtualByte * Math.ceil(anticipatedWeight / vRatio);
 
   // Sign each input
-  args.utxos.forEach(({tokens}, i) => {
-    const sigHash = transaction.hashForWitnessV0(i, script, tokens, hashAll);
+  args.utxos.forEach(({redeem, tokens}, i) => {
+    const sigHash = tx.hashForWitnessV0(i, redeem, tokens, hashAll);
 
     const signature = signingKey.sign(sigHash).toScriptSignature(hashAll);
 
-    return [[signature, preimage, script]]
-      .forEach((witness, i) => transaction.setWitness(i, witness));
+    return [[signature, preimage, redeem]]
+      .forEach((witness, i) => tx.setWitness(i, witness));
   });
 
-  return cbk(null, {transaction: transaction.toHex()});
+  return cbk(null, {transaction: tx.toHex()});
 };
 
