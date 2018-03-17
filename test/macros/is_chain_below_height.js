@@ -1,4 +1,4 @@
-const getBlockchainInfo = require('./get_blockchain_info');
+const {getBlockchainInfo} = require('./../../chain');
 
 /** Determine if the chain is below a certain height
 

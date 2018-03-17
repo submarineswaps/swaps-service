@@ -6,26 +6,26 @@ const {Transaction} = require('bitcoinjs-lib');
 const macros = './../macros/';
 
 const addressForPublicKey = require(`${macros}address_for_public_key`);
-const broadcastTransaction = require(`${macros}broadcast_transaction`);
-const chainSwapAddress = require(`${macros}chain_swap_address`);
-const generateChainBlocks = require(`${macros}generate_chain_blocks`);
+const {broadcastTransaction} = require('./../../chain');
+const {generateChainBlocks} = require('./../../chain');
 const generateInvoice = require(`${macros}generate_invoice`);
 const generateKeyPair = require(`${macros}generate_keypair`);
-const getBlockchainInfo = require(`${macros}get_blockchain_info`);
-const getTransaction = require(`${macros}get_transaction`);
+const {getBlockchainInfo} = require('./../../chain');
+const {getTransaction} = require('./../../chain');
 const isChainBelowHeight = require(`${macros}is_chain_below_height`);
 const mineTransaction = require(`${macros}mine_transaction`);
-const outputScriptInTransaction = require(`${macros}output_script_in_tx`);
+const {outputScriptInTransaction} = require('./../../chain');
 const parseLightningInvoice = require(`${macros}parse_lightning_invoice`);
 const promptForInput = require(`${macros}prompt`);
-const refundTransaction = require(`${macros}refund_transaction`);
-const returnResult = require(`${macros}return_result`);
+const {refundTransaction} = require('./../../swaps');
+const {returnResult} = require('./../../async-util');
 const sendChainTokensTransaction = require(`${macros}send_chain_tokens_tx`);
-const spawnChainDaemon = require(`${macros}spawn_chain_daemon`);
-const stopChainDaemon = require(`${macros}stop_chain_daemon`);
+const {spawnChainDaemon} = require('./../../chain');
+const {stopChainDaemon} = require('./../../chain');
+const {swapAddress} = require('./../../swaps');
 
 const math = require('./../conf/math');
-const chain = require('./../conf/chain');
+const chain = require('./../../chain').constants;
 
 const chainCheckFrequencyMs = 200;
 const coinbaseIndex = chain.coinbase_tx_index;
@@ -64,7 +64,7 @@ module.exports = (args, cbk) => {
       const network = res.promptForNetwork.value;
 
       if (network !== 'regtest' && network !== 'testnet') {
-        return cbk([0, 'Expected known network']);
+        return cbk([0, 'ExpectedKnownNetwork']);
       }
 
       return cbk(null, network);
@@ -188,9 +188,9 @@ module.exports = (args, cbk) => {
       'timeoutBlockHeight',
       (res, cbk) =>
     {
-      return cbk(null, chainSwapAddress({
+      return cbk(null, swapAddress({
         destination_public_key: res.generateBobKeyPair.public_key,
-        payment_hash: res.parseLightningInvoice.payment_hash,
+        payment_hash: res.parseLightningInvoice.id,
         refund_public_key: res.generateAliceKeyPair.public_key,
         timeout_block_height: res.timeoutBlockHeight,
       }));
@@ -345,11 +345,14 @@ module.exports = (args, cbk) => {
       'getFundingTransaction',
       (res, cbk) =>
     {
-      return outputScriptInTransaction({
-        redeem_script: res.createChainSwapAddress.redeem_script,
-        transaction: res.getFundingTransaction.transaction,
-      },
-      cbk);
+      try {
+        return cbk(null, outputScriptInTransaction({
+          redeem_script: res.createChainSwapAddress.redeem_script,
+          transaction: res.getFundingTransaction.transaction,
+        }));
+      } catch (e) {
+        return cbk([0, e.message, e]);
+      }
     }],
 
     // (Parse the tokens per vbyte into a number)

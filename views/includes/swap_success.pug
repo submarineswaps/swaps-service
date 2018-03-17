@@ -1,0 +1,44 @@
+.collapse.hide.swap-success.template
+  .border-success.card.mb-3
+    .card-header Swap tBTC for tBTC
+    .card-body
+      h5.card-title.text-success Swap Complete!
+      .card-text.collapse.invoice-details.show
+        dl
+          dt On-Chain
+          dd
+            span.chain-amount
+            span #{' '}
+            span.testnet-currency-qualifier t
+            span.send-currency-code
+          dt Transaction Id
+          dd
+            a(target="blank").text-muted.transaction-id
+          dt Off-Chain
+          dd
+            span.send-amount
+            span #{' '}
+            span.testnet-currency-qualifier t
+            span.send-currency-code
+          dt Swap Fee
+          dd
+            span.swap-fee
+            span #{' '}
+            span.testnet-currency-qualifier t
+            span.send-currency-code
+            span #{' '}
+            span (1.5%)
+          .description
+            dt Invoice
+            dd
+              i.fa.fa-quote-left.mr-1
+              span #{' '}
+              span.payment-description.mr-1
+              span #{' '}
+              i.fa.fa-quote-right
+          dt Payment Proof
+          dd
+            code.payment-secret.text-muted
+    .card-footer
+      .swap-date.text-muted
+

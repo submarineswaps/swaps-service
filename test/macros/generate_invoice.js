@@ -1,10 +1,9 @@
-const bitcoinjsLib = require('bitcoinjs-lib');
 const {createHash} = require('crypto');
-const {encode, sign} = require('bolt11');
+const {ECPair} = require('bitcoinjs-lib');
+const {encode} = require('bolt11');
+const {sign} = require('bolt11');
 const {testnet} = require('bitcoinjs-lib').networks;
 const uuidv4 = require('uuid/v4');
-
-const errCode = require('./../conf/error_codes');
 
 const preimageByteCount = 32;
 const privKeySize = 32;
@@ -25,10 +24,10 @@ const uuidv4ByteCount = 16;
 */
 module.exports = (args, cbk) => {
   if (!args.private_key) {
-    return cbk([errCode.local_err, 'Expected private key']);
+    return cbk([0, 'Expected private key']);
   }
 
-  const keyPair = bitcoinjsLib.ECPair.fromWIF(args.private_key, testnet);
+  const keyPair = ECPair.fromWIF(args.private_key, testnet);
   const preimage = new Buffer(preimageByteCount);
 
   // Populate preimage bytes with a couple uuidv4s

@@ -1,0 +1,88 @@
+form.collapse.create-swap-quote.mb-4.show
+  .swap-settings
+    .form-group
+      label
+        h4.text-primary Pay a Lightning Invoice With On-Chain Coins:
+      .input-group.input-group-lg.mb-3
+        .input-group-prepend
+          span.input-group-text
+            i.fa.fa-fw.fa-bolt
+        input.form-control.pay-to-lightning-invoice(
+          autofocus,
+          placeholder="Enter Lightning invoice to pay...",
+          required,
+          spellcheck="false",
+          type="text"
+        )
+    .collapse.form-group.invoice-details
+      .bg-light.card
+        .card-body.pb-3
+          h4.card-title
+            span.send-amount
+            span #{' '}
+            span.testnet-currency-qualifier t
+            span.send-currency-code BTC
+            span #{' '}
+            span (
+            span.fiat-send-amount
+            span #{' '}
+            span.testnet-currency-qualifier t
+            span.fiat-currency-code USD
+            span )
+          h6.card-subtitle.mb-2.text-muted
+            span to
+            span #{' '}
+            span.payment-public-key
+            a(href="#").destination-url.text-dark
+          p.card-text.description
+            i.fa.fa-quote-left.mr-2.text-muted
+            span.payment-description.mr-2
+            i.fa.fa-quote-right.text-muted
+    .form-group
+      label
+        strong Pay With:
+      .input-group.input-group-lg.mb-3
+        .input-group-prepend
+          label.input-group-text
+            i.fa.fa-link
+        select.custom-select.form-control.select-currency
+          option(selected, value="tBTC")
+            | Testnet BTC (on-chain for off-chain)
+        .input-group-append
+          label.input-group-text
+            | Fee: 1.5%
+      small.form-text.text-muted
+        | You will make an on-chain payment using this currency.
+    .form-group
+      label
+        span Refund Address:
+      .input-group.input-group-lg.mb-3
+        .input-group-prepend
+          span.input-group-text
+            i.fa.fa-fw.fa-undo
+        input.form-control.refund-address(
+          autocomplete="off",
+          placeholder="Enter your refund address...",
+          required,
+          spellcheck="false",
+          type="text"
+        )
+      small.form-text.text-muted
+        span Enter a
+        span #{' '}
+        span.required-address-type
+          abbr.initialism(title="Pay to Public Key Hash (1xx)") p2pkh
+          span #{' '}
+          span or
+          span #{' '}
+          abbr.initialism(
+            title="Pay to Witness Public Key Hash (bc)"
+          ) p2pkh
+        span #{' '}
+        span.address-currency-label tBTC
+        span #{' '}
+        span address to use for a refund if things go wrong.
+    button.btn.btn-block.btn-lg.btn-primary.disabled.make(type="submit")
+      i.fa.fa-exchange.mr-2
+      span.mr-2 Swap
+      i.fa.fa-exchange.mr-2

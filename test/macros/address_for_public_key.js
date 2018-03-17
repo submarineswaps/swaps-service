@@ -1,5 +1,7 @@
-const bitcoinjsLib = require('bitcoinjs-lib');
-const {address, crypto, networks, script} = require('bitcoinjs-lib');
+const {address} = require('bitcoinjs-lib');
+const {crypto} = require('bitcoinjs-lib');
+const {networks} = require('bitcoinjs-lib');
+const {script} = require('bitcoinjs-lib');
 
 const knownNetworks = ['regtest', 'testnet'];
 const notFound = -1;

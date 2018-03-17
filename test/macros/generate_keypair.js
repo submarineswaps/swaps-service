@@ -1,9 +1,9 @@
-const {crypto, ECPair, networks} = require('bitcoinjs-lib');
+const {crypto} = require('bitcoinjs-lib');
+const {ECPair} = require('bitcoinjs-lib');
+const {networks} = require('bitcoinjs-lib');
 
 const {testnet} = networks;
 const {hash160} = crypto;
-
-const errCode = require('./../conf/error_codes');
 
 const notFound = -1;
 const testnets = ['regtest', 'testnet'];
@@ -25,7 +25,7 @@ module.exports = (args, cbk) => {
   const network = testnets.indexOf(args.network) !== notFound ? testnet : null;
 
   if (!network) {
-    return cbk([errCode.local_err, 'Expected known network', args.network]);
+    return cbk([0, 'Expected known network', args.network]);
   }
 
   const keyPair = ECPair.makeRandom({network});

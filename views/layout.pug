@@ -1,0 +1,63 @@
+doctype html
+html(lang="en")
+  head
+    link(
+      crossorigin="anonymous",
+      href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css",
+      integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm",
+      rel="stylesheet"
+    )
+    link(
+      crossorigin="anonymous",
+      href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css",
+      integrity="sha384-wvfXpqpZZVQGK6TAh5PVlGOfQNHSoD2xbE+QkPxCAFlNEevoEH3Sl0sibVcOQVnN",
+      rel="stylesheet"
+    )
+    meta(charset="utf-8")
+    meta(
+      content="width=device-width, initial-scale=1, shrink-to-fit=no",
+      name="viewport"
+    )
+    title Orion
+  body
+    nav.bg-light.mb-4.navbar.navbar-expand-lg.navbar-light
+      a.navbar-brand(href="#") Orion
+      button.navbar-toggler(
+        aria-controls="navbarSupportedContent",
+        aria-expanded="false",
+        aria-label="Toggle navigation",
+        data-target="#navbarSupportedContent",
+        data-toggle="collapse",
+        type="button"
+      )
+        span.navbar-toggler-icon
+
+      .collapse.navbar-collapse#navbarSupportedContent
+        ul.mr-auto.navbar-nav
+          li.active.nav-item
+            a.nav-link(href="#")
+              span Home
+              span.sr-only (current)
+          li.nav-item
+            a.nav-link(href="#") About
+        form.form-inline.my-2.my-lg-0
+          button.btn.btn-outline-primary.disabled.my-2.my-sm-0.new-swap(
+            type="submit"
+          )
+            | New Swap
+
+    block content
+    block scripts
+      script(
+        crossorigin="anonymous",
+        integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN",
+        src="https://code.jquery.com/jquery-3.2.1.slim.min.js"
+      )
+      script(
+        crossorigin="anonymous",
+        integrity="sha384-feJI7QwhOS+hwpX2zkaeJQjeiwlhOP+SdQDqhgvvo1DsjtiSQByFdThsxO669S2D",
+        src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.bundle.min.js"
+      )
+      script(src="/js/browserified/blockchain.js")
+      script(src="/js/main.js")
+    

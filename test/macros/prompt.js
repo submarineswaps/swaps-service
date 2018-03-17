@@ -1,6 +1,5 @@
-const {get, start} = require('prompt');
-
-const errCode = require('./../conf/error_codes');
+const {get} = require('prompt');
+const {start} = require('prompt');
 
 /** Prompt at the command line for a value
 
@@ -15,17 +14,17 @@ const errCode = require('./../conf/error_codes');
     value: <Entered Value String>
   }
 */
-module.exports = ({default_value, explain, role}, cbk) => {
+module.exports = (args, cbk) => {
   start();
 
-  const key = `[${role}]: ${explain}`;
+  const key = `[${args.role}]: ${args.explain}`;
 
   return get([key], (err, res) => {
     if (!!err) {
-      return cbk([errCode.local_err, 'Error prompting for value', err]);
+      return cbk([0, 'ErrorPrompting', err]);
     }
 
-    return cbk(null, {value: res[key] || default_value});
+    return cbk(null, {value: res[key] || args.default_value});
   });
 };
 

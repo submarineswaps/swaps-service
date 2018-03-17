@@ -1,0 +1,14 @@
+{
+  "// JSON RPC Command Names": "",
+
+  "createAddress": "getnewaddress",
+  "estimateSmartFee": "estimatesmartfee",
+  "generate": "generate",
+  "getBestBlockHash": "getbestblockhash",
+  "getBlock": "getblock",
+  "getBlockCount": "getblockcount",
+  "getRawMempool": "getrawmempool",
+  "getRawTransaction": "getrawtransaction",
+  "sendRawTransaction": "sendrawtransaction",
+  "stop": "stop"
+}

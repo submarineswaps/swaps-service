@@ -4,25 +4,25 @@ const {Transaction} = require('bitcoinjs-lib');
 const macros = './../macros/';
 
 const addressForPublicKey = require(`${macros}address_for_public_key`);
-const broadcastTransaction = require(`${macros}broadcast_transaction`);
-const chainSwapAddress = require(`${macros}chain_swap_address`);
-const claimTransaction = require(`${macros}claim_transaction`);
-const generateChainBlocks = require(`${macros}generate_chain_blocks`);
+const {broadcastTransaction} = require('./../../chain');
+const {claimTransaction} = require('./../../swaps');
+const {generateChainBlocks} = require('./../../chain');
 const generateInvoice = require(`${macros}generate_invoice`);
 const generateKeyPair = require(`${macros}generate_keypair`);
-const getBlockchainInfo = require(`${macros}get_blockchain_info`);
-const getTransaction = require(`${macros}get_transaction`);
+const {getBlockchainInfo} = require('./../../chain');
+const {getTransaction} = require('./../../chain');
 const mineTransaction = require(`${macros}mine_transaction`);
-const outputScriptInTransaction = require(`${macros}output_script_in_tx`);
+const {outputScriptInTransaction} = require('./../../chain');
 const parseLightningInvoice = require(`${macros}parse_lightning_invoice`);
 const promptForInput = require(`${macros}prompt`);
-const returnResult = require(`${macros}return_result`);
+const {returnResult} = require('./../../async-util');
 const sendChainTokensTransaction = require(`${macros}send_chain_tokens_tx`);
-const spawnChainDaemon = require(`${macros}spawn_chain_daemon`);
-const stopChainDaemon = require(`${macros}stop_chain_daemon`);
+const {spawnChainDaemon} = require('./../../chain');
+const {stopChainDaemon} = require('./../../chain');
+const {swapAddress} = require('./../../swaps');
 
 const math = require('./../conf/math');
-const chain = require('./../conf/chain');
+const chain = require('./../../chain').constants;
 
 const coinbaseIndex = chain.coinbase_tx_index;
 const intBase = math.dec_base;
@@ -67,7 +67,7 @@ module.exports = (args, cbk) => {
       const network = res.promptForNetwork.value;
 
       if (network !== 'regtest' && network !== 'testnet') {
-        return cbk([0, 'Expected known network']);
+        return cbk([0, 'ExpectedKnownNetwork']);
       }
 
       return cbk(null, network);
@@ -179,9 +179,9 @@ module.exports = (args, cbk) => {
       'swapRefundHeight',
       (res, cbk) =>
     {
-      return cbk(null, chainSwapAddress({
+      return cbk(null, swapAddress({
         destination_public_key: res.generateBobKeyPair.public_key,
-        payment_hash: res.parseLightningInvoice.payment_hash,
+        payment_hash: res.parseLightningInvoice.id,
         refund_public_key: res.generateAliceKeyPair.public_key,
         timeout_block_height: res.swapRefundHeight,
       }));
@@ -285,11 +285,14 @@ module.exports = (args, cbk) => {
       'getFundingTransaction',
       (res, cbk) =>
     {
-      return outputScriptInTransaction({
-        redeem_script: res.createChainSwapAddress.redeem_script,
-        transaction: res.getFundingTransaction.transaction,
-      },
-      cbk);
+      try {
+        return cbk(null, outputScriptInTransaction({
+          redeem_script: res.createChainSwapAddress.redeem_script,
+          transaction: res.getFundingTransaction.transaction,
+        }));
+      } catch (e) {
+        return cbk([0, e.message, e]);
+      }
     }],
 
     // Bob needs to pay the invoice and then enter the preimage
@@ -335,18 +338,22 @@ module.exports = (args, cbk) => {
       'tokensPerVirtualByte',
       (res, cbk) =>
     {
-      return claimTransaction({
-        current_block_height: res.getHeightForSweepTransaction.current_height,
-        destination: res.promptForClaimSuccessAddress.value,
-        fee_tokens_per_vbyte: res.tokensPerVirtualByte,
-        preimage: res.promptForPaymentPreimage.value,
-        private_key: res.generateBobKeyPair.private_key,
-        redeem_script: res.createChainSwapAddress.redeem_script,
-        utxos: res.fundingTransactionUtxos.matching_outputs,
-      },
-      cbk);
+      try {
+        return cbk(null, claimTransaction({
+          current_block_height: res.getHeightForSweepTransaction.current_height,
+          destination: res.promptForClaimSuccessAddress.value,
+          fee_tokens_per_vbyte: res.tokensPerVirtualByte,
+          preimage: res.promptForPaymentPreimage.value,
+          private_key: res.generateBobKeyPair.private_key,
+          redeem_script: res.createChainSwapAddress.redeem_script,
+          utxos: res.fundingTransactionUtxos.matching_outputs,
+        }));
+      } catch (e) {
+        return cbk([0, 'ClaimTransactionFailed', e]);
+      }
     }],
 
+    // Tell the network about the claim transaction
     broadcastSweepTransaction: ['claimTransaction', (res, cbk) => {
       return broadcastTransaction({
         network: res.network,
@@ -355,6 +362,7 @@ module.exports = (args, cbk) => {
       cbk);
     }],
 
+    // Mine the claim transaction into a block
     mineSweepTransaction: ['broadcastSweepTransaction', (res, cbk) => {
       // Exit early when on testnet, mining is not an option
       if (res.network === 'testnet') {
@@ -378,11 +386,11 @@ module.exports({}, (err, network) => {
   }
 
   if (network !== 'testnet') {
-    return stopChainDaemon({network}, (err) => {
-      return console.log('TEST END');
+    return stopChainDaemon({network}, err => {
+      return console.log('TEST SUCCESS');
     });
   } else {
-    return console.log('END TEST');
+    return console.log('SUCCESSFUL TEST');
   }
 });
 

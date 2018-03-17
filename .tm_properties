@@ -1,1 +1,1 @@
-excludeDirectories = "{$excludeDirectories,node_modules}"
+excludeDirectories = "{$excludeDirectories,browserified,node_modules}"

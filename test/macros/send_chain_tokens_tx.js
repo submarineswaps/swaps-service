@@ -1,4 +1,6 @@
-const {ECPair, networks, TransactionBuilder} = require('bitcoinjs-lib');
+const {ECPair} = require('bitcoinjs-lib');
+const {networks} = require('bitcoinjs-lib');
+const {TransactionBuilder} = require('bitcoinjs-lib');
 
 const {testnet} = networks;
 

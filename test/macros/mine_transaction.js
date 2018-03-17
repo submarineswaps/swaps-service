@@ -1,10 +1,10 @@
 const asyncAuto = require('async/auto');
 const {Transaction} = require('bitcoinjs-lib');
 
-const broadcastTransaction = require('./broadcast_transaction');
-const generateChainBlocks = require('./generate_chain_blocks');
-const getTransaction = require('./get_transaction');
-const returnResult = require('./return_result');
+const {broadcastTransaction} = require('./../../chain');
+const {generateChainBlocks} = require('./../../chain');
+const {getTransaction} = require('./../../chain');
+const {returnResult} = require('./../../async-util');
 
 const txConfirmationCount = 6;
 
@@ -27,9 +27,9 @@ module.exports = ({network, transaction}, cbk) => {
     },
 
     // Broadcast the transaction into the mempool
-    broadcastTransaction: ['getTransaction', (res, cbk) => {
+    broadcastTransaction: ['getTransaction', ({getTransaction}, cbk) => {
       // Exit early when the transaction has already been broadcast
-      if (!!res.getTransaction.transaction) {
+      if (!!getTransaction.transaction) {
         return cbk();
       }
 
@@ -37,7 +37,7 @@ module.exports = ({network, transaction}, cbk) => {
     }],
 
     // Generate blocks to confirm the transaction into a block
-    generateBlock: ['broadcastTransaction', (res, cbk) => {
+    generateBlock: ['broadcastTransaction', (_, cbk) => {
       return generateChainBlocks({
         network,
         blocks_count: txConfirmationCount,

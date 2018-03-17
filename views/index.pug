@@ -1,0 +1,21 @@
+extends layout.pug
+
+block content
+  .container.mb-4
+    .row
+      .col
+      .col-10
+        .heading.mb-4
+          h1 Orion Swap
+          p.text-muted Swaps for Lightning invoices.
+
+        include includes/create_swap_quote.pug
+
+        .quotes
+
+        include includes/swap_quote.pug
+
+        include includes/swap_success.pug
+
+      .col
+

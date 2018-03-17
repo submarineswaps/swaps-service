@@ -17,6 +17,11 @@ a swap fails because a correct preimage is presented but the claim sig is bad.
 A **claim success** is an outcome of a swap scenario in which the chain funds
 were successfully swept with the preimage of the off-chain HTLC.
 
+## `destination_key`
+
+A **destination key** is the key that combines with the swapping preimage hash
+to control the claim success funds.
+
 ## `refund_success`
 
 The **refund success** case happens when the swap is cancelled by waiting out
