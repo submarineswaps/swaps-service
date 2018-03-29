@@ -1,7 +1,7 @@
 const App = {
   address_details: {},
   change_events: 'change keyup paste',
-  check_for_swap_interval_ms: 3000,
+  check_for_swap_interval_ms: 5000,
   check_for_swap_interval: null,
   invoice_details: {},
   swaps: {},
@@ -70,7 +70,7 @@ App.changedInvoice = function(_) {
 
 /** Changed the refund address
 */
-App.changedRefundAddress = function(event) {
+App.changedRefundAddress = function(_) {
   const input = $(this);
 
   const address = input.val().trim();
@@ -115,16 +115,85 @@ App.changedRefundAddress = function(event) {
   });
 };
 
-/** Changed the refund key
+/** Changed the refund script
 */
-App.changedRefundKey = function(event) {
-  const input = $(this);
+App.changedRefundScript = function(_) {
+  const redeemScript = $(this).val().trim();
 
-  const key = input.val().trim();
+  // Exit early when the refund address is blanked
+  if (!redeemScript) {
+    $('.dump-refund-address').text('');
 
-  console.log("KEY IS", key);
+    return $('.redeem-refund-address, .timeout-block-height').val('');
+  }
+
+  const details = blockchain.swapScriptDetails({redeem_script: redeemScript});
+
+  $('.dump-refund-address').text(details.refund_p2wpkh_address);
+  $('.timeout-block-height').val(details.timelock_block_height);
+  $('.redeem-refund-address').val(details.refund_p2wpkh_address);
 
   return;
+};
+
+/** Check on a swap
+
+  {
+    [button]: <Checking Button Dom Object>
+    id: <Payment Hash String>
+    quote: <Quote Object>
+  }
+*/
+App.checkSwap = ({button, id, quote}) => {
+  return App.getSwap({id}, (err, res) => {
+    if (!!App.swaps[id].is_completed) {
+      return;
+    }
+
+    // Reset the check swap button title to its normal state
+    if (!!button) {
+      $(button).text($(button).prop('title'));
+    }
+
+    if (!!err) {
+      return;
+    }
+
+    quote.find('.chain-link').addClass('disabled');
+
+    const invoice = App.swaps[id].invoice;
+    const sentAmount = (res.output_tokens / 1e8).toFixed(8);
+
+    quote.find('.delete-swap').prop('disabled', true).addClass('disabled');
+    quote.find('.refund-output-index').val(res.output_index);
+    quote.find('.refund-tokens-total').val(sentAmount);
+    quote.find('.swap-transaction-id').val(res.transaction_id);
+
+    if (!res.payment_secret) {
+      const confs = `${res.conf_wait_count} confirmation`;
+      const plural = res.conf_wait_count === 1 ? '' : 's';
+      const wait = `Deposit found, waiting for`;
+
+      quote.find('.waiting-notification')
+        .removeClass('alert-secondary')
+        .addClass('alert-primary');
+
+      quote.find('.waiting-label').text(`${wait} ${confs}${plural}...`);
+
+      return;
+    }
+
+    App.swaps[id].is_completed = true;
+
+    return App.presentCompletedSwap({
+      invoice,
+      payment_secret: res.payment_secret,
+      presented_quote: quote,
+      swap_amount: App.swaps[id].swap_amount,
+      swap_fee: App.swaps[id].swap_fee,
+      transaction_id: res.transaction_id,
+    });
+  });
 };
 
 /** Clicked check swap button
@@ -134,30 +203,13 @@ App.clickedCheckSwap = function(event) {
 
   const button = $(this);
 
-  const swap = button.closest('.swap-quote');
+  const quote = button.closest('.swap-quote');
 
-  const id = swap.data().payment_hash;
+  const id = quote.data().payment_hash;
 
-  const swapDetails = App.swaps[id];
+  button.text(button.data().pending_title);
 
-  button.text('Checking...');
-
-  return App.getSwap({id}, (err, details) => {
-    button.text('Check?');
-
-    if (!!err) {
-      return console.log('ERROR', err);
-    }
-
-    return App.presentCompletedSwap({
-      invoice: swapDetails.invoice,
-      payment_secret: details.payment_secret,
-      presented_quote: swap,
-      swap_amount: swapDetails.swap_amount,
-      swap_fee: swapDetails.swap_fee,
-      transaction_id: details.transaction_id,
-    });
-  });
+  return App.checkSwap({button, id, quote});
 };
 
 /** Clicked delete swap
@@ -180,11 +232,15 @@ App.clickedDeleteSwap = function(event) {
 
 /** Clicked new swap button
 */
-App.clickedNewSwap = e => {
-  e.preventDefault();
+App.clickedNewSwap = function(event) {
+  event.preventDefault();
+
+  // Exit early when the swap button is not pressable
+  if ($(this).is('.disabled')) {
+    return;
+  }
 
   $('.create-swap-quote').collapse('show');
-
   $('.new-swap').addClass('disabled');
 
   return;
@@ -198,9 +254,7 @@ App.clickedShowRefund = function(event) {
   const swap = $(this).closest('.swap-quote');
 
   swap.find('.toggle-refund').removeClass('active').removeClass('inactive');
-
   $(this).addClass('active');
-
   swap.find('.send-to-swap').collapse('hide');
   swap.find('.refund-details').collapse('show');
 
@@ -215,9 +269,7 @@ App.clickedShowSwap = function(event) {
   const swap = $(this).closest('.swap-quote');
 
   swap.find('.toggle-refund').removeClass('active').removeClass('inactive');
-
   $(this).addClass('active');
-
   swap.find('.send-to-swap').collapse('show');
   swap.find('.refund-details').collapse('hide');
 
@@ -247,26 +299,25 @@ App.clickedShowSwap = function(event) {
   }
 */
 App.createSwap = (args, cbk) => {
-  const body = JSON.stringify({
+  if (!args.currency) {
+    return cbk([0, 'ExpectedCurrency']);
+  }
+
+  if (!args.invoice) {
+    return cbk([0, 'ExpectedInvoice']);
+  }
+
+  if (!args.refund_address) {
+    return cbk([0, 'ExpectedRefundAddress']);
+  }
+
+  const post = {
     currency: args.currency,
     invoice: args.invoice,
     refund_address: args.refund_address,
-  });
+  };
 
-  const headers = {'content-type': 'application/json'};
-  const method = 'POST';
-
-  return fetch('/api/v0/swaps/', {body, headers, method})
-    .then(r => {
-      switch (r.status) {
-      case 200:
-        return Promise.resolve(r);
-
-      default:
-        return Promise.reject(new Error(r.statusText));
-      }
-    })
-    .then(r => r.json())
+  App.makeRequest({post, api: 'swaps/'})
     .then(details => {
       if (!App.invoice_details[args.invoice]) {
         throw new Error('ExpectedInvoiceDetails');
@@ -296,6 +347,8 @@ App.createSwap = (args, cbk) => {
     })
     .then(details => cbk(null, details))
     .catch(err => cbk(err));
+
+  return;
 };
 
 /** Format tokens as a display string
@@ -324,17 +377,7 @@ App.format = ({tokens}) => {
   }
 */
 App.getAddressDetails = ({address}, cbk) => {
-  return fetch(`/api/v0/address_details/${address}`)
-    .then(r => {
-      switch (r.status) {
-      case 200:
-        return Promise.resolve(r);
-
-      default:
-        return Promise.reject(new Error(r.statusText));
-      }
-    })
-    .then(r => r.json())
+  App.makeRequest({api: `address_details/${address}`})
     .then(details => {
       if (details.is_testnet !== true) {
         throw new Error('ExpectedTestnetAddress');
@@ -347,7 +390,9 @@ App.getAddressDetails = ({address}, cbk) => {
       return details
     })
     .then(details => cbk(null, details))
-    .catch(err => cbk(err))
+    .catch(err => cbk(err));
+
+  return;
 };
 
 /** Get invoice details
@@ -414,74 +459,12 @@ App.getInvoiceDetails = ({invoice}, cbk) => {
       return details;
     })
     .then(details => cbk(null, details))
-    .catch(err => cbk(err));
-};
-
-/** Get refund details
-
-  {
-    id: <Invoice Id String>
-  }
-
-  @returns via cbk
-  {
-    current_block_height: <Current Block Height Number>
-    destination: <Send Tokens to Address String>
-    fee_tokens_per_vbyte: <Fee Per Virtual Byte Token Rate Number>
-    utxos: [{
-      redeem: <Redeem Script Buffer>
-      tokens: <Tokens Number>
-      transaction_id: <Transaction Id String>
-      vout: <Vout Number>
-    }]
-  }
-*/
-App.getRefundDetails = ({id}, cbk) => {
-  const swapDetails = App.swaps[id];
-
-  const body = JSON.stringify({
-    destination_public_key: swapDetails.destination_public_key,
-    payment_hash: swapDetails.payment_hash,
-    redeem_script: swapDetails.redeem_script,
-    refund_address: swapDetails.refund_address,
-    timeout_block_height: swapDetails.timeout_block_height,
-  });
-
-  const headers = {'content-type': 'application/json'};
-  const method = 'POST';
-
-  return fetch('/api/v0/refunds/', {body, headers, method})
-    .then(r => {
-      switch (r.status) {
-      case 200:
-        return Promise.resolve(r);
-
+    .catch(err => {
+      switch (err.message) {
       default:
-        return Promise.reject(new Error(r.statusText));
+        return cbk(null, err);
       }
-    })
-    .then(r => r.json())
-    .then(details => {
-      if (!details.current_block_height) {
-        throw new Error('ExpectedCurrentBlockHeight');
-      }
-
-      if (!details.destination) {
-        throw new Error('ExpectedDestination');
-      }
-
-      if (!details.fee_tokens_per_vbyte) {
-        throw new Error('ExpectedFee');
-      }
-
-      if (!Array.isArray(details.utxos)) {
-        throw new Error('ExpectedUtxos');
-      }
-
-      return details;
-    })
-    .then(details => cbk(null, details))
-    .catch(err => cbk(err));
+    });
 };
 
 /** Get the status of a swap
@@ -539,12 +522,43 @@ App.getSwap = ({id}, cbk) => {
 App.init = args => {
   $('.create-swap-quote').submit(App.submitCreateSwapQuote);
   $('.new-swap').click(App.clickedNewSwap);
+  $('.online-refund-details').submit(App.submitOnlineRefundRecovery);
   $('.pay-to-lightning-invoice').on(App.change_events, App.changedInvoice);
   $('.refund-address').on(App.change_events, App.changedRefundAddress);
+  $('.sign-with-refund-details').submit(App.submitSignWithRefundDetails);
+  $('.refund-details-script').on(App.change_events, App.changedRefundScript);
   $('.select-currency').change(App.changedCurrencySelection);
 
   return;
 };
+
+/** Make a request
+
+  {
+    api: <API Path String>
+    [post]: <Post JSON Object>
+  }
+
+  @returns
+  <Fetch Promise Object>
+*/
+App.makeRequest = ({api, post}) => {
+  const body = !!post ? JSON.stringify(post) : null;
+  const headers = {'content-type': 'application/json'};
+  const method = !post ? 'GET' : 'POST';
+
+  return fetch(`/api/v0/${api}`, {body, headers, method})
+    .then(r => {
+      switch (r.status) {
+      case 200:
+        return Promise.resolve(r);
+
+      default:
+        return Promise.reject(new Error(r.statusText));
+      }
+    })
+    .then(r => r.json());
+  };
 
 /** Present completed swap
 
@@ -651,7 +665,6 @@ App.submitCreateSwapQuote = function(event) {
 
   quote.find('.check-swap').click(App.clickedCheckSwap);
   quote.find('.delete-swap').click(App.clickedDeleteSwap);
-  quote.find('.refund-key').on(App.change_events, App.changedRefundKey);
   quote.find('.show-payment').click(App.clickedShowSwap);
   quote.find('.show-refund').click(App.clickedShowRefund);
 
@@ -683,7 +696,46 @@ App.submitCreateSwapQuote = function(event) {
     quote.find('.redeem-script').val(details.redeem_script);
     quote.find('.swap-address').val(details.swap_address);
     quote.find('.swap-amount').val(swapAmount);
-    quote.find('.timeout-block-height').text(details.timeout_block_height);
+    quote.find('.timeout-block-height').val(details.timeout_block_height);
+
+    quote.find('.save-redeem-script').click(e => {
+      const anchor = document.createElement('a');
+      const encoding = 'data:text/plain;charset=utf-8';
+      const text = [
+        'Redeem Script:',
+        details.redeem_script,
+        '',
+        'Swap Address:',
+        details.swap_address,
+        '',
+        'Refund After:',
+        details.timeout_block_height,
+        '',
+        'Swap Amount:',
+        swapAmount,
+        '',
+        'Date:',
+        new Date().toISOString()
+      ].join('\n');
+
+      anchor.setAttribute('download', `details.swap_address.redeem_script.txt`);
+      anchor.setAttribute('href', `${encoding},${encodeURIComponent(text)}`);
+
+      if (!!document.createEvent) {
+        const event = document.createEvent('MouseEvents');
+
+        event.initEvent('click', true, true);
+        anchor.dispatchEvent(event);
+      } else {
+        anchor.click();
+      }
+
+      quote.find('.make-payment').collapse('show');
+      quote.find('.save-redeem-script').addClass('disabled');
+      quote.find('.chain-link').removeClass('disabled');
+
+      return;
+    });
 
     const invoiceDetails = App.invoice_details[invoice];
 
@@ -692,56 +744,181 @@ App.submitCreateSwapQuote = function(event) {
     quote.collapse('show');
 
     App.check_for_swap = setInterval(() => {
-      return App.getSwap({id: details.payment_hash}, (err, res) => {
-        if (!!err) {
-          return;
-        }
-
-        App.getRefundDetails({id: details.payment_hash}, (err, refund) => {
-          if (!!err) {
-            return console.log("REFUND ERR", err);
-          }
-
-          quote.data({refund});
-
-          const {transaction} = blockchain.refundTransaction({
-            current_block_height: details.timeout_block_height,
-            destination: refund.destination,
-            fee_tokens_per_vbyte: refund.fee_tokens_per_vbyte,
-            is_public_key_hash_refund: true,
-            private_key: quote.find('.refund-key').val().trim(),
-            utxos: refund.utxos,
-          });
-
-          quote.find('.refund-transaction').val(transaction)
-
-          return;
-        });
-
-        if (!res.payment_secret) {
-          const wait = `Deposit found, waiting for`;
-          const confs = `${res.conf_wait_count} confirmation`;
-          const plural = res.conf_wait_count === 1 ? '' : 's';
-
-          quote.find('.waiting-label').text(`${wait} ${confs}${plural}...`);
-
-          return;
-        }
-
-        return App.presentCompletedSwap({
-          invoice,
-          payment_secret: res.payment_secret,
-          presented_quote: quote,
-          swap_amount: details.swap_amount,
-          swap_fee: details.swap_fee,
-          transaction_id: res.transaction_id,
-        });
-      });
+      return App.checkSwap({quote, id: details.payment_hash});
     },
     App.check_for_swap_interval_ms);
 
     return;
   });
+};
+
+/** Submit online refund
+*/
+App.submitOnlineRefundRecovery = function(e) {
+  e.preventDefault();
+
+  $('.refund-details-not-found').collapse('hide');
+  $('.search-for-refund').addClass('disabled').prop('disabled', true);
+  $('.search-for-refund').text('Searching for Swap Transaction...')
+
+  const redeemScript = $('.online-refund-redeem-script').val().trim();
+
+  if (!redeemScript) {
+    return;
+  }
+
+  const body = JSON.stringify({redeem_script: redeemScript});
+  const headers = {'content-type': 'application/json'};
+  const method = 'POST';
+
+  return fetch('/api/v0/swap_outputs/', {body, headers, method})
+    .then(r => {
+      $('.search-for-refund').removeClass('disabled').prop('disabled', false);
+      $('.search-for-refund').text('Search for Refund Details');
+
+      switch (r.status) {
+      case 200:
+        return Promise.resolve(r);
+
+      default:
+        return Promise.reject(new Error(r.statusText));
+      }
+    })
+    .then(r => r.json())
+    .then(details => {
+      if (!details.fee_tokens_per_vbyte) {
+        throw new Error('ExectedFee');
+      }
+
+      if (!details.refund_p2wpkh_address) {
+        throw new Error('ExpectedRefundAddress');
+      }
+
+      if (!details.timelock_block_height) {
+        throw new Error('ExpectedLockHeight');
+      }
+
+      if (!details.utxo) {
+        throw new Error('ExpectedUtxo');
+      }
+
+      if (details.utxo.output_index === undefined) {
+        throw new Error('ExpectedOutputIndex');
+      }
+
+      if (!details.utxo.output_tokens) {
+        throw new Error('ExpectedOutputTokens');
+      }
+
+      if (!details.utxo.transaction_id) {
+        throw new Error('ExpectedTransactionId');
+      }
+
+      return details;
+    })
+    .then(details => {
+      $('.refund-details-script').val(redeemScript);
+      $('.refund-fee').val(details.fee_tokens_per_vbyte);
+      $('.tokens-total').val((details.utxo.output_tokens / 1e8).toFixed(8));
+      $('.redeem-refund-address').val(details.refund_p2wpkh_address);
+      $('.dump-refund-address').text(details.refund_p2wpkh_address);
+      $('.refund-transaction-id').val(details.utxo.transaction_id);
+      $('.refund-tx-vout').val(details.utxo.output_index);
+      $('.timeout-block-height').val(details.timelock_block_height);
+
+      $('#tx-details-refund-tab').tab('show');
+
+      return;
+    })
+    .catch(err => {
+      switch (err.message) {
+      case 'ExectedUtxo':
+        $('.refund-details-not-found').collapse('show');
+        break;
+
+      default:
+        console.log('ERR', err, err.code, err.message);
+      }
+
+      return;
+    });
+
+  return;
+};
+
+/** Submit sign refund transaction with details form
+*/
+App.submitSignWithRefundDetails = function(e) {
+  e.preventDefault();
+
+  const redeemScript = $(this).find('.refund-details-script').val().trim();
+
+  if (!redeemScript) {
+    return console.log('ExpectedRedeemScript');
+  }
+
+  let swapDetails;
+
+  try {
+    swapDetails = blockchain.swapScriptDetails({redeem_script: redeemScript});
+  } catch (e) {
+    return console.log('FailedToDeriveSwapDetails', e);
+  }
+
+  const refundFee = parseInt($('.refund-fee').val().trim(), 10);
+  const refundKey = $('.refund-key').val().trim();
+  const refundAmount = $('.tokens-total').val().trim();
+  const refundTxId = $('.refund-transaction-id').val().trim();
+  const refundTxVout = parseInt($('.refund-tx-vout').val().trim(), 10);
+
+  if (!refundKey) {
+    $('.signed-refund-transaction').val('');
+    $('.generic.refund-tx-failure').collapse('show');
+
+    return;
+  }
+
+  const refundTokens = parseInt(
+    (parseFloat(refundAmount, 10) * 1e8).toFixed(),
+    10
+  );
+
+  let refund;
+
+  try {
+    refund = blockchain.refundTransaction({
+      destination: swapDetails.refund_p2wpkh_address,
+      fee_tokens_per_vbyte: refundFee,
+      is_public_key_hash_refund: true,
+      private_key: refundKey,
+      timelock_block_height: swapDetails.timelock_block_height,
+      utxos: [{
+        redeem: redeemScript,
+        tokens: refundTokens,
+        transaction_id: refundTxId,
+        vout: refundTxVout,
+      }],
+    });
+  } catch (e) {
+    $('.signed-refund-transaction').val('');
+
+    switch (e.message) {
+    case 'RefundValueTooSmall':
+      $('.output-too-small.refund-tx-failure').collapse('show');
+      break;
+
+    default:
+      $('.generic.refund-tx-failure').collapse('show');
+      break;
+    }
+
+    return;
+  }
+
+  $('.refund-tx-failure').collapse('hide');
+  $('.signed-refund-transaction').val(refund.transaction);
+
+  return;
 };
 
 /** Update the swap details
@@ -756,6 +933,10 @@ App.updatedSwapDetails = ({swap}) => {
 
   const hasAddress = !!App.address_details[address];
   const hasInvoiceDetails = !!App.invoice_details[invoice];
+
+  if (!!hasInvoiceDetails && !!swap.find('.refund-address-entry.hide')) {
+    swap.find('.refund-address-entry').collapse('show');
+  }
 
   if (!!hasAddress) {
     swap.find('.refund-address')

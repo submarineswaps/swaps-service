@@ -3,10 +3,10 @@ const {Router} = require('express');
 
 const {checkSwapStatus} = require('./../service');
 const {createSwap} = require('./../service');
-const {returnJson} = require('./../async-util');
+const {findSwapOutpoint} = require('./../service');
 const {getAddressDetails} = require('./../service');
 const {getInvoiceDetails} = require('./../service');
-const {getRefundDetails} = require('./../service');
+const {returnJson} = require('./../async-util');
 
 /** Make an api router
 
@@ -36,15 +36,11 @@ module.exports = ({log}) => {
     return getInvoiceDetails({invoice}, returnJson({log, res}));
   });
 
-  // POST a refund transaction creation request
-  router.post('/refunds/', ({body}, res) => {
-    return getRefundDetails({
-      destination_public_key: body.destination_public_key,
+  // POST a swap output find details request
+  router.post('/swap_outputs/', ({body}, res) => {
+    return findSwapOutpoint({
       network: 'testnet',
-      payment_hash: body.payment_hash,
       redeem_script: body.redeem_script,
-      refund_address: body.refund_address,
-      timeout_block_height: body.timeout_block_height,
     },
     returnJson({log, res}));
   });

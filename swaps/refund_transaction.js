@@ -16,6 +16,7 @@ const {toOutputScript} = address;
 const {witnessScriptHash} = script;
 
 const compressedPubKeySize = chain.compressed_public_key_size;
+const dustValue = 1e3;
 const ecdsaSignatureLength = chain.ecdsa_sig_max_byte_length;
 const hexBase = 16;
 const hexCharCountPerByte = 2;
@@ -27,11 +28,11 @@ const vRatio = chain.witness_byte_discount_denominator;
 /** Build a refund transaction to claim funds back from a swap
 
   {
-    current_block_height: <Current Block Height Number>
     destination: <Send Tokens to Address String>
     fee_tokens_per_vbyte: <Fee Per Virtual Byte Token Rate Number>
     [is_public_key_hash_refund]: <Is Public Key Hash Refund Bool> = false
     [private_key]: <Refund Private Key WIF String>
+    timelock_block_height: <Timelock Block Height Number>
     utxos: [{
       redeem: <Redeem Script Hex String>
       tokens: <Tokens Number>
@@ -49,6 +50,18 @@ const vRatio = chain.witness_byte_discount_denominator;
   }
 */
 module.exports = args => {
+  if (!args.destination) {
+    throw new Error('ExpectedDestination');
+  }
+
+  if (!args.fee_tokens_per_vbyte) {
+    throw new Error('ExpectedFee');
+  }
+
+  if (!args.timelock_block_height) {
+    throw new Error('ExpectedLocktimeHeight');
+  }
+
   if (!Array.isArray(args.utxos) || !args.utxos.length) {
     throw new Error('ExpectedUTXOs');
   }
@@ -70,7 +83,7 @@ module.exports = args => {
   // OP_CLTV prohibits final sequence use
   tx.ins.forEach(txIn => txIn.sequence = minSequence);
 
-  tx.locktime = bip65Encode({blocks: args.current_block_height});
+  tx.locktime = bip65Encode({blocks: args.timelock_block_height});
 
   // The public key buffer is stubbed all zeros when there is no private key
   if (!!args.private_key) {
@@ -100,6 +113,10 @@ module.exports = args => {
   const [out] = tx.outs;
 
   out.value -= tokensPerVirtualByte * Math.ceil(anticipatedWeight / vRatio);
+
+  if (out.value < dustValue) {
+    throw new Error('RefundValueTooSmall');
+  }
 
   // Exit early when there is no private key to sign the refund inputs
   if (!args.private_key) {

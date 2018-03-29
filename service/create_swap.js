@@ -12,7 +12,7 @@ const network = 'testnet';
 const swapRate = 0.015;
 const timeoutBlockCount = 1;
 
-/** Create a swap
+/** Create a swap quote.
 
   {
     currency: <Currency Code String>

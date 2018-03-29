@@ -1,4 +1,5 @@
 const {refundTransaction} = require('./../../swaps');
+const {swapScriptDetails} = require('./../../swaps');
 
-module.exports = {refundTransaction};
+module.exports = {refundTransaction, swapScriptDetails};
 

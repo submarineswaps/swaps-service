@@ -1,0 +1,198 @@
+extends layout.pug
+
+block content
+  .container.mb-4
+    .row
+      .col
+      .col-10
+        .heading.mb-4
+          h1 Submarine Swap Refund
+          p.text-muted Swap didn't work? Receive a refund for your swap.
+
+        .alert.alert-primary(role="alert")
+          | Select the type of refund you prefer:
+
+        ul.mb-3.nav.nav-pills#pills-tab(role="tablist")
+          li.nav-item
+            a.active.nav-link#redeem-script-tab(
+              aria-controls="redeem-script-refund",
+              aria-selected="false",
+              data-toggle="pill",
+              href="#redeem-script-refund",
+              role="tab"
+            )
+              | Find refund details
+          li.nav-item
+            a.nav-link#tx-details-refund-tab(
+              aria-controls="tx-details-refund",
+              aria-selected="false",
+              data-toggle="pill",
+              href="#tx-details-refund",
+              role="tab"
+            )
+              | I have the swap transaction details
+        .tab-content#pills-tabContent
+          .active.fade.show.tab-pane#redeem-script-refund(
+            aria-labelledby="redeem-script-tab",
+            role="tabpanel"
+          )
+            .card
+              .card-body
+                form.online-refund-details(auto-complete="off")
+                  .form-group.row
+                    label.col-form-label.col-sm-2
+                      | Redeem Script:
+                    .col-sm-10
+                      textarea.form-control.online-refund-redeem-script(
+                        placeholder="Enter the swap redeem script",
+                        rows="4"
+                      )
+                      small.form-text.mb-2.text-muted
+                        | You saved this redeem script when you requested the
+                        | swap.
+                  .btn-group
+                    button.btn.btn-lg.btn-primary.search-for-refund
+                      | Get Refund
+                  .collapse.hide.refund-details-not-found
+                    hr
+                    .alert.alert-warning
+                      | Swap transaction not found. If you know the transaction
+                      | details please use the offline-recovery mode to
+                      | recover.
+
+          .fade.tab-pane#tx-details-refund(
+            aria-labelledby="tx-details-refund-tab",
+            role="tabpanel"
+          )
+            .card
+              .card-body
+                form.sign-with-refund-details(auto-complete="off")
+                  .form-group.row
+                    label.col-form-label.col-sm-2
+                      | Chain:
+                    .col-sm-10
+                      select.custom-select.form-control.select-currency
+                        option(selected, value="tBTC")
+                          | Testnet BTC
+                  .form-group.row
+                    label.col-form-label.col-sm-2
+                      | Redeem Script:
+                    .col-sm-10
+                      textarea.form-control.refund-details-script(
+                        placeholder="Enter the swap redeem script",
+                        rows="4"
+                      )
+                      small.form-text.mb-2.text-muted
+                        | You saved this redeem script when you requested the
+                        | swap.
+                  .form-group.row
+                    label.col-form-label.col-sm-2
+                      | Refund Valid After:
+                    .col-sm-10
+                      input.form-control.timeout-block-height(
+                        readonly,
+                        spellcheck="false",
+                        type="text"
+                      )
+                      small.form-text.mb-2.text-muted
+                        | Broadcasting before this block will not return your
+                        | funds.
+                  .form-group.row
+                    label.col-form-label.col-sm-2
+                      | Refund P2WPKH Address:
+                    .col-sm-10
+                      input.form-control.redeem-refund-address(
+                        readonly,
+                        type="text"
+                      )
+                      small.form-text.mb-2.text-muted
+                        | Refund address entered for this redeem script.
+                  .form-group.row
+                    label.col-form-label.col-sm-2
+                      | Transaction Id:
+                    .col-sm-10
+                      input.form-control.refund-transaction-id(
+                        placeholder="Enter your transaction id",
+                        spellcheck="false",
+                      )
+                      small.form-text.mb-2.text-muted
+                        | Find the transaction id that sends to the swap
+                        | address.
+                  .form-group.row
+                    label.col-form-label.col-sm-2
+                      | Output Index:
+                    .col-sm-10
+                      input.form-control.refund-tx-vout(
+                        min="0",
+                        placeholder="0",
+                        step="1",
+                        type="number"
+                      )
+                      small.form-text.mb-2.text-muted
+                        | Use the output index that sends to the swap address.
+                  .form-group.row
+                    label.col-form-label.col-sm-2
+                      | Sent Amount:
+                    .col-sm-10
+                      input.form-control.tokens-total(
+                        max="21000000",
+                        min="0",
+                        placeholder="0.00000000",
+                        step="0.00000001",
+                        type="number",
+                      )
+                      small.form-text.mb-2.text-muted
+                        | The complete amount sent in the send to the swap
+                        | address.
+                  .form-group.row
+                    label.col-form-label.col-sm-2
+                      | Fee (sat/vbyte):
+                    .col-sm-10
+                      input.form-control.refund-fee(
+                        min="1",
+                        placeholder="1",
+                        step="1",
+                        type="number"
+                      )
+                      small.form-text.mb-2.text-muted
+                        | Please select a good fee in sat/vbyte you are
+                        | comfortable paying.
+                  .form-group.row
+                    label.col-form-label.col-sm-2
+                      | Refund Private Key:
+                    .col-sm-10
+                      input.form-control.refund-key(
+                        autocomplete="off",
+                        placeholder="Enter your refund private key",
+                        type="password")
+                      small.form-text.mb-2.text-muted
+                        span In Core you can use
+                        span #{' '}
+                        code dumpprivkey
+                        span #{' '}
+                        code.dump-refund-address
+                        span #{' '}
+                        span command to get this key.
+                  .mb-4
+                    button.btn.btn-primary(type="submit")
+                      | Create Signed Refund Transaction
+                  .alert.alert-danger.collapse.generic.hide.mb-4.refund-tx-failure
+                    | Failed to create refund transaction.
+                  .alert.alert-danger.collapse.hide.mb-4.output-too-small.refund-tx-failure
+                    | The fee used is too high and would result in dust.
+                  .form-group.row
+                    label.col-form-label.col-sm-2
+                      | Signed Refund Transaction:
+                    .col-sm-10
+                      textarea.form-control.signed-refund-transaction(
+                        readonly,
+                        rows="9"
+                      )
+                      small.form-text.mb-2.text-muted
+                        span In Core you can use
+                        span #{' '}
+                        code sendrawtransaction
+                        span #{' '}
+                        span to broadcast.
+      .col
+

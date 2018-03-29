@@ -23,7 +23,7 @@
           )
             i.fa.fa-info.mr-1
             span #{' '}
-            span Refund Contract
+            span Refund Details
         li.nav-item
           a.nav-link#cancel-tab(
             aria-controls="cancel",
@@ -70,37 +70,50 @@
               code.payment-public-key.text-muted
 
           form.send-to-swap
-            h4.text-primary
-              a.btn.btn-lg.btn-primary.mb-1.chain-link(href="#")
-                i.fa.fa-btc
+            .btn-group.btn-group-lg.mb-3(aria-label="Swap actions", role="group")
+              a.btn.btn-primary.download-file.save-redeem-script(href="#")
+                span 1.
+                span.mr-1 #{' '}
+                i.fa.fa-download.mr-2
+                span Save Refund Details
+              a.btn.btn-primary.disabled.chain-link(href="#")
+                span 2.
+                span.mr-1 #{' '}
+                i.fa.fa-btc.mr-1
                 span #{' '}
-                span Execute Swap
-            .form-group
-              label
-                span Send
-                span #{' '}
-                strong tBTC
-                span #{' '}
-                span to Swap Address:
-              input.form-control.form-control-lg.swap-address(
-                readonly,
-                type="text",
-                value="Loading...",
-              )
-            .form-group
-              label Amount:
-              input.form-control.form-control-lg.swap-amount(
-                readonly,
-                type="text",
-                value="Loading..."
-              )
-              small.form-text.text-muted
-                | Make sure to send the exact amount!
-            .alert.alert-primary(role="alert")
-              span.waiting-label Waiting for deposit...
-              h5.pull-right
-                i.fa.fa-asterisk.fa-spin
-              a.alert-link.check-swap.mr-4.pull-right(href='#') Check?
+                span Pay to Swap Address
+            .collapse.hide.make-payment
+              .form-group
+                label
+                  span Send
+                  span #{' '}
+                  strong tBTC
+                  span #{' '}
+                  span to Swap Address:
+                input.form-control.form-control-lg.swap-address(
+                  readonly,
+                  type="text",
+                  value="Loading...",
+                )
+              .form-group
+                label Amount:
+                input.form-control.form-control-lg.swap-amount(
+                  readonly,
+                  type="text",
+                  value="Loading..."
+                )
+                small.form-text.text-muted
+                  | Make sure to send the exact amount!
+              .alert.alert-secondary.waiting-notification(role="alert")
+                span.waiting-label Waiting for deposit...
+                h5.pull-right
+                  i.fa.fa-asterisk.fa-spin
+                a.alert-link.check-swap.mr-4.pull-right(
+                  data-pending_title="Checking...",
+                  href='#',
+                  title="Check?",
+                )
+                  | Check?
         .fade.tab-pane#refund(aria-labelledby="refund-tab", role="tabpanel")
           form.refund-details(auto-complete="off")
             .form-group
@@ -111,25 +124,44 @@
                 span #{' '}
                 code decodescript
                 span #{' '}
-                span to check this smart contract resolves correctly.
+                span to check this smart contract.
             .form-group
-              .local-signing.mb-2
-                label Refund Private Key for Signed Refund Transaction:
-                input.form-control.refund-key(
-                  autocomplete="off",
-                  type="password"
-                )
-              label.refund-label Refund Transaction:
-              textarea.form-control.refund-transaction(readonly, rows="9")
-                | Waiting for swap payment...
+              label.col-form-label Refund Valid After:
+              input.form-control.timeout-block-height(
+                readonly,
+                type="text"
+              )
               small.form-text.mb-2.text-muted
-                span
-                  | This unsigned transaction will return your funds to you.
-                  | Your refund will only be valid after height:
-                span #{' '}
-                code.timeout-block-height
-                span
-                  | . Broadcasting before that time will not return your funds.
+                | A refund transaction cannot be broadcast before this block.
+            .form-group
+              label.col-form-label
+                | Transaction Id:
+              input.form-control.swap-transaction-id(
+                placeholder="Waiting for swap funding transaction...",
+                readonly,
+              )
+              small.form-text.mb-2.text-muted
+                | The transaction id that sends to the swap address.
+            .form-group
+              label.col-form-label
+                | Output Index:
+              input.form-control.refund-output-index(
+                placeholder="Waiting for swap funding transaction...",
+                readonly,
+                type="number"
+              )
+              small.form-text.mb-2.text-muted
+                | The output index that sends to the swap address.
+            .form-group
+              label.col-form-label
+                | Sent Amount:
+              input.form-control.refund-tokens-total(
+                placeholder="Waiting for swap funding transaction...",
+                readonly,
+                type="number",
+              )
+              small.form-text.mb-2.text-muted
+                | The complete amount sent in the send to the swap address.
         .fade.tab-pane#cancel(aria-labelledby="cancel-tab", role="tabpanel")
           p.card-text
             | Don't want to go through with the swap? You can cancel your swap
@@ -141,4 +173,9 @@
           p.card-text.text-muted
             small
               | If you have already sent payment to the swap you cannot cancel.
+              | Instead you must wait for the refund timeout and execute the
+              | refund.
+            small
+              span #{' '}
+              a(href="/refund", target="_blank") Refund Transaction.
 

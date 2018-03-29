@@ -39,7 +39,7 @@ module.exports = ({invoice}, cbk) => {
       try {
         return cbk(null, decode(invoice));
       } catch (e) {
-        return cbk([400, 'DecodeAddressFailure', e]);
+        return cbk([400, 'DecodeInvoiceFailure', e]);
       }
     },
 

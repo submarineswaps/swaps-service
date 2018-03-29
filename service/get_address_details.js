@@ -18,15 +18,19 @@ const publicKeyHashLength = 20;
     version: <Address Version Number>
   }
 */
-module.exports = ({address}, cbk) => {
+module.exports = (args, cbk) => {
+  if (!args.address) {
+    return cbk([400, 'ExpectedAddress']);
+  }
+
   let base58Address;
   let bech32Address;
 
-  try { base58Address = address.fromBase58Check(address); } catch (e) {
+  try { base58Address = address.fromBase58Check(args.address); } catch (e) {
     base58Address = null;
   }
 
-  try { bech32Address = address.fromBech32(address); } catch (e) {
+  try { bech32Address = address.fromBech32(args.address); } catch (e) {
     bech32Address = null;
   }
 

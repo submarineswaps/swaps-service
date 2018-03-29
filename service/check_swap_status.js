@@ -5,9 +5,10 @@ const completeSwapTransaction = require('./complete_swap_transaction');
 const findSwapTransaction = require('./find_swap_transaction');
 const {returnResult} = require('./../async-util');
 const {swapAddress} = require('./../swaps');
+const {swapOutput} = require('./../swaps');
 
 const blockSearchDepth = 9;
-const requiredConfCount = 6;
+const requiredConfCount = 3;
 
 /** Check the status of a swap
 
@@ -24,6 +25,8 @@ const requiredConfCount = 6;
   @returns via cbk
   {
     [conf_wait_count]: <Confirmations to Wait Number>
+    [output_index]: <Output Index Number>
+    [output_tokens]: <Output Tokens Number>
     [payment_secret]: <Payment Secret Hex String>
     transaction_id: <Transaction Id Hex String>
   }
@@ -87,19 +90,48 @@ module.exports = (args, cbk) => {
       }
     }],
 
-    swapTransaction: ['findSwapTransaction', 'swapAddress', (res, cbk) => {
+    // Make sure that the transaction has been found
+    checkTransactionDetected: ['findSwapTransaction', (res, cbk) => {
       if (!res.findSwapTransaction.transaction) {
         return cbk([402, 'FundingTransactionNotFound']);
       }
 
-      if (res.findSwapTransaction.confirmation_count < requiredConfCount) {
-        const confirmationsCount = res.findSwapTransaction.confirmation_count;
-        const transaction = res.findSwapTransaction.transaction;
+      return cbk();
+    }],
 
-        return cbk(null, {
-          conf_wait_count: requiredConfCount - confirmationsCount,
-          transaction_id: Transaction.fromHex(transaction).getId,
+    // Determine the number of remaining confirmations before swap execution
+    remainingConfs: ['checkTransactionDetected', (res, cbk) => {
+      const confCount = res.findSwapTransaction.confirmation_count || 0;
+
+      return cbk(null, Math.max(requiredConfCount - confCount, 0));
+    }],
+
+    // Pending swap details
+    pendingDetails: ['remainingConfs', (res, cbk) => {
+      let swapUtxo;
+
+      try {
+        swapUtxo = swapOutput({
+          p2sh_output_script: res.swapAddress.p2sh_output_script,
+          transaction: res.findSwapTransaction.transaction,
+          witness_output_script: res.swapAddress.witness_output_script,
         });
+      } catch (e) {
+        return cbk([500, 'ExpectedSwapUtxoDetails', e]);
+      }
+
+      return cbk(null, {
+        conf_wait_count: res.remainingConfs,
+        output_index: swapUtxo.output_index,
+        output_tokens: swapUtxo.output_tokens,
+        transaction_id: swapUtxo.transaction_id,
+      });
+    }],
+
+    // Complete the swap transaction
+    swapTransaction: ['findSwapTransaction', 'remainingConfs', (res, cbk) => {
+      if (!!res.remainingConfs) {
+        return cbk();
       }
 
       return completeSwapTransaction({
@@ -111,7 +143,24 @@ module.exports = (args, cbk) => {
       },
       cbk);
     }],
+
+    // Current swap details
+    swapDetails: ['pendingDetails', 'swapTransaction', (res, cbk) => {
+      if (!!res.swapTransaction) {
+        return cbk(null, {
+          payment_secret: res.swapTransaction.payment_secret,
+          transaction_id: res.swapTransaction.transaction_id,
+        });
+      } else {
+        return cbk(null, {
+          conf_wait_count: res.pendingDetails.conf_wait_count,
+          output_index: res.pendingDetails.output_index,
+          output_tokens: res.pendingDetails.output_tokens,
+          transaction_id: res.pendingDetails.transaction_id,
+        });
+      }
+    }],
   },
-  returnResult({of: 'swapTransaction'}, cbk));
+  returnResult({of: 'swapDetails'}, cbk));
 };
 

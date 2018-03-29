@@ -2,7 +2,7 @@ form.collapse.create-swap-quote.mb-4.show
   .swap-settings
     .form-group
       label
-        h4.text-primary Pay a Lightning Invoice With On-Chain Coins:
+        h4.text-primary Pay Invoice:
       .input-group.input-group-lg.mb-3
         .input-group-prepend
           span.input-group-text
@@ -48,12 +48,16 @@ form.collapse.create-swap-quote.mb-4.show
         select.custom-select.form-control.select-currency
           option(selected, value="tBTC")
             | Testnet BTC (on-chain for off-chain)
+          option(disabled, value="tLTC")
+            | Testnet LTC (coming soon)
+          option(disabled, value="tBCH")
+            | Testnet BCash (coming soon)
         .input-group-append
           label.input-group-text
             | Fee: 1.5%
       small.form-text.text-muted
         | You will make an on-chain payment using this currency.
-    .form-group
+    .collapse.form-group.hide.refund-address-entry
       label
         span Refund Address:
       .input-group.input-group-lg.mb-3
@@ -62,7 +66,7 @@ form.collapse.create-swap-quote.mb-4.show
             i.fa.fa-fw.fa-undo
         input.form-control.refund-address(
           autocomplete="off",
-          placeholder="Enter your refund address...",
+          placeholder="Enter a refund address...",
           required,
           spellcheck="false",
           type="text"
@@ -81,8 +85,9 @@ form.collapse.create-swap-quote.mb-4.show
         span #{' '}
         span.address-currency-label tBTC
         span #{' '}
-        span address to use for a refund if things go wrong.
+        span
+          | address with a private key you control to use for a refund if
+          | things go wrong.
     button.btn.btn-block.btn-lg.btn-primary.disabled.make(type="submit")
       i.fa.fa-exchange.mr-2
-      span.mr-2 Swap
-      i.fa.fa-exchange.mr-2
+      span.mr-2 Pay

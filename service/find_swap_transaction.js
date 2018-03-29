@@ -9,6 +9,8 @@ const {getTransaction} = require('./../chain');
 const {returnResult} = require('./../async-util');
 const {swapAddress} = require('./../swaps');
 
+const blockSearchRateLimit = 300;
+
 /** Find the swap funding transaction that matches a swap key
 
   {
@@ -25,10 +27,14 @@ const {swapAddress} = require('./../swaps');
   {
     [confirmation_count]: <Confirmation Count>
     [transaction]: <Transaction Hex String>
+    [transaction_id]: <Transaction Id Hex String>
   }
 */
 module.exports = (args, cbk) => {
   return asyncAuto({
+    // Get the current block tip hash
+    getChainInfo: cbk => getBlockchainInfo({network: args.network}, cbk),
+
     // Check the arguments
     validate: cbk => {
       if (!args.block_search_depth) {
@@ -53,9 +59,6 @@ module.exports = (args, cbk) => {
 
       return cbk();
     },
-
-    // Get the current block tip hash
-    getChainInfo: cbk => getBlockchainInfo({network: args.network}, cbk),
 
     swap: ['validate', (_, cbk) => {
       return cbk(null, swapAddress({
@@ -109,7 +112,7 @@ module.exports = (args, cbk) => {
             cursor = res.previous_block_hash;
             txId = res.transaction_id;
 
-            return cbk();
+            return setTimeout(cbk, blockSearchRateLimit);
           });
         },
         err => {
@@ -138,6 +141,7 @@ module.exports = (args, cbk) => {
       return cbk(null, {
         confirmation_count: scanBlocks.confirmation_count,
         transaction: getTransaction.transaction,
+        transaction_id: scanBlocks.transaction_id,
       });
     }],
   },

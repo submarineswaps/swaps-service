@@ -34,12 +34,11 @@ html(lang="en")
 
       .collapse.navbar-collapse#navbarSupportedContent
         ul.mr-auto.navbar-nav
-          li.active.nav-item
-            a.nav-link(href="#")
-              span Home
-              span.sr-only (current)
-          li.nav-item
-            a.nav-link(href="#") About
+          li.nav-item(class={active: path === '/'})
+            a.nav-link(href="/")
+              span Submarine Swap
+          li.nav-item(class={active: path === '/refund'})
+            a.nav-link(href="/refund") Refund
         form.form-inline.my-2.my-lg-0
           button.btn.btn-outline-primary.disabled.my-2.my-sm-0.new-swap(
             type="submit"

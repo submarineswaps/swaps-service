@@ -193,11 +193,11 @@ module.exports = (args, cbk) => {
     {
       try {
         return cbk(null, refundTransaction({
-          current_block_height: res.getHeightAfterFunding.current_height,
           destination: res.createAliceAddress.p2wpkh_address,
           fee_tokens_per_vbyte: staticFeePerVirtualByte,
           is_public_key_hash_refund: args.is_refund_to_public_key_hash,
           private_key: res.generateAliceKeyPair.private_key,
+          timelock_block_height: res.getHeightAfterFunding.current_height,
           utxos: res.fundingTransactionUtxos.matching_outputs,
         }));
       } catch (e) {
@@ -246,11 +246,11 @@ module.exports = (args, cbk) => {
     {
       try {
         cbk(null, refundTransaction({
-          current_block_height: res.getHeightForRefund.current_height,
           destination: res.createAliceAddress.p2wpkh_address,
           fee_tokens_per_vbyte: staticFeePerVirtualByte,
           is_public_key_hash_refund: args.is_refund_to_public_key_hash,
           private_key: res.generateAliceKeyPair.private_key,
+          timelock_block_height: res.getHeightForRefund.current_height,
           utxos: res.fundingTransactionUtxos.matching_outputs,
         }));
       } catch (e) {

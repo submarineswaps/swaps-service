@@ -371,11 +371,11 @@ module.exports = (args, cbk) => {
       (res, cbk) =>
     {
       return refundTransaction({
-        current_block_height: res.getHeightForRefundTransaction.current_height,
         destination: res.promptForRefundAddress.value,
         fee_tokens_per_vbyte: res.tokensPerVirtualByte,
         private_key: res.generateAliceKeyPair.private_key,
         redeem_script: res.createChainSwapAddress.redeem_script,
+        timelock_block_height: res.getHeightForRefundTransaction.current_height,
         utxos: res.fundingTransactionUtxos.matching_outputs,
       },
       cbk);

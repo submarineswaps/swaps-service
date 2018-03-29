@@ -14,6 +14,7 @@ const {toOutputScript} = address;
 const {sha256} = crypto;
 const {witnessScriptHash} = script;
 
+const dustValue = 1e3;
 const ecdsaSignatureLength = chainConstants.ecdsa_sig_max_byte_length;
 const hexCharCountPerByte = 2;
 const minSequenceValue = chainConstants.min_sequence_value
@@ -103,6 +104,10 @@ module.exports = args => {
   const [out] = tx.outs;
 
   out.value -= tokensPerVirtualByte * Math.ceil(anticipatedWeight / vRatio);
+
+  if (out.value < dustValue) {
+    throw new Error('FeesTooHighToClaim');
+  }
 
   // Sign each input
   args.utxos.forEach(({redeem, tokens}, i) => {
