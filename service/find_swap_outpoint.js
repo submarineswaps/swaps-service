@@ -7,7 +7,7 @@ const {swapAddress} = require('./../swaps');
 const {swapOutput} = require('./../swaps');
 const {swapScriptDetails} = require('./../swaps');
 
-const blockSearchDepth = 66;
+const blockSearchDepth = 144;
 
 /** Find a swap outpoint given a swap pkhash redeem script
 
@@ -90,6 +90,7 @@ module.exports = (args, cbk) => {
 
       try {
         return cbk(null, swapOutput({
+          p2sh_output_script: res.swapAddress.p2sh_output_script,
           transaction: res.findSwapTransaction.transaction,
           witness_output_script: res.swapAddress.witness_output_script,
         }));

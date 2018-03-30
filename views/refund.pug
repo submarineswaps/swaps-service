@@ -109,6 +109,33 @@ block content
                         | Refund address entered for this redeem script.
                   .form-group.row
                     label.col-form-label.col-sm-2
+                      | Swap Address:
+                    .col-sm-10
+                      .custom-control.custom-radio
+                        input.custom-control-input.form-check-input#swap-p2sh(
+                          checked,
+                          name="swap-output",
+                          type="radio",
+                          value="swap-p2sh")
+                        label.custom-control-label.form-check-label(
+                          for="swap-p2sh"
+                        )
+                          span.refund-p2sh-swap-address
+                            | Base58 Standard P2SH Swap Address
+                      .custom-control.custom-radio
+                        input.custom-control-input.form-check-input#swap-p2wsh(
+                          name="swap-output",
+                          type="radio",
+                          value="swap-p2wsh")
+                        label.custom-control-label.form-check-label(
+                          for="swap-p2wsh"
+                        )
+                          span.refund-p2wsh-swap-address
+                            | Bech32 Native SegWit Swap Address
+                      small.form-text.mb-2.text-muted
+                        | Select the swap address you sent to.
+                  .form-group.row
+                    label.col-form-label.col-sm-2
                       | Transaction Id:
                     .col-sm-10
                       input.form-control.refund-transaction-id(

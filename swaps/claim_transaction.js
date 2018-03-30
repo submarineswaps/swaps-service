@@ -13,16 +13,16 @@ const scriptBuffersAsScript = require('./script_buffers_as_script');
 
 const {hash160} = crypto;
 const hashAll = Transaction.SIGHASH_ALL;
+const {sha256} = crypto;
 const {testnet} = networks;
 const {toOutputScript} = address;
-const {sha256} = crypto;
 const {witnessScriptHash} = script;
 
 const dustRatio = 1 / 3;
 const ecdsaSignatureLength = chainConstants.ecdsa_sig_max_byte_length;
 const hexCharCountPerByte = 2;
 const minSequenceValue = chainConstants.min_sequence_value
-const nestedP2shScriptPubLength = 23;
+const nestedScriptPubHexLength = 46;
 const sequenceLength = chainConstants.sequence_byte_length;
 const shortPushdataLength = chainConstants.short_push_data_length;
 const vRatio = chainConstants.witness_byte_discount_denominator;
@@ -38,7 +38,7 @@ const vRatio = chainConstants.witness_byte_discount_denominator;
     private_key: <Claim Private Key WIF String>
     utxos: [{
       redeem: <Redeem Script Hex String>
-      [script]: <Script Pub Buffer>
+      [script]: <Script Pub Hex String>
       tokens: <Tokens Number>
       transaction_id: <Transaction Id String>
       vout: <Vout Number>
@@ -121,9 +121,9 @@ module.exports = args => {
 
   // Sign each input and include the normal redeem script for nested p2sh
   args.utxos.forEach(({redeem, script, tokens}, i) => {
+    const isNested = !!script && script.length === nestedScriptPubHexLength;
     const redeemScript = Buffer.from(redeem, 'hex');
 
-    const isNested = !!script && script.length === nestedP2shScriptPubLength;
     const sigHash = tx.hashForWitnessV0(i, redeemScript, tokens, hashAll);
 
     if (isNested) {

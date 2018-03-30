@@ -28,9 +28,7 @@ module.exports = args => {
   const outputScripts = [args.p2sh_output_script, args.witness_output_script];
   let transaction;
 
-  const scriptPubs = outputScripts
-    .filter(n => !!n)
-    .map(n => Buffer.from(n, 'hex'));
+  const scriptPubs = outputScripts.filter(n => !!n)
 
   try {
     transaction = Transaction.fromHex(args.transaction);
@@ -38,8 +36,8 @@ module.exports = args => {
     throw new Error('ExpectedValidTransactionHex');
   }
 
-  const outputIndex = transaction.outs.map(n => n.script)
-    .findIndex(script => scriptPubs.find(n => script.equals(n)));
+  const outputIndex = transaction.outs.map(n => n.script.toString('hex'))
+    .findIndex(script => scriptPubs.find(n => script === n));
 
   if (outputIndex === notFoundIndex) {
     throw new Error('ExpectedUtxoInTransaction');

@@ -14,6 +14,18 @@ const {getTransaction} = require('./../chain');
   <Transaction Contains Output With Scriptpub Bool>
 */
 module.exports = (args, cbk) => {
+  if (!Array.isArray(args.output_scripts) || !args.output_scripts.length) {
+    return cbk([400, 'ExpectedOutputScripts']);
+  }
+
+  if (!args.network) {
+    return cbk([400, 'ExpectedNetwork']);
+  }
+
+  if (!args.transaction_id) {
+    return cbk([400, 'ExpectedTransactionId']);
+  }
+
   return getTransaction({
     network: args.network,
     transaction_id: args.transaction_id,
@@ -23,7 +35,7 @@ module.exports = (args, cbk) => {
       return cbk(err);
     }
 
-    const scriptPubs = args.output_scripts.map(n => Buffer.from(n, 'hex'));
+    const scriptPubs = args.output_scripts;
     let tx;
 
     try { tx = Transaction.fromHex(res.transaction); } catch (e) {
@@ -31,8 +43,8 @@ module.exports = (args, cbk) => {
     }
 
     const hasScriptPub = tx.outs
-      .map(n => n.script)
-      .find(script => scriptPubs.find(n => script.equals(n)));
+      .map(n => n.script.toString('hex'))
+      .find(script => args.output_scripts.find(n => script === n));
 
     return cbk(null, !!hasScriptPub);
   });

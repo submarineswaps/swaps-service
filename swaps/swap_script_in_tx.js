@@ -23,7 +23,7 @@ const {witnessScriptHash} = script;
   {
     matching_outputs: [{
       redeem: <Redeem Script Hex String>
-      script: <ScriptPub Buffer>
+      script: <ScriptPub Hex String>
       tokens: <Tokens Number>
       transaction_id: <Transaction Id Hex String>
       vout: <Vout Number>
@@ -47,18 +47,21 @@ module.exports = args => {
 
   const p2shScript = encodeScriptHash(hash160(p2wshScript));
 
-  const matchingVouts = transaction.outs
+  const p2shScriptHex = p2shScript.toString('hex');
+  const p2wshScriptHex = p2wshScript.toString('hex');
+
+  const matchingOutputs = transaction.outs
     .map(({script, value}, vout) => {
       return {
-        redeem: redeem.toString('hex'),
-        script,
         vout,
+        redeem: redeem.toString('hex'),
+        script: script.toString('hex'),
         tokens: value,
         transaction_id: txId,
       };
     })
-    .filter(n => n.script.equals(p2wshScript) || n.script.equals(p2shScript));
+    .filter(n => n.script === p2wshScriptHex || n.script === p2shScriptHex);
 
-  return {matching_outputs: matchingVouts};
+  return {matching_outputs: matchingOutputs};
 };
 

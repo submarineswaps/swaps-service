@@ -3,11 +3,14 @@ const {address} = require('bitcoinjs-lib');
 const {crypto} = require('bitcoinjs-lib');
 const {ECPair} = require('bitcoinjs-lib');
 const {networks} = require('bitcoinjs-lib');
+const {OP_0} = require('bitcoin-ops');
 const {OP_FALSE} = require('bitcoin-ops');
 const {script} = require('bitcoinjs-lib');
 const {Transaction} = require('bitcoinjs-lib');
 
 const chain = require('./../chain').constants;
+const numberAsBuffer = require('./number_as_buffer');
+const scriptBuffersAsScript = require('./script_buffers_as_script');
 
 const {SIGHASH_ALL} = Transaction;
 const {sha256} = crypto;
@@ -21,6 +24,7 @@ const ecdsaSignatureLength = chain.ecdsa_sig_max_byte_length;
 const hexBase = 16;
 const hexCharCountPerByte = 2;
 const minSequence = chain.min_sequence_value;
+const nestedScriptPubHexLength = 46;
 const sequenceLength = chain.sequence_byte_length;
 const shortPushdataLength = chain.short_push_data_length;
 const vRatio = chain.witness_byte_discount_denominator;
@@ -35,6 +39,7 @@ const vRatio = chain.witness_byte_discount_denominator;
     timelock_block_height: <Timelock Block Height Number>
     utxos: [{
       redeem: <Redeem Script Hex String>
+      script: <ScriptPub Hex String>
       tokens: <Tokens Number>
       transaction_id: <Transaction Id String>
       vout: <Vout Number>
@@ -129,14 +134,25 @@ module.exports = args => {
   const signingKey = ECPair.fromWIF(args.private_key, testnet);
 
   // Sign each input. We need the dummy to fail the preimage test
-  args.utxos.forEach(({redeem, tokens}, i) => {
-    const script = Buffer.from(redeem, 'hex');
+  args.utxos.forEach(({redeem, script, tokens}, i) => {
+    const isNested = !!script && script.length === nestedScriptPubHexLength;
+    const redeemScript = Buffer.from(redeem, 'hex');
 
-    const sigHash = tx.hashForWitnessV0(i, script, tokens, SIGHASH_ALL);
+    if (isNested) {
+      const witnessVersion = numberAsBuffer({number: OP_0}).toString('hex');
 
-    const signature = signingKey.sign(sigHash).toScriptSignature(SIGHASH_ALL);
+      const nestComponents = [witnessVersion, sha256(redeemScript)];
 
-    return [[signature, space, script]].forEach((w, i) => tx.setWitness(i, w));
+      const nest = Buffer.from(scriptBuffersAsScript(nestComponents), 'hex');
+
+      tx.setInputScript(i, Buffer.from(scriptBuffersAsScript([nest]), 'hex'));
+    }
+
+    const sigHash = tx.hashForWitnessV0(i, redeemScript, tokens, SIGHASH_ALL);
+
+    const sig = signingKey.sign(sigHash).toScriptSignature(SIGHASH_ALL);
+
+    return [[sig, space, redeemScript]].forEach((w, i) => tx.setWitness(i, w));
   });
 
   return {transaction: tx.toHex()};

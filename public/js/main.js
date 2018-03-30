@@ -132,6 +132,10 @@ App.changedRefundScript = function(_) {
   $('.dump-refund-address').text(details.refund_p2wpkh_address);
   $('.timeout-block-height').val(details.timelock_block_height);
   $('.redeem-refund-address').val(details.refund_p2wpkh_address);
+  $('.refund-p2sh-swap-address').text(details.p2sh_p2wsh_address);
+  $('.refund-p2wsh-swap-address').text(details.p2wsh_address);
+  $('#swap-p2sh').val(details.p2sh_output_script);
+  $('#swap-p2wsh').val(details.witness_output_script);
 
   return;
 };
@@ -809,7 +813,7 @@ App.submitOnlineRefundRecovery = function(event) {
   return fetch('/api/v0/swap_outputs/', {body, headers, method})
     .then(r => {
       $('.search-for-refund').removeClass('disabled').prop('disabled', false);
-      $('.search-for-refund').text('Search for Refund Details');
+      $('.search-for-refund').text('Get Refund');
 
       switch (r.status) {
       case 200:
@@ -861,18 +865,26 @@ App.submitOnlineRefundRecovery = function(event) {
       $('.refund-tx-vout').val(details.utxo.output_index);
       $('.timeout-block-height').val(details.timelock_block_height);
 
+      const swap = blockchain.swapScriptDetails({redeem_script: redeemScript});
+
+      $('.refund-p2sh-swap-address').text(swap.p2sh_p2wsh_address);
+      $('.refund-p2wsh-swap-address').text(swap.p2wsh_address);
+      $('#swap-p2sh').val(swap.p2sh_output_script);
+      $('#swap-p2wsh').val(swap.witness_output_script);
+
       $('#tx-details-refund-tab').tab('show');
 
       return;
     })
     .catch(err => {
       switch (err.message) {
-      case 'ExectedUtxo':
+      case 'ExpectedUtxo':
         $('.refund-details-not-found').collapse('show');
         break;
 
       default:
-        console.log('ERR', err, err.code, err.message);
+        console.log('ERR', err.message);
+        break;
       }
 
       return;
@@ -929,6 +941,7 @@ App.submitSignWithRefundDetails = function(e) {
       timelock_block_height: swapDetails.timelock_block_height,
       utxos: [{
         redeem: redeemScript,
+        script: $('input[name=swap-output]:checked').val(),
         tokens: refundTokens,
         transaction_id: refundTxId,
         vout: refundTxVout,
