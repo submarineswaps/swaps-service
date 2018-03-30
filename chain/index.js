@@ -8,7 +8,6 @@ const getBlockDetails = require('./get_block_details');
 const getChainFeeRate = require('./get_chain_fee_rate');
 const getMempool = require('./get_mempool');
 const getTransaction = require('./get_transaction');
-const outputScriptInTransaction = require('./output_script_in_tx');
 const spawnChainDaemon = require('./spawn_chain_daemon');
 const stopChainDaemon = require('./stop_chain_daemon');
 
@@ -23,7 +22,6 @@ module.exports = {
   getChainFeeRate,
   getMempool,
   getTransaction,
-  outputScriptInTransaction,
   spawnChainDaemon,
   stopChainDaemon,
 };

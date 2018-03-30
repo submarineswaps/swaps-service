@@ -145,7 +145,16 @@ App.changedRefundScript = function(_) {
   }
 */
 App.checkSwap = ({button, id, quote}) => {
-  return App.getSwap({id}, (err, res) => {
+  return App.getSwap({
+    destination_public_key: App.swaps[id].destination_public_key,
+    invoice: App.swaps[id].invoice,
+    payment_hash: App.swaps[id].payment_hash,
+    private_key: App.swaps[id].private_key,
+    redeem_script: App.swaps[id].redeem_script,
+    refund_public_key_hash: App.swaps[id].refund_public_key_hash,
+    timeout_block_height: App.swaps[id].timeout_block_height,
+  },
+  (err, res) => {
     if (!!App.swaps[id].is_completed) {
       return;
     }
@@ -293,8 +302,9 @@ App.clickedShowSwap = function(event) {
     refund_address: <Refund Address String>
     refund_public_key_hash: <Refund Public Key Hash Hex String>
     redeem_script: <Redeem Script Hex String>
-    swap_address: <Swap Chain Address String>
     swap_amount: <Swap Amount Number>
+    swap_p2sh_address: <Swap Chain Legacy P2SH Base58 Address String>
+    swap_p2wsh_address: <Swap Chain P2WSH Bech32 Address String>
     timeout_block_height: <Swap Expiration Date Number>
   }
 */
@@ -331,12 +341,16 @@ App.createSwap = (args, cbk) => {
         throw new Error('ExpectedRedeemScript');
       }
 
-      if (!details.swap_address) {
-        throw new Error('ExpectedSwapAddress');
-      }
-
       if (!details.swap_amount) {
         throw new Error('ExpectedSwapAmount');
+      }
+
+      if (!details.swap_p2sh_address) {
+        throw new Error('ExpectedSwapP2shAddress');
+      }
+
+      if (!details.swap_p2wsh_address) {
+        throw new Error('ExpectedSwapP2wshAddress');
       }
 
       if (!details.timeout_block_height) {
@@ -470,7 +484,13 @@ App.getInvoiceDetails = ({invoice}, cbk) => {
 /** Get the status of a swap
 
   {
-    id: <Invoice Id String>
+    destination_public_key: <Destination Public Key String>
+    invoice: <Invoice BOLT 11 String>
+    payment_hash: <Payment Hash String>
+    private_key: <Private Key WIF String>
+    redeem_script: <Redeem Script String>
+    refund_public_key_hash: <Refund Public Key Hash String>
+    timeout_block_height: <Timeout Block Height Number>
   }
 
   @returns via cbk
@@ -479,33 +499,46 @@ App.getInvoiceDetails = ({invoice}, cbk) => {
     [payment_secret]: <Payment Secret Hex String>
   }
 */
-App.getSwap = ({id}, cbk) => {
-  const swapDetails = App.swaps[id];
+App.getSwap = (args, cbk) => {
+  if (!args.destination_public_key) {
+    return cbk([0, 'ExpectedDestinationPublicKey']);
+  }
 
-  const body = JSON.stringify({
-    destination_public_key: swapDetails.destination_public_key,
-    invoice: swapDetails.invoice,
-    payment_hash: swapDetails.payment_hash,
-    private_key: swapDetails.private_key,
-    redeem_script: swapDetails.redeem_script,
-    refund_public_key_hash: swapDetails.refund_public_key_hash,
-    timeout_block_height: swapDetails.timeout_block_height,
-  });
+  if (!args.invoice) {
+    return cbk([0, 'ExpectedInvoice']);
+  }
 
-  const headers = {'content-type': 'application/json'};
-  const method = 'POST';
+  if (!args.payment_hash) {
+    return cbk([0, 'ExpectedPaymentHash']);
+  }
 
-  return fetch(`/api/v0/swaps/${id}`, {body, headers, method})
-    .then(r => {
-      switch (r.status) {
-      case 200:
-        return Promise.resolve(r);
+  if (!args.private_key) {
+    return cbk([0, 'ExpectedPrivateKey']);
+  }
 
-      default:
-        return Promise.reject(new Error(r.statusText));
-      }
-    })
-    .then(r => r.json())
+  if (!args.redeem_script) {
+    return cbk([0, 'ExpectedRedeemScript']);
+  }
+
+  if (!args.refund_public_key_hash) {
+    return cbk([0, 'ExpectedRefundPublicKeyHash']);
+  }
+
+  if (!args.timeout_block_height) {
+    return cbk([0, 'ExpectedTimeoutBlockHeight']);
+  }
+
+  const post = {
+    destination_public_key: args.destination_public_key,
+    invoice: args.invoice,
+    payment_hash: args.payment_hash,
+    private_key: args.private_key,
+    redeem_script: args.redeem_script,
+    refund_public_key_hash: args.refund_public_key_hash,
+    timeout_block_height: args.timeout_block_height,
+  };
+
+  App.makeRequest({post, api: `swaps/${args.payment_hash}`})
     .then(details => {
       if (!details.payment_secret && details.conf_wait_count === undefined) {
         throw new Error('ExpectedPaymentSecretOrConfirmationsWaitCount');
@@ -515,6 +548,8 @@ App.getSwap = ({id}, cbk) => {
     })
     .then(details => cbk(null, details))
     .catch(err => cbk(err));
+
+  return;
 };
 
 /** Init App
@@ -689,12 +724,12 @@ App.submitCreateSwapQuote = function(event) {
 
     const swapAmount = App.format({tokens: details.swap_amount});
 
-    const addr = `bitcoin:${details.swap_address}?amount=${swapAmount}`;
+    const addr = `bitcoin:${details.swap_p2wsh_address}?amount=${swapAmount}`;
 
     quote.data({payment_hash: details.payment_hash});
     quote.find('.chain-link').prop('href', addr);
     quote.find('.redeem-script').val(details.redeem_script);
-    quote.find('.swap-address').val(details.swap_address);
+    quote.find('.swap-address').val(details.swap_p2wsh_address);
     quote.find('.swap-amount').val(swapAmount);
     quote.find('.timeout-block-height').val(details.timeout_block_height);
 
@@ -706,7 +741,7 @@ App.submitCreateSwapQuote = function(event) {
         details.redeem_script,
         '',
         'Swap Address:',
-        details.swap_address,
+        details.swap_p2wsh_address,
         '',
         'Refund After:',
         details.timeout_block_height,
@@ -718,7 +753,7 @@ App.submitCreateSwapQuote = function(event) {
         new Date().toISOString()
       ].join('\n');
 
-      anchor.setAttribute('download', `details.swap_address.redeem_script.txt`);
+      anchor.setAttribute('download', `details.swapaddress.redeem_script.txt`);
       anchor.setAttribute('href', `${encoding},${encodeURIComponent(text)}`);
 
       if (!!document.createEvent) {
@@ -754,8 +789,8 @@ App.submitCreateSwapQuote = function(event) {
 
 /** Submit online refund
 */
-App.submitOnlineRefundRecovery = function(e) {
-  e.preventDefault();
+App.submitOnlineRefundRecovery = function(event) {
+  event.preventDefault();
 
   $('.refund-details-not-found').collapse('hide');
   $('.search-for-refund').addClass('disabled').prop('disabled', true);

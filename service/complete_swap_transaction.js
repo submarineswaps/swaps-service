@@ -6,9 +6,9 @@ const {createAddress} = require('./../chain');
 const {getBlockchainInfo} = require('./../chain');
 const {getChainFeeRate} = require('./../chain');
 const {getFee} = require('./../chain');
-const {outputScriptInTransaction} = require('./../chain');
 const {payInvoice} = require('./../lightning');
 const {returnResult} = require('./../async-util');
+const {swapScriptInTransaction} = require('./../swaps');
 
 /** Complete a swap transaction
 
@@ -65,7 +65,7 @@ module.exports = (args, cbk) => {
     // Funding UTXOs from the transaction
     fundingUtxos: ['validate', (_, cbk) => {
       try {
-        return cbk(null, outputScriptInTransaction({
+        return cbk(null, swapScriptInTransaction({
           redeem_script: args.redeem_script,
           transaction: args.transaction,
         }));
@@ -80,7 +80,7 @@ module.exports = (args, cbk) => {
       'getBlockchainInfo',
       'getFee',
       'getSweepAddress',
-      (res, cbk) =>
+      (_, cbk) =>
     {
       return payInvoice({invoice: args.invoice}, cbk);
     }],

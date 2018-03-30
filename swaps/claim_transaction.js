@@ -3,21 +3,26 @@ const bip65Encode = require('bip65').encode;
 const {crypto} = require('bitcoinjs-lib');
 const {ECPair} = require('bitcoinjs-lib');
 const {networks} = require('bitcoinjs-lib');
+const {OP_0} = require('bitcoin-ops');
 const {script} = require('bitcoinjs-lib');
 const {Transaction} = require('bitcoinjs-lib');
 
 const chainConstants = require('./../chain').constants;
+const numberAsBuffer = require('./number_as_buffer');
+const scriptBuffersAsScript = require('./script_buffers_as_script');
 
+const {hash160} = crypto;
 const hashAll = Transaction.SIGHASH_ALL;
 const {testnet} = networks;
 const {toOutputScript} = address;
 const {sha256} = crypto;
 const {witnessScriptHash} = script;
 
-const dustValue = 1e3;
+const dustRatio = 1 / 3;
 const ecdsaSignatureLength = chainConstants.ecdsa_sig_max_byte_length;
 const hexCharCountPerByte = 2;
 const minSequenceValue = chainConstants.min_sequence_value
+const nestedP2shScriptPubLength = 23;
 const sequenceLength = chainConstants.sequence_byte_length;
 const shortPushdataLength = chainConstants.short_push_data_length;
 const vRatio = chainConstants.witness_byte_discount_denominator;
@@ -28,10 +33,12 @@ const vRatio = chainConstants.witness_byte_discount_denominator;
     current_block_height: <Current Block Height Number>
     destination: <Send Tokens to Address String>
     fee_tokens_per_vbyte: <Fee Per Virtual Byte Token Rate Number>
+    is_p2sh: <Is Nested P2SH Bool> = false
     preimage: <Payment Preimage Hex String>
     private_key: <Claim Private Key WIF String>
     utxos: [{
       redeem: <Redeem Script Hex String>
+      [script]: <Script Pub Buffer>
       tokens: <Tokens Number>
       transaction_id: <Transaction Id String>
       vout: <Vout Number>
@@ -100,24 +107,38 @@ module.exports = args => {
   },
   tx.weight());
 
-  // Reduce the final output value to give some tokens over to fees
-  const [out] = tx.outs;
+  const feeSum = tokensPerVirtualByte * Math.ceil(anticipatedWeight / vRatio);
 
-  out.value -= tokensPerVirtualByte * Math.ceil(anticipatedWeight / vRatio);
-
-  if (out.value < dustValue) {
+  // Exit early when the ratio of the amount spent on fees would be too high
+  if (feeSum > tokens || feeSum / (tokens - feeSum) > dustRatio) {
     throw new Error('FeesTooHighToClaim');
   }
 
-  // Sign each input
-  args.utxos.forEach(({redeem, tokens}, i) => {
-    const script = Buffer.from(redeem, 'hex');
+  // Reduce the final output value to give some tokens over to fees
+  const [out] = tx.outs;
 
-    const sigHash = tx.hashForWitnessV0(i, script, tokens, hashAll);
+  out.value -= feeSum;
+
+  // Sign each input and include the normal redeem script for nested p2sh
+  args.utxos.forEach(({redeem, script, tokens}, i) => {
+    const redeemScript = Buffer.from(redeem, 'hex');
+
+    const isNested = !!script && script.length === nestedP2shScriptPubLength;
+    const sigHash = tx.hashForWitnessV0(i, redeemScript, tokens, hashAll);
+
+    if (isNested) {
+      const witnessVersion = numberAsBuffer({number: OP_0}).toString('hex');
+
+      const nestComponents = [witnessVersion, sha256(redeemScript)];
+
+      const nest = Buffer.from(scriptBuffersAsScript(nestComponents), 'hex');
+
+      tx.setInputScript(i, Buffer.from(scriptBuffersAsScript([nest]), 'hex'));
+    }
 
     const signature = signingKey.sign(sigHash).toScriptSignature(hashAll);
 
-    return [[signature, preimage, script]]
+    return [[signature, preimage, redeemScript]]
       .forEach((witness, i) => tx.setWitness(i, witness));
   });
 

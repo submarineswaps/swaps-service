@@ -16,7 +16,7 @@ const {toOutputScript} = address;
 const {witnessScriptHash} = script;
 
 const compressedPubKeySize = chain.compressed_public_key_size;
-const dustValue = 1e3;
+const dustRatio = 1 / 3;
 const ecdsaSignatureLength = chain.ecdsa_sig_max_byte_length;
 const hexBase = 16;
 const hexCharCountPerByte = 2;
@@ -109,14 +109,17 @@ module.exports = args => {
   },
   tx.weight());
 
+  const feeSum = tokensPerVirtualByte * Math.ceil(anticipatedWeight / vRatio);
+
+  // Exit early when the ratio of the amount spent on fees would be too high
+  if (feeSum > tokens || feeSum / (tokens - feeSum) > dustRatio) {
+    throw new Error('RefundOutputTooSmall');
+  }
+
   // Reduce the final output value to give some tokens over to fees
   const [out] = tx.outs;
 
-  out.value -= tokensPerVirtualByte * Math.ceil(anticipatedWeight / vRatio);
-
-  if (out.value < dustValue) {
-    throw new Error('RefundValueTooSmall');
-  }
+  out.value -= feeSum;
 
   // Exit early when there is no private key to sign the refund inputs
   if (!args.private_key) {

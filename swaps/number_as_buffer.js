@@ -1,5 +1,6 @@
 const byteLength = 1;
 const scriptNumberMax = 75;
+const scriptNumberMin = 0;
 
 /** Number as a Buffer for script pushdata
 
@@ -15,14 +16,18 @@ const scriptNumberMax = 75;
   @returns
   <Buffer>
 */
-module.exports = (args) => {
-  if (!args || !args.number || args.number > scriptNumberMax) {
+module.exports = ({number}) => {
+  if (number > scriptNumberMax) {
     throw new Error('ExpectedLowNumber');
+  }
+
+  if (number < scriptNumberMin) {
+    throw new Error('ExpectedHigherNumber');
   }
 
   const buf = Buffer(byteLength);
 
-  buf.writeUInt8(args.number);
+  buf.writeUInt8(number);
 
   return buf;
 };

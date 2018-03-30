@@ -29,8 +29,9 @@ const timeoutBlockCount = 1;
     refund_address: <Refund Address String>
     refund_public_key_hash: <Refund Public Key Hash Hex String>
     redeem_script: <Redeem Script Hex String>
-    swap_address: <Swap Chain Address String>
     swap_amount: <Swap Amount Number>
+    swap_p2sh_address: <Swap Chain Legacy P2SH Base58 Address String>
+    swap_p2wsh_address: <Swap Chain P2WSH Bech32 Address String>
     timeout_block_height: <Swap Expiration Date Number>
   }
 */
@@ -116,6 +117,7 @@ module.exports = (args, cbk) => {
       }
     }],
 
+    // Swap fee component
     fee: ['getInvoiceDetails', (res, cbk) => {
       return cbk(null, Math.round(res.getInvoiceDetails.tokens * swapRate));
     }],
@@ -130,7 +132,8 @@ module.exports = (args, cbk) => {
         refund_address: args.refund_address,
         refund_public_key_hash: res.refundAddress.public_key_hash,
         redeem_script: res.swapAddress.redeem_script,
-        swap_address: res.swapAddress.p2wsh_address,
+        swap_p2sh_address: res.swapAddress.p2wsh_address,
+        swap_p2wsh_address: res.swapAddress.p2sh_p2wsh_address,
         swap_amount: res.getInvoiceDetails.tokens + res.fee,
         swap_fee: res.fee,
         timeout_block_height: res.timeoutBlockHeight,

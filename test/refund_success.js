@@ -11,13 +11,13 @@ const generateInvoice = require(`${macros}generate_invoice`);
 const generateKeyPair = require(`${macros}generate_keypair`);
 const {getBlockchainInfo} = require('./../chain');
 const mineTransaction = require(`${macros}mine_transaction`);
-const {outputScriptInTransaction} = require('./../chain');
 const {refundTransaction} = require('./../swaps');
 const {returnResult} = require('./../async-util');
 const sendChainTokensTransaction = require(`${macros}send_chain_tokens_tx`);
 const {spawnChainDaemon} = require('./../chain');
 const {stopChainDaemon} = require('./../chain');
 const {swapAddress} = require('./../swaps');
+const {swapScriptInTransaction} = require('./../swaps');
 
 const chain = require('./../chain').constants;
 
@@ -174,7 +174,7 @@ module.exports = (args, cbk) => {
       ({createChainSwapAddress, fundSwapAddress}, cbk) =>
     {
       try {
-        return cbk(null, outputScriptInTransaction({
+        return cbk(null, swapScriptInTransaction({
           redeem_script: createChainSwapAddress.redeem_script,
           transaction: fundSwapAddress.transaction,
         }));

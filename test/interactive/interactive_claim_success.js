@@ -12,7 +12,6 @@ const generateKeyPair = require(`${macros}generate_keypair`);
 const {getBlockchainInfo} = require('./../../chain');
 const {getTransaction} = require('./../../chain');
 const mineTransaction = require(`${macros}mine_transaction`);
-const {outputScriptInTransaction} = require('./../../chain');
 const parseLightningInvoice = require(`${macros}parse_lightning_invoice`);
 const promptForInput = require(`${macros}prompt`);
 const {returnResult} = require('./../../async-util');
@@ -20,6 +19,7 @@ const sendChainTokensTransaction = require(`${macros}send_chain_tokens_tx`);
 const {spawnChainDaemon} = require('./../../chain');
 const {stopChainDaemon} = require('./../../chain');
 const {swapAddress} = require('./../../swaps');
+const {swapScriptInTransaction} = require('./../../swaps');
 
 const math = require('./../conf/math');
 const chain = require('./../../chain').constants;
@@ -286,7 +286,7 @@ module.exports = (args, cbk) => {
       (res, cbk) =>
     {
       try {
-        return cbk(null, outputScriptInTransaction({
+        return cbk(null, swapScriptInTransaction({
           redeem_script: res.createChainSwapAddress.redeem_script,
           transaction: res.getFundingTransaction.transaction,
         }));

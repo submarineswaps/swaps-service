@@ -2,6 +2,10 @@ const {crypto} = require('bitcoinjs-lib');
 const {script} = require('bitcoinjs-lib');
 const {Transaction} = require('bitcoinjs-lib');
 
+const swapScriptDetails = require('./swap_script_details');
+
+const encodeScriptHash = script.scriptHash.output.encode;
+const {hash160} = crypto;
 const {sha256} = crypto;
 const {witnessScriptHash} = script;
 
@@ -39,7 +43,9 @@ module.exports = args => {
   const transaction = Transaction.fromHex(args.transaction);
 
   const txId = transaction.getId();
-  const witnessScript = witnessScriptHash.output.encode(sha256(redeem));
+  const p2wshScript = witnessScriptHash.output.encode(sha256(redeem));
+
+  const p2shScript = encodeScriptHash(hash160(p2wshScript));
 
   const matchingVouts = transaction.outs
     .map(({script, value}, vout) => {
@@ -51,7 +57,7 @@ module.exports = args => {
         transaction_id: txId,
       };
     })
-    .filter(n => n.script.equals(witnessScript));
+    .filter(n => n.script.equals(p2wshScript) || n.script.equals(p2shScript));
 
   return {matching_outputs: matchingVouts};
 };
