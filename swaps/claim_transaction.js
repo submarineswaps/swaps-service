@@ -93,6 +93,23 @@ module.exports = args => {
   tx.ins.forEach(n => n.sequence = minSequenceValue);
   tx.locktime = bip65Encode({blocks: args.current_block_height});
 
+  args.utxos.forEach(({redeem, script}, i) => {
+    if (script.length !== nestedScriptPubHexLength) {
+      return;
+    }
+
+    const redeemScript = Buffer.from(redeem, 'hex');
+    const witnessVersion = numberAsBuffer({number: OP_0}).toString('hex');
+
+    const nestComponents = [witnessVersion, sha256(redeemScript)];
+
+    const nest = Buffer.from(scriptBuffersAsScript(nestComponents), 'hex');
+
+    tx.setInputScript(i, Buffer.from(scriptBuffersAsScript([nest]), 'hex'));
+
+    return;
+  });
+
   // Anticipate the final weight of the transaction
   const anticipatedWeight = args.utxos.reduce((sum, utxo) => {
     return [
@@ -120,21 +137,10 @@ module.exports = args => {
   out.value -= feeSum;
 
   // Sign each input and include the normal redeem script for nested p2sh
-  args.utxos.forEach(({redeem, script, tokens}, i) => {
-    const isNested = !!script && script.length === nestedScriptPubHexLength;
+  args.utxos.forEach(({redeem, tokens}, i) => {
     const redeemScript = Buffer.from(redeem, 'hex');
 
     const sigHash = tx.hashForWitnessV0(i, redeemScript, tokens, hashAll);
-
-    if (isNested) {
-      const witnessVersion = numberAsBuffer({number: OP_0}).toString('hex');
-
-      const nestComponents = [witnessVersion, sha256(redeemScript)];
-
-      const nest = Buffer.from(scriptBuffersAsScript(nestComponents), 'hex');
-
-      tx.setInputScript(i, Buffer.from(scriptBuffersAsScript([nest]), 'hex'));
-    }
 
     const signature = signingKey.sign(sigHash).toScriptSignature(hashAll);
 

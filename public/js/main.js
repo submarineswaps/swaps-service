@@ -191,6 +191,8 @@ App.checkSwap = ({button, id, quote}) => {
         .removeClass('alert-secondary')
         .addClass('alert-primary');
 
+      quote.find('.swap-payment-details').hide();
+      quote.find('.tx-found').collapse('show');
       quote.find('.waiting-label').text(`${wait} ${confs}${plural}...`);
 
       return;
@@ -797,8 +799,10 @@ App.submitOnlineRefundRecovery = function(event) {
   event.preventDefault();
 
   $('.refund-details-not-found').collapse('hide');
+  $('.refund-key').val('');
   $('.search-for-refund').addClass('disabled').prop('disabled', true);
   $('.search-for-refund').text('Searching for Swap Transaction...')
+  $('.signed-refund-transaction').val('');
 
   const redeemScript = $('.online-refund-redeem-script').val().trim();
 
@@ -897,6 +901,9 @@ App.submitOnlineRefundRecovery = function(event) {
 */
 App.submitSignWithRefundDetails = function(e) {
   e.preventDefault();
+
+  $('.sign-with-refund-details input').val('');
+  $('.sign-with-refund-details textarea').val('');
 
   const redeemScript = $(this).find('.refund-details-script').val().trim();
 

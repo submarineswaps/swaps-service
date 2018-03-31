@@ -83,7 +83,7 @@
                 span #{' '}
                 span Pay to Swap Address
             .collapse.hide.make-payment
-              .form-group
+              .form-group.swap-payment-details
                 label
                   span Send
                   span #{' '}
@@ -95,7 +95,7 @@
                   type="text",
                   value="Loading...",
                 )
-              .form-group
+              .form-group.swap-payment-details
                 label Amount:
                 input.form-control.form-control-lg.swap-amount(
                   readonly,
@@ -105,6 +105,7 @@
                 small.form-text.text-muted
                   | Make sure to send the exact amount!
               .alert.alert-secondary.waiting-notification(role="alert")
+                h4.alert-heading.collapse.hide.tx-found Swap Pending
                 span.waiting-label Waiting for deposit...
                 h5.pull-right
                   i.fa.fa-asterisk.fa-spin

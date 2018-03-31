@@ -90,6 +90,24 @@ module.exports = args => {
 
   tx.locktime = bip65Encode({blocks: args.timelock_block_height});
 
+  // Add redeem scripts for nested p2sh
+  args.utxos.forEach(({redeem, script}, i) => {
+    if (script.length !== nestedScriptPubHexLength) {
+      return;
+    }
+
+    const redeemScript = Buffer.from(redeem, 'hex');
+    const witnessVersion = numberAsBuffer({number: OP_0}).toString('hex');
+
+    const nestComponents = [witnessVersion, sha256(redeemScript)];
+
+    const nest = Buffer.from(scriptBuffersAsScript(nestComponents), 'hex');
+
+    tx.setInputScript(i, Buffer.from(scriptBuffersAsScript([nest]), 'hex'));
+
+    return;
+  });
+
   // The public key buffer is stubbed all zeros when there is no private key
   if (!!args.private_key) {
     pubKey = ECPair.fromWIF(args.private_key, testnet).getPublicKeyBuffer();

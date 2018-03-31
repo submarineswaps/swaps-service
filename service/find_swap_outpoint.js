@@ -7,7 +7,7 @@ const {swapAddress} = require('./../swaps');
 const {swapOutput} = require('./../swaps');
 const {swapScriptDetails} = require('./../swaps');
 
-const blockSearchDepth = 144;
+const blockSearchDepth = 288;
 
 /** Find a swap outpoint given a swap pkhash redeem script
 
