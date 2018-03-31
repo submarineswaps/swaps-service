@@ -7,7 +7,7 @@
   @returns
   <Result Picking Function>
 */
-module.exports = (args, cbk) => {
-  return (err, res) => (!!err ? cbk(err) : cbk(null, res[args.of]));
+module.exports = ({of}, cbk) => {
+  return (err, res) => (!!err ? cbk(err) : cbk(null, res[of]));
 };
 
