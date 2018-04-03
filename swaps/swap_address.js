@@ -1,11 +1,14 @@
-const bitcoinjsLib = require('bitcoinjs-lib');
+const {address} = require('bitcoinjs-lib');
+const {crypto} = require('bitcoinjs-lib');
+const {networks} = require('bitcoinjs-lib');
+const {script} = require('bitcoinjs-lib');
 
-const addressFromOutputScript = bitcoinjsLib.address.fromOutputScript;
-const encodeScriptHash = bitcoinjsLib.script.scriptHash.output.encode;
-const hash160 = bitcoinjsLib.crypto.hash160;
-const sha256 = bitcoinjsLib.crypto.sha256;
-const testnet = bitcoinjsLib.networks.testnet;
-const witnessScriptHash = bitcoinjsLib.script.witnessScriptHash;
+const {fromOutputScript} = address;
+const encodeScriptHash = script.scriptHash.output.encode;
+const {hash160} = crypto;
+const {sha256} = crypto;
+const {testnet} = networks;
+const {witnessScriptHash} = script;
 
 const pkSwapScript = require('./pk_swap_script');
 const pkHashSwapScript = require('./pkhash_swap_script');
@@ -62,12 +65,12 @@ module.exports = args => {
   // When wrapping for legacy p2sh, the program is hashed more and with RIPE160
   const p2shWrappedWitnessProgram = encodeScriptHash(hash160(witnessProgram));
 
-  const p2shAddr = addressFromOutputScript(p2shWrappedWitnessProgram, testnet);
+  const p2shAddr = fromOutputScript(p2shWrappedWitnessProgram, testnet);
 
   return {
     p2sh_output_script: p2shWrappedWitnessProgram.toString('hex'),
     p2sh_p2wsh_address: p2shAddr,
-    p2wsh_address: addressFromOutputScript(witnessProgram, testnet),
+    p2wsh_address: fromOutputScript(witnessProgram, testnet),
     redeem_script: redeemScriptHex.toString('hex'),
     witness_output_script: witnessProgram.toString('hex'),
   };
