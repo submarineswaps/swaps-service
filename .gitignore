@@ -1,2 +1,3 @@
-browserified
+.DS_Store
 node_modules
+*~

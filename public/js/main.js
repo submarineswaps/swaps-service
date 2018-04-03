@@ -802,6 +802,8 @@ App.submitOnlineRefundRecovery = function(event) {
   $('.refund-key').val('');
   $('.search-for-refund').addClass('disabled').prop('disabled', true);
   $('.search-for-refund').text('Searching for Swap Transaction...')
+  $('.sign-with-refund-details input').val('');
+  $('.sign-with-refund-details textarea').val('');
   $('.signed-refund-transaction').val('');
 
   const redeemScript = $('.online-refund-redeem-script').val().trim();
@@ -901,9 +903,6 @@ App.submitOnlineRefundRecovery = function(event) {
 */
 App.submitSignWithRefundDetails = function(e) {
   e.preventDefault();
-
-  $('.sign-with-refund-details input').val('');
-  $('.sign-with-refund-details textarea').val('');
 
   const redeemScript = $(this).find('.refund-details-script').val().trim();
 
