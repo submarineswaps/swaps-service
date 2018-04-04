@@ -2,7 +2,7 @@ const asyncAuto = require('async/auto');
 
 const {broadcastTransaction} = require('./../chain');
 const {claimTransaction} = require('./../swaps');
-const {createAddress} = require('./../chain');
+const {createAddress} = require('./../lightning');
 const {getBlockchainInfo} = require('./../chain');
 const {getChainFeeRate} = require('./../chain');
 const {getFee} = require('./../chain');
@@ -35,7 +35,7 @@ module.exports = (args, cbk) => {
     getFee: cbk => getChainFeeRate({network: args.network}, cbk),
 
     // Make a new address to sweep out the funds to
-    getSweepAddress: cbk => createAddress({network: args.network}, cbk),
+    getSweepAddress: cbk => createAddress({}, cbk),
 
     // Check completion arguments
     validate: cbk => {
