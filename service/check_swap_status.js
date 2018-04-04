@@ -8,7 +8,7 @@ const {swapAddress} = require('./../swaps');
 const {swapOutput} = require('./../swaps');
 
 const blockSearchDepth = 9;
-const requiredConfCount = 3;
+const requiredConfCount = 0;
 
 /** Check the status of a swap
 

@@ -1,18 +1,14 @@
-const uuidv4 = require('uuid/v4');
+const {lightningDaemon} = require('ln-service');
+const {payInvoice} = require('ln-service');
 
-const preimage = new Buffer(32);
-const uuidv4ByteCount = 16;
-
-// Populate preimage bytes with a couple uuidv4s
-uuidv4({}, preimage);
-uuidv4({}, preimage, uuidv4ByteCount);
-
-console.log('FAKED PREIMAGE', preimage.toString('hex'));
+const {OCW_LND_GRPC_HOST} = process.env;
+const {OCW_LND_MACAROON} = process.env;
+const {OCW_LND_TLS_CERT} = process.env;
 
 /** Pay Lightning Invoice
 
   {
-    invoice: <Invoice String>
+    invoice: <BOLT 11 Invoice String>
   }
 
   @returns via cbk
@@ -20,9 +16,23 @@ console.log('FAKED PREIMAGE', preimage.toString('hex'));
     payment_secret: <Payment Preimage Hex String>
   }
 */
-module.exports = (args, cbk) => {
-  return cbk(null, {
-    payment_secret: preimage.toString('hex'),
+module.exports = ({invoice}, cbk) => {
+  if (!invoice) {
+    return cbk([400, 'ExpectedInvoice']);
+  }
+
+  const lnd = lightningDaemon({
+    cert: OCW_LND_TLS_CERT,
+    host: OCW_LND_GRPC_HOST,
+    macaroon: OCW_LND_MACAROON,
+  });
+
+  return payInvoice({invoice, lnd, wss: []}, (err, res) => {
+    if (!!err) {
+      return cbk([503, 'FailedToPayInvoice', err]);
+    }
+
+    return cbk(null, {payment_secret: res.payment_secret});
   });
 };
 
