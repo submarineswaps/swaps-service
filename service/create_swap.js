@@ -145,7 +145,7 @@ module.exports = (args, cbk) => {
       'swapAddress',
       'swapKeyIndex',
       'timeoutBlockHeight',
-      (res, cbk) => 
+      (res, cbk) =>
     {
       return cbk(null, {
         destination_public_key: res.serverDestinationKey.public_key,

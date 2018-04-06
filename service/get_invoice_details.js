@@ -66,7 +66,7 @@ module.exports = (args, cbk) => {
       'checkInvoice',
       'currency',
       'fiatCurrency',
-      ({currency, fiatCurrency}, cbk) => 
+      ({currency, fiatCurrency}, cbk) =>
     {
       return getPrice({
         from_currency_code: currency,
