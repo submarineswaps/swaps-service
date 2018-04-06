@@ -8,6 +8,7 @@ const {returnResult} = require('./../async-util');
 /** Get invoice details
 
   {
+    [min_tokens]: <Minimum Tokens Number>
     invoice: <Invoice String>
   }
 
@@ -26,7 +27,7 @@ const {returnResult} = require('./../async-util');
     tokens: <Tokens to Send Number>
   }
 */
-module.exports = ({invoice}, cbk) => {
+module.exports = (args, cbk) => {
   return asyncAuto({
     // Assumed currency code
     currency: asyncConstant('BTC'),
@@ -37,20 +38,11 @@ module.exports = ({invoice}, cbk) => {
     // Decode the supplied invoice
     invoice: cbk => {
       try {
-        return cbk(null, decode(invoice));
+        return cbk(null, decode(args.invoice));
       } catch (e) {
         return cbk([400, 'DecodeInvoiceFailure', e]);
       }
     },
-
-    // Grab the fiat price
-    getPrice: ['currency', 'fiatCurrency', ({currency, fiatCurrency}, cbk) => {
-      return getPrice({
-        from_currency_code: currency,
-        to_currency_code: fiatCurrency,
-      },
-      cbk);
-    }],
 
     // Check that the supplied invoice is payable
     checkInvoice: ['invoice', ({invoice}, cbk) => {
@@ -62,7 +54,25 @@ module.exports = ({invoice}, cbk) => {
         return cbk([400, 'InvoiceMissingTokens']);
       }
 
+      if (!!args.min_tokens && invoice.satoshis < args.min_tokens) {
+        return cbk([400, 'InvoiceTooSmall']);
+      }
+
       return cbk();
+    }],
+
+    // Grab the fiat price
+    getPrice: [
+      'checkInvoice',
+      'currency',
+      'fiatCurrency',
+      ({currency, fiatCurrency}, cbk) => 
+    {
+      return getPrice({
+        from_currency_code: currency,
+        to_currency_code: fiatCurrency,
+      },
+      cbk);
     }],
 
     // Invoice description
@@ -103,21 +113,21 @@ module.exports = ({invoice}, cbk) => {
       'fiatValue',
       'id',
       'invoice',
-      (res, cbk) =>
+      ({currency, description, fiatCurrency, fiatValue, id, invoice}, cbk) =>
     {
       return cbk(null, {
-        created_at: res.invoice.timestampString,
-        currency: res.currency,
-        description: res.description,
+        currency,
+        description,
+        id,
+        created_at: invoice.timestampString,
         destination_label: null,
-        destination_public_key: res.invoice.payeeNodeKey,
+        destination_public_key: invoice.payeeNodeKey,
         destination_url: null,
-        expires_at: res.invoice.timeExpireDateString || null,
-        fiat_currency_code: res.fiatCurrency,
-        fiat_value: res.fiatValue || null,
-        id: res.id,
-        is_testnet: res.invoice.coinType === 'testnet',
-        tokens: res.invoice.satoshis,
+        expires_at: invoice.timeExpireDateString || null,
+        fiat_currency_code: fiatCurrency,
+        fiat_value: fiatValue || null,
+        is_testnet: invoice.coinType === 'testnet',
+        tokens: invoice.satoshis,
       });
     }],
   },

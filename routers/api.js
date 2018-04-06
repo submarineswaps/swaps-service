@@ -8,6 +8,8 @@ const {getAddressDetails} = require('./../service');
 const {getInvoiceDetails} = require('./../service');
 const {returnJson} = require('./../async-util');
 
+const minInvoiceTokens = 1e5;
+
 /** Make an api router
 
   {
@@ -33,7 +35,11 @@ module.exports = ({log}) => {
   router.get('/invoice_details/:invoice', ({params}, res) => {
     const {invoice} = params;
 
-    return getInvoiceDetails({invoice}, returnJson({log, res}));
+    return getInvoiceDetails({
+      invoice,
+      min_tokens: minInvoiceTokens,
+    },
+    returnJson({log, res}));
   });
 
   // POST a swap output find details request
@@ -61,9 +67,9 @@ module.exports = ({log}) => {
       destination_public_key: body.destination_public_key,
       invoice: body.invoice,
       payment_hash: params.payment_hash,
-      private_key: body.private_key,
       redeem_script: body.redeem_script,
       refund_public_key_hash: body.refund_public_key_hash,
+      swap_key_index: body.swap_key_index,
       timeout_block_height: body.timeout_block_height,
     },
     returnJson({log, res}));

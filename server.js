@@ -9,16 +9,21 @@ const walnut = require('walnut');
 
 const apiRouter = require('./routers/api');
 
-const isProduction = process.env.NODE_ENV === 'production';
+const {NODE_ENV} = process.env;
+const {OCW_PORT} = process.env;
+const {PORT} = process.env;
+
+const browserifyPath = `${__dirname}/public/browserify/index.js`;
+const isProduction = NODE_ENV === 'production';
 const morganLogLevel = 'dev';
-const port = process.env.PORT || process.env.ORION_DEMO_PORT || 9889;
+const port = PORT || OCW_PORT || 9889;
 
 const app = express();
 
 app.use(hidePoweredBy())
 app.use(compression());
 
-app.get('/js/blockchain.js', browserify(__dirname + '/public/browserify/index.js'));
+app.get('/js/blockchain.js', browserify(browserifyPath));
 
 app.use(express.static('public'));
 app.use(morgan(morganLogLevel));

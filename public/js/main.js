@@ -22,7 +22,7 @@ App.changedCurrencySelection = function(_) {
 
   Update the details of the payment based on the entered invoice.
 */
-App.changedInvoice = function(_) {
+App.changedInvoice = function({}) {
   const input = $(this);
 
   const invoice = input.val().trim();
@@ -53,7 +53,7 @@ App.changedInvoice = function(_) {
     if (!!err) {
       detailsDisplay.collapse('hide');
 
-      input.toggleClass('is-invalid', err.message === 'InvalidInvoice');
+      input.addClass('is-invalid', err.message === 'InvalidInvoice');
 
       return;
     }
@@ -153,9 +153,9 @@ App.checkSwap = ({button, id, quote}) => {
     destination_public_key: App.swaps[id].destination_public_key,
     invoice: App.swaps[id].invoice,
     payment_hash: App.swaps[id].payment_hash,
-    private_key: App.swaps[id].private_key,
     redeem_script: App.swaps[id].redeem_script,
     refund_public_key_hash: App.swaps[id].refund_public_key_hash,
+    swap_key_index: App.swaps[id].swap_key_index,
     timeout_block_height: App.swaps[id].timeout_block_height,
   },
   (err, res) => {
@@ -182,18 +182,24 @@ App.checkSwap = ({button, id, quote}) => {
     quote.find('.refund-tokens-total').val(sentAmount);
     quote.find('.swap-transaction-id').val(res.transaction_id);
 
+    // Exit early when the deposit is found but more confs are needed
     if (!res.payment_secret) {
-      const confs = `${res.conf_wait_count} confirmation`;
-      const plural = res.conf_wait_count === 1 ? '' : 's';
-      const wait = `Deposit found, waiting for`;
+      const txUrl = `https://testnet.smartbit.com.au/tx/${res.transaction_id}`;
+
+      const isPluralConfs = res.conf_wait_count !== 1;
+
+      quote.find('.found-waiting').collapse('show');
+      quote.find('.deposit-transaction-id').prop('href', txUrl);
+      quote.find('.needed-confirmations-count').text(res.conf_wait_count);
+      quote.find('.plural-confirmation').prop('hidden', !isPluralConfs);
+      quote.find('.tx-found').collapse('show');
+      quote.find('.waiting-label').collapse('hide');
 
       quote.find('.waiting-notification')
         .removeClass('alert-secondary')
         .addClass('alert-primary');
 
       quote.find('.swap-payment-details').hide();
-      quote.find('.tx-found').collapse('show');
-      quote.find('.waiting-label').text(`${wait} ${confs}${plural}...`);
 
       return;
     }
@@ -304,11 +310,11 @@ App.clickedShowSwap = function(event) {
     destination_public_key: <Destination Public Key Hex String>
     invoice: <Lightning Invoice String>
     payment_hash: <Payment Hash Hex String>
-    private_key: <Private Key WIF String>
     refund_address: <Refund Address String>
     refund_public_key_hash: <Refund Public Key Hash Hex String>
     redeem_script: <Redeem Script Hex String>
     swap_amount: <Swap Amount Number>
+    swap_key_index: <Swap Key Index Number>
     swap_p2sh_address: <Swap Chain Legacy P2SH Base58 Address String>
     swap_p2wsh_address: <Swap Chain P2WSH Bech32 Address String>
     timeout_block_height: <Swap Expiration Date Number>
@@ -479,12 +485,7 @@ App.getInvoiceDetails = ({invoice}, cbk) => {
       return details;
     })
     .then(details => cbk(null, details))
-    .catch(err => {
-      switch (err.message) {
-      default:
-        return cbk(null, err);
-      }
-    });
+    .catch(err => cbk(err));
 };
 
 /** Get the status of a swap
@@ -493,9 +494,9 @@ App.getInvoiceDetails = ({invoice}, cbk) => {
     destination_public_key: <Destination Public Key String>
     invoice: <Invoice BOLT 11 String>
     payment_hash: <Payment Hash String>
-    private_key: <Private Key WIF String>
     redeem_script: <Redeem Script String>
     refund_public_key_hash: <Refund Public Key Hash String>
+    swap_key_index: <Swap Key Index Number>
     timeout_block_height: <Timeout Block Height Number>
   }
 
@@ -503,6 +504,7 @@ App.getInvoiceDetails = ({invoice}, cbk) => {
   {
     [conf_wait_count]: <Confirmations to Wait Number>
     [payment_secret]: <Payment Secret Hex String>
+    [transaction_id]: <Transaction Id Hex String>
   }
 */
 App.getSwap = (args, cbk) => {
@@ -518,16 +520,16 @@ App.getSwap = (args, cbk) => {
     return cbk([0, 'ExpectedPaymentHash']);
   }
 
-  if (!args.private_key) {
-    return cbk([0, 'ExpectedPrivateKey']);
-  }
-
   if (!args.redeem_script) {
     return cbk([0, 'ExpectedRedeemScript']);
   }
 
   if (!args.refund_public_key_hash) {
     return cbk([0, 'ExpectedRefundPublicKeyHash']);
+  }
+
+  if (!args.swap_key_index) {
+    return cbk([0, 'ExpectedSwapKeyIndex']);
   }
 
   if (!args.timeout_block_height) {
@@ -538,9 +540,9 @@ App.getSwap = (args, cbk) => {
     destination_public_key: args.destination_public_key,
     invoice: args.invoice,
     payment_hash: args.payment_hash,
-    private_key: args.private_key,
     redeem_script: args.redeem_script,
     refund_public_key_hash: args.refund_public_key_hash,
+    swap_key_index: args.swap_key_index,
     timeout_block_height: args.timeout_block_height,
   };
 
@@ -548,6 +550,10 @@ App.getSwap = (args, cbk) => {
     .then(details => {
       if (!details.payment_secret && details.conf_wait_count === undefined) {
         throw new Error('ExpectedPaymentSecretOrConfirmationsWaitCount');
+      }
+
+      if (!details.transaction_id) {
+        throw new Error('ExpectedTransactionId');
       }
 
       return details;
@@ -728,36 +734,29 @@ App.submitCreateSwapQuote = function(event) {
 
     App.swaps[details.payment_hash] = details;
 
+    const redeemInfoJsonSpacing = 2;
+    const swapAddress = details.swap_p2wsh_address;
     const swapAmount = App.format({tokens: details.swap_amount});
 
-    const addr = `bitcoin:${details.swap_p2wsh_address}?amount=${swapAmount}`;
+    const addr = `bitcoin:${swapAddress}?amount=${swapAmount}`;
 
     quote.data({payment_hash: details.payment_hash});
     quote.find('.chain-link').prop('href', addr);
     quote.find('.redeem-script').val(details.redeem_script);
-    quote.find('.swap-address').val(details.swap_p2wsh_address);
+    quote.find('.swap-address').val(swapAddress);
     quote.find('.swap-amount').val(swapAmount);
     quote.find('.timeout-block-height').val(details.timeout_block_height);
 
     quote.find('.save-redeem-script').click(e => {
       const anchor = document.createElement('a');
       const encoding = 'data:text/plain;charset=utf-8';
-      const text = [
-        'Redeem Script:',
-        details.redeem_script,
-        '',
-        'Swap Address:',
-        details.swap_p2wsh_address,
-        '',
-        'Refund After:',
-        details.timeout_block_height,
-        '',
-        'Swap Amount:',
-        swapAmount,
-        '',
-        'Date:',
-        new Date().toISOString()
-      ].join('\n');
+      const text = JSON.stringify({
+        redeem_script: details.redeem_script,
+        refund_after: details.timeout_block_height,
+        swap_address: swapAddress,
+        swap_amount: swapAmount,
+        swap_quote_received_at: new Date().toISOString(),
+      }, null, redeemInfoJsonSpacing);
 
       anchor.setAttribute('download', `details.swapaddress.redeem_script.txt`);
       anchor.setAttribute('href', `${encoding},${encodeURIComponent(text)}`);

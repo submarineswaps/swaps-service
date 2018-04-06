@@ -15,8 +15,8 @@ const {swapScriptInTransaction} = require('./../swaps');
   {
     invoice: <Bolt 11 Invoice String>
     network: <Network Name String>
-    redeem_script: <Redeem Script Hex String>
     private_key: <Private Key WIF String>
+    redeem_script: <Redeem Script Hex String>
     transaction: <Funding Transaction Hex String>
   }
 
@@ -63,7 +63,7 @@ module.exports = (args, cbk) => {
     },
 
     // Funding UTXOs from the transaction
-    fundingUtxos: ['validate', (_, cbk) => {
+    fundingUtxos: ['validate', ({}, cbk) => {
       try {
         return cbk(null, swapScriptInTransaction({
           redeem_script: args.redeem_script,
@@ -80,12 +80,12 @@ module.exports = (args, cbk) => {
       'getBlockchainInfo',
       'getFee',
       'getSweepAddress',
-      (_, cbk) =>
+      ({}, cbk) =>
     {
       return payInvoice({invoice: args.invoice}, cbk);
     }],
 
-    // Create a claim transaction to sweep the swap
+    // Create a claim transaction to sweep the swap to the destination address
     claimTransaction: ['payInvoice', (res, cbk) => {
       try {
         return cbk(null, claimTransaction({

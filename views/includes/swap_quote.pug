@@ -106,7 +106,6 @@
                   | Make sure to send the exact amount!
               .alert.alert-secondary.waiting-notification(role="alert")
                 h4.alert-heading.collapse.hide.tx-found Swap Pending
-                span.waiting-label Waiting for deposit...
                 h5.pull-right
                   i.fa.fa-asterisk.fa-spin
                 a.alert-link.check-swap.mr-4.pull-right(
@@ -115,6 +114,21 @@
                   title="Check?",
                 )
                   | Check?
+                span.collapse.show.waiting-label Waiting for deposit...
+                span.collapse.found-waiting.hide
+                  a.alert-link.deposit-transaction-id(
+                    href='#',
+                    target="_blank"
+                  )
+                    | Deposit found
+                  span #{' '}
+                  span Waiting for
+                  span #{' '}
+                  span.needed-confirmations-count
+                  span #{' '}
+                  span confirmation
+                  span.plural-confirmation(hidden) s
+                  span ...
         .fade.tab-pane#refund(aria-labelledby="refund-tab", role="tabpanel")
           form.refund-details(auto-complete="off")
             .form-group
