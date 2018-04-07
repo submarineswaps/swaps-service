@@ -35,7 +35,7 @@
 
 ## Find a Swap UTXO
 
-    POST /swap_outputs/
+    POST /api/v0/swap_outputs/
     
     // JSON request body
     {
@@ -63,7 +63,7 @@
 
 ## Create a Swap
 
-    POST /swaps/
+    POST /api/v0/swaps/
     
     JSON request body
     {
@@ -89,7 +89,7 @@
 
 ## Check Swap Status
 
-    POST /swaps/:payment_hash/
+    POST /api/v0/swaps/:payment_hash/
     
     // JSON request body
     {
