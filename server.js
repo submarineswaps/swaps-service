@@ -2,6 +2,7 @@ const {log} = console;
 
 const browserify = require('browserify-middleware');
 const compression = require('compression');
+const cors = require('cors');
 const express = require('express');
 const {hidePoweredBy} = require('helmet');
 const morgan = require('morgan');
@@ -22,6 +23,7 @@ const app = express();
 
 app.use(hidePoweredBy())
 app.use(compression());
+app.use(cors());
 
 app.get('/js/blockchain.js', browserify(browserifyPath));
 
