@@ -31,9 +31,7 @@ const blockSearchDepth = 288;
 module.exports = (args, cbk) => {
   return asyncAuto({
     // Get the chain fee rate
-    getChainFeeRate: cbk => {
-      return getChainFeeRate({network: args.network}, cbk);
-    },
+    getChainFeeRate: cbk => getChainFeeRate({network: args.network}, cbk),
 
     // Validate arguments
     validate: cbk => {
@@ -91,6 +89,7 @@ module.exports = (args, cbk) => {
       try {
         return cbk(null, swapOutput({
           p2sh_output_script: res.swapAddress.p2sh_output_script,
+          p2sh_p2wsh_output_script: res.swapAddress.p2sh_p2wsh_output_script,
           transaction: res.findSwapTransaction.transaction,
           witness_output_script: res.swapAddress.witness_output_script,
         }));

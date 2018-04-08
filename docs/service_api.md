@@ -83,6 +83,7 @@
       swap_amount: <Swap Amount Number>
       swap_key_index: <Swap Key Index Number>
       swap_p2sh_address: <Swap Chain Legacy P2SH Base58 Address String>
+      swap_p2sh_p2wsh_address: <Swap P2SH Nested P2WSH Base58 Address String>
       swap_p2wsh_address: <Swap Chain P2WSH Bech32 Address String>
       timeout_block_height: <Swap Expiration Date Number>
     }

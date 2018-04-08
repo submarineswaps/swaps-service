@@ -132,9 +132,11 @@ App.changedRefundScript = function(_) {
   $('.dump-refund-address').text(details.refund_p2wpkh_address);
   $('.timeout-block-height').val(details.timelock_block_height);
   $('.redeem-refund-address').val(details.refund_p2wpkh_address);
-  $('.refund-p2sh-swap-address').text(details.p2sh_p2wsh_address);
+  $('.refund-p2sh-p2wsh-swap-address').text(details.p2sh_p2wsh_address);
+  $('.refund-p2sh-swap-address').text(details.p2sh_address);
   $('.refund-p2wsh-swap-address').text(details.p2wsh_address);
   $('#swap-p2sh').val(details.p2sh_output_script);
+  $('#swap-p2sh-p2wsh').val(details.p2sh_p2wsh_output_script);
   $('#swap-p2wsh').val(details.witness_output_script);
 
   return;
@@ -310,12 +312,14 @@ App.clickedShowSwap = function(event) {
     destination_public_key: <Destination Public Key Hex String>
     invoice: <Lightning Invoice String>
     payment_hash: <Payment Hash Hex String>
+    redeem_script: <Redeem Script Hex String>
     refund_address: <Refund Address String>
     refund_public_key_hash: <Refund Public Key Hash Hex String>
-    redeem_script: <Redeem Script Hex String>
     swap_amount: <Swap Amount Number>
+    swap_fee: <Swap Fee Tokens Number>
     swap_key_index: <Swap Key Index Number>
     swap_p2sh_address: <Swap Chain Legacy P2SH Base58 Address String>
+    swap_p2sh_p2wsh_address: <Swap Chain P2SH Nested SegWit Address String>
     swap_p2wsh_address: <Swap Chain P2WSH Bech32 Address String>
     timeout_block_height: <Swap Expiration Date Number>
   }
@@ -345,8 +349,24 @@ App.createSwap = (args, cbk) => {
         throw new Error('ExpectedInvoiceDetails');
       }
 
+      if (!details.destination_public_key) {
+        throw new Error('ExpectedDestinationPublicKey');
+      }
+
+      if (!details.invoice) {
+        throw new Error('ExpectedInvoice');
+      }
+
+      if (!details.payment_hash) {
+        throw new Error('ExpectedPaymentHash');
+      }
+
       if (!details.refund_address) {
         throw new Error('ExpectedRefundAddress');
+      }
+
+      if (!details.refund_public_key_hash) {
+        throw new Error('ExpectedRefundPublicKeyHash');
       }
 
       if (!details.redeem_script) {
@@ -357,7 +377,19 @@ App.createSwap = (args, cbk) => {
         throw new Error('ExpectedSwapAmount');
       }
 
+      if (!details.swap_fee) {
+        throw new Error('ExpectedSwapFee');
+      }
+
+      if (!details.swap_key_index) {
+        throw new Error('ExpectedSwapKeyIndex');
+      }
+
       if (!details.swap_p2sh_address) {
+        throw new Error('ExpectedSwapP2shAddress');
+      }
+
+      if (!details.swap_p2sh_p2wsh_address) {
         throw new Error('ExpectedSwapP2shAddress');
       }
 
@@ -735,7 +767,8 @@ App.submitCreateSwapQuote = function(event) {
     App.swaps[details.payment_hash] = details;
 
     const redeemInfoJsonSpacing = 2;
-    const swapAddress = details.swap_p2wsh_address;
+    const swapAddress = details.swap_p2sh_address;
+    // const swapAddress = details.swap_p2sh_p2wsh_address;
     const swapAmount = App.format({tokens: details.swap_amount});
 
     const addr = `bitcoin:${swapAddress}?amount=${swapAmount}`;
@@ -872,9 +905,11 @@ App.submitOnlineRefundRecovery = function(event) {
 
       const swap = blockchain.swapScriptDetails({redeem_script: redeemScript});
 
-      $('.refund-p2sh-swap-address').text(swap.p2sh_p2wsh_address);
+      $('.refund-p2sh-p2wsh-swap-address').text(swap.p2sh_p2wsh_address);
+      $('.refund-p2sh-swap-address').text(swap.p2sh_address);
       $('.refund-p2wsh-swap-address').text(swap.p2wsh_address);
       $('#swap-p2sh').val(swap.p2sh_output_script);
+      $('#swap-p2sh-p2wsh').val(swap.p2sh_p2wsh_output_script);
       $('#swap-p2wsh').val(swap.witness_output_script);
 
       $('#tx-details-refund-tab').tab('show');
@@ -954,6 +989,8 @@ App.submitSignWithRefundDetails = function(e) {
     });
   } catch (e) {
     $('.signed-refund-transaction').val('');
+
+    console.log('ERROR', e);
 
     switch (e.message) {
     case 'RefundValueTooSmall':

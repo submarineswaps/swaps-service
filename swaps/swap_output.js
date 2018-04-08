@@ -5,7 +5,8 @@ const notFoundIndex = -1;
 /** Find the swap output in a raw transaction
 
   {
-    p2sh_output_script: <P2SH Nested Output Script Hex String>
+    p2sh_output_script: <Legacy P2SH Output Script Hex String>
+    p2sh_p2wsh_output_script: <P2SH Nested Output Script Hex String>
     transaction: <Raw Transaction Hex String>
     witness_output_script: <Witness Output Script Hex String>
   }
@@ -25,7 +26,12 @@ module.exports = args => {
     throw new Error('ExpectedRawTransaction');
   }
 
-  const outputScripts = [args.p2sh_output_script, args.witness_output_script];
+  const outputScripts = [
+    args.p2sh_output_script,
+    args.p2sh_p2wsh_output_script,
+    args.witness_output_script,
+  ];
+
   let transaction;
 
   const scriptPubs = outputScripts.filter(n => !!n)

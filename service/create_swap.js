@@ -25,12 +25,14 @@ const timeoutBlockCount = 144;
     destination_public_key: <Destination Public Key Hex String>
     invoice: <Lightning Invoice String>
     payment_hash: <Payment Hash Hex String>
+    redeem_script: <Redeem Script Hex String>
     refund_address: <Refund Address String>
     refund_public_key_hash: <Refund Public Key Hash Hex String>
-    redeem_script: <Redeem Script Hex String>
     swap_amount: <Swap Amount Number>
+    swap_fee: <Swap Fee Tokens Number>
     swap_key_index: <Swap Key Index Number>
     swap_p2sh_address: <Swap Chain Legacy P2SH Base58 Address String>
+    swap_p2sh_p2wsh_address: <Swap Chain P2SH Nested SegWit Address String>
     swap_p2wsh_address: <Swap Chain P2WSH Bech32 Address String>
     timeout_block_height: <Swap Expiration Date Number>
   }
@@ -151,14 +153,15 @@ module.exports = (args, cbk) => {
         destination_public_key: res.serverDestinationKey.public_key,
         invoice: args.invoice,
         payment_hash: res.getInvoiceDetails.id,
-        swap_key_index: res.swapKeyIndex,
+        redeem_script: res.swapAddress.redeem_script,
         refund_address: args.refund_address,
         refund_public_key_hash: res.refundAddress.public_key_hash,
-        redeem_script: res.swapAddress.redeem_script,
-        swap_p2sh_address: res.swapAddress.p2wsh_address,
-        swap_p2wsh_address: res.swapAddress.p2sh_p2wsh_address,
         swap_amount: res.getInvoiceDetails.tokens + res.fee,
         swap_fee: res.fee,
+        swap_key_index: res.swapKeyIndex,
+        swap_p2sh_address: res.swapAddress.p2sh_address,
+        swap_p2sh_p2wsh_address: res.swapAddress.p2sh_p2wsh_address,
+        swap_p2wsh_address: res.swapAddress.p2wsh_address,
         timeout_block_height: res.timeoutBlockHeight,
       });
     }],

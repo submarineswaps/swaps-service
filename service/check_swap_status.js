@@ -14,7 +14,7 @@ const blockSearchDepth = 9;
 const minSwapTokens = 1e5;
 const minBlocksUntilRefundHeight = 70;
 const network = 'testnet';
-const requiredConfCount = 0;
+const requiredConfCount = 2;
 
 /** Check the status of a swap
 
@@ -178,6 +178,7 @@ module.exports = (args, cbk) => {
       try {
         swapUtxo = swapOutput({
           p2sh_output_script: res.swapAddress.p2sh_output_script,
+          p2sh_p2wsh_output_script: res.swapAddress.p2sh_p2wsh_output_script,
           transaction: res.findSwapTransaction.transaction,
           witness_output_script: res.swapAddress.witness_output_script,
         });

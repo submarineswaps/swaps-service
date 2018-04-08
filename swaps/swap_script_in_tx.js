@@ -9,6 +9,8 @@ const {hash160} = crypto;
 const {sha256} = crypto;
 const {witnessScriptHash} = script;
 
+const notFound = -1;
+
 /** Find outputs with matching script in transaction
 
   {
@@ -45,10 +47,12 @@ module.exports = args => {
   const txId = transaction.getId();
   const p2wshScript = witnessScriptHash.output.encode(sha256(redeem));
 
-  const p2shScript = encodeScriptHash(hash160(p2wshScript));
-
-  const p2shScriptHex = p2shScript.toString('hex');
-  const p2wshScriptHex = p2wshScript.toString('hex');
+  const outputScripts = [
+    encodeScriptHash(hash160(redeem)),
+    encodeScriptHash(hash160(p2wshScript)),
+    p2wshScript,
+  ]
+    .map(n => n.toString('hex'));
 
   const matchingOutputs = transaction.outs
     .map(({script, value}, vout) => {
@@ -60,7 +64,7 @@ module.exports = args => {
         transaction_id: txId,
       };
     })
-    .filter(n => n.script === p2wshScriptHex || n.script === p2shScriptHex);
+    .filter(({script}) => outputScripts.indexOf(script) !== notFound);
 
   return {matching_outputs: matchingOutputs};
 };

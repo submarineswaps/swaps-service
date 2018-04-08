@@ -5,12 +5,14 @@ const {ECPair} = require('bitcoinjs-lib');
 const {networks} = require('bitcoinjs-lib');
 const {OP_0} = require('bitcoin-ops');
 const {OP_FALSE} = require('bitcoin-ops');
+const {OP_PUSHDATA1} = require('bitcoin-ops');
 const {script} = require('bitcoinjs-lib');
 const {Transaction} = require('bitcoinjs-lib');
 
 const chain = require('./../chain').constants;
-const numberAsBuffer = require('./number_as_buffer');
+const numberAsBuffer = require('varuint-bitcoin').encode;
 const scriptBuffersAsScript = require('./script_buffers_as_script');
+const swapScriptDetails = require('./swap_script_details');
 
 const {SIGHASH_ALL} = Transaction;
 const {sha256} = crypto;
@@ -96,8 +98,18 @@ module.exports = args => {
       return;
     }
 
+    const scriptDetails = swapScriptDetails({redeem_script: redeem});
+
+    if (script === scriptDetails.p2sh_output_script) {
+      return;
+    }
+
+    if (script !== scriptDetails.p2sh_p2wsh_output_script) {
+      throw new Error('UnrecognizedScriptPub');
+    }
+
     const redeemScript = Buffer.from(redeem, 'hex');
-    const witnessVersion = numberAsBuffer({number: OP_0}).toString('hex');
+    const witnessVersion = numberAsBuffer(OP_0).toString('hex');
 
     const nestComponents = [witnessVersion, sha256(redeemScript)];
 
@@ -118,8 +130,52 @@ module.exports = args => {
   // In place of the preimage a dummy spacer byte or a public key is placed
   const space = !isPkHashRefund ? dummy : pubKey;
 
+  // Set legacy p2sh signatures
+  args.utxos.forEach(({redeem, script}, i) => {
+    if (script.length !== nestedScriptPubHexLength) {
+      return;
+    }
+
+    const scriptDetails = swapScriptDetails({redeem_script: redeem});
+
+    if (script === scriptDetails.p2sh_p2wsh_output_script) {
+      return;
+    }
+
+    if (script !== scriptDetails.p2sh_output_script) {
+      throw new Error('UnrecognizedScriptPub');
+    }
+
+    const dummyKey = ECPair.makeRandom();
+    const redeemScript = Buffer.from(redeem, 'hex');
+
+    const sigHash = tx.hashForSignature(i, redeemScript, SIGHASH_ALL);
+
+    const sig = dummyKey.sign(sigHash).toScriptSignature(SIGHASH_ALL);
+
+    const pushDatas = scriptBuffersAsScript([sig, space]);
+
+    const inputScript = Buffer.concat([
+      Buffer.from(pushDatas, 'hex'),
+      space,
+      numberAsBuffer(OP_PUSHDATA1),
+      numberAsBuffer(redeemScript.length),
+      redeemScript,
+    ]);
+
+    tx.setInputScript(i, Buffer.from(inputScript, 'hex'));
+
+    return;
+  });
+
   // Anticipate the final weight of the transaction
   const anticipatedWeight = args.utxos.reduce((sum, utxo) => {
+    const scriptDetails = swapScriptDetails({redeem_script: utxo.redeem});
+
+    if (utxo.script === scriptDetails.p2sh_output_script) {
+      return sum;
+    }
+
     return [
       shortPushdataLength,
       ecdsaSignatureLength,
@@ -151,13 +207,52 @@ module.exports = args => {
 
   const signingKey = ECPair.fromWIF(args.private_key, testnet);
 
-  // Sign each input. We need the dummy to fail the preimage test
-  args.utxos.forEach(({redeem, script, tokens}, i) => {
-    const isNested = !!script && script.length === nestedScriptPubHexLength;
+  // Set legacy p2sh signatures
+  args.utxos.forEach(({redeem, script}, i) => {
+    if (script.length !== nestedScriptPubHexLength) {
+      return;
+    }
+
+    const scriptDetails = swapScriptDetails({redeem_script: redeem});
+
+    if (script === scriptDetails.p2sh_p2wsh_output_script) {
+      return;
+    }
+
+    if (script !== scriptDetails.p2sh_output_script) {
+      throw new Error('UnrecognizedScriptPub');
+    }
+
     const redeemScript = Buffer.from(redeem, 'hex');
 
+    const sigHash = tx.hashForSignature(i, redeemScript, SIGHASH_ALL);
+
+    const sig = signingKey.sign(sigHash).toScriptSignature(SIGHASH_ALL);
+
+    const pushDatas = scriptBuffersAsScript([sig, space]);
+
+    const inputScriptElements = [sig, space, OP_PUSHDATA1, redeemScript];
+
+    const inputScript = scriptBuffersAsScript(inputScriptElements);
+
+    tx.setInputScript(i, Buffer.from(inputScript, 'hex'));
+
+    return;
+  });
+
+  // Sign each input. We need the dummy to fail the preimage test
+  args.utxos.forEach(({redeem, script, tokens}, i) => {
+    const redeemScript = Buffer.from(redeem, 'hex');
+    const scriptDetails = swapScriptDetails({redeem_script: redeem});
+
+    if (script === scriptDetails.p2sh_output_script) {
+      return;
+    }
+
+    const isNested = script.length === nestedScriptPubHexLength;
+
     if (isNested) {
-      const witnessVersion = numberAsBuffer({number: OP_0}).toString('hex');
+      const witnessVersion = numberAsBuffer(OP_0).toString('hex');
 
       const nestComponents = [witnessVersion, sha256(redeemScript)];
 

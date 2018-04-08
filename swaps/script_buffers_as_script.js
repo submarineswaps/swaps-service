@@ -1,4 +1,4 @@
-const numberAsBuf = require('./number_as_buffer');
+const {encode} = require('varuint-bitcoin');
 
 const hexBase = 16;
 
@@ -18,7 +18,7 @@ module.exports = scriptElements => {
   const fullScript = scriptElements
     .map(element => {
       if (Buffer.isBuffer(element)) {
-        return Buffer.concat([numberAsBuf({number: element.length}), element]);
+        return Buffer.concat([encode(element.length), element]);
       } else {
         return Buffer.from(element.toString(hexBase), 'hex');
       }

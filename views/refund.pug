@@ -123,6 +123,17 @@ block content
                           span.refund-p2sh-swap-address
                             | Base58 Standard P2SH Swap Address
                       .custom-control.custom-radio
+                        input.custom-control-input.form-check-input#swap-p2sh-p2wsh(
+                          checked,
+                          name="swap-output",
+                          type="radio",
+                          value="swap-p2sh-p2wsh")
+                        label.custom-control-label.form-check-label(
+                          for="swap-p2sh-p2wsh"
+                        )
+                          span.refund-p2sh-p2wsh-swap-address
+                            | SegWit Base58 Standard P2SH Swap Address
+                      .custom-control.custom-radio
                         input.custom-control-input.form-check-input#swap-p2wsh(
                           name="swap-output",
                           type="radio",

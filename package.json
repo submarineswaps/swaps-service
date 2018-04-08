@@ -20,6 +20,7 @@
     "pug": "2.0.3",
     "pushdata-bitcoin": "1.0.1",
     "uuid": "3.2.1",
+    "varuint-bitcoin": "1.1.0",
     "walnut": "0.0.3"
   },
   "description": "Tools for swaps with Lightning",
