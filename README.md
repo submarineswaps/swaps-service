@@ -1,4 +1,4 @@
-# Orion
+# Swaps Service
 
-Orion is a system for swapping tokens.
+The swaps service is a system for providing and executing Submarine Swaps.
 
