@@ -6,7 +6,6 @@ const {testnet} = networks;
 const {hash160} = crypto;
 
 const notFound = -1;
-const testnets = ['regtest', 'testnet'];
 
 /** Generate a keypair
 
@@ -14,26 +13,31 @@ const testnets = ['regtest', 'testnet'];
     network: <Network Name String>
   }
 
-  @returns via cbk
+  @throws
+  <Error> on invalid arguments
+
+  @returns
   {
+    p2pkh_address: <Pay to Public Key Hash Base58 Address String>
     pk_hash: <Public Key Hash String>
     private_key: <Private Key WIF Encoded String>
     public_key: <Public Key Hex String>
   }
 */
-module.exports = (args, cbk) => {
-  const network = testnets.indexOf(args.network) !== notFound ? testnet : null;
-
+module.exports = ({network}) => {
   if (!network) {
-    return cbk([0, 'Expected known network', args.network]);
+    throw new Error('ExpectedNetwork');
   }
 
-  const keyPair = ECPair.makeRandom({network});
+  const net = network === 'regtest' ? 'testnet' : network;
 
-  return cbk(null, {
+  const keyPair = ECPair.makeRandom({network: networks[net]});
+
+  return {
+    p2pkh_address: keyPair.getAddress(),
     pk_hash: hash160(keyPair.getPublicKeyBuffer()).toString('hex'),
     private_key: keyPair.toWIF(),
     public_key: keyPair.getPublicKeyBuffer().toString('hex'),
-  });
+  };
 };
 

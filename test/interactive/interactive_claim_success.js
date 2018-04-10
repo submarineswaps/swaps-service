@@ -8,7 +8,7 @@ const {broadcastTransaction} = require('./../../chain');
 const {claimTransaction} = require('./../../swaps');
 const {generateChainBlocks} = require('./../../chain');
 const generateInvoice = require(`${macros}generate_invoice`);
-const generateKeyPair = require(`${macros}generate_keypair`);
+const {generateKeyPair} = require('./../../chain');
 const {getBlockchainInfo} = require('./../../chain');
 const {getTransaction} = require('./../../chain');
 const mineTransaction = require(`${macros}mine_transaction`);
@@ -75,12 +75,20 @@ module.exports = (args, cbk) => {
 
     // Alice will need a new keypair to get back refunded coins
     generateAliceKeyPair: ['network', ({network}, cbk) => {
-      return generateKeyPair({network}, cbk);
+      try {
+        return cbk(null, generateKeyPair({network}));
+      } catch (e) {
+        return cbk([0, 'ExpectedGeneratedKeyPair', e]);
+      }
     }],
 
     // Bob will need a keypair to lock coins for the success case
     generateBobKeyPair: ['network', ({network}, cbk) => {
-      return generateKeyPair({network}, cbk);
+      try {
+        return cbk(null, generateKeyPair({network}));
+      } catch (e) {
+        return cbk([0, 'ExpectedGeneratedKeyPair', e]);
+      }
     }],
 
     // Default sweep address for Bob to sweep claimed coins to

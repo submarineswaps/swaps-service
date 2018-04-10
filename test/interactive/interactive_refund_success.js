@@ -9,7 +9,7 @@ const addressForPublicKey = require(`${macros}address_for_public_key`);
 const {broadcastTransaction} = require('./../../chain');
 const {generateChainBlocks} = require('./../../chain');
 const generateInvoice = require(`${macros}generate_invoice`);
-const generateKeyPair = require(`${macros}generate_keypair`);
+const {generateKeyPair} = require('./../../chain');
 const {getBlockchainInfo} = require('./../../chain');
 const {getTransaction} = require('./../../chain');
 const isChainBelowHeight = require(`${macros}is_chain_below_height`);
@@ -72,7 +72,11 @@ module.exports = (args, cbk) => {
 
     // Alice will need a new keypair to get back refunded coins
     generateAliceKeyPair: ['network', ({network}, cbk) => {
-      return generateKeyPair({network}, cbk);
+      try {
+        return cbk(null, generateKeyPair({network}));
+      } catch (e) {
+        return cbk([0, 'ExpectedGeneratedKeyPair', e]);
+      }
     }],
 
     // In a default case we can assume Alice made the invoice herself
@@ -85,7 +89,11 @@ module.exports = (args, cbk) => {
 
     // Bob will need a keypair to lock coins for the success case
     generateBobKeyPair: ['network', ({network}, cbk) => {
-      return generateKeyPair({network}, cbk);
+      try {
+        return cbk(null, generateKeyPair({network}));
+      } catch (e) {
+        return cbk([0, 'ExpectedGeneratedKeyPair', e]);
+      }
     }],
 
     // Default refund address for Alice to get her coins sent back to

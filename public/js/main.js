@@ -4,6 +4,7 @@ const App = {
   check_for_swap_interval_ms: 5000,
   check_for_swap_interval: null,
   invoice_details: {},
+  invoice_refund_keypairs: {},
   swaps: {},
 };
 
@@ -767,8 +768,7 @@ App.submitCreateSwapQuote = function(event) {
     App.swaps[details.payment_hash] = details;
 
     const redeemInfoJsonSpacing = 2;
-    const swapAddress = details.swap_p2sh_address;
-    // const swapAddress = details.swap_p2sh_p2wsh_address;
+    const swapAddress = details.swap_p2sh_p2wsh_address;
     const swapAmount = App.format({tokens: details.swap_amount});
 
     const addr = `bitcoin:${swapAddress}?amount=${swapAmount}`;
@@ -783,13 +783,19 @@ App.submitCreateSwapQuote = function(event) {
     quote.find('.save-redeem-script').click(e => {
       const anchor = document.createElement('a');
       const encoding = 'data:text/plain;charset=utf-8';
-      const text = JSON.stringify({
-        redeem_script: details.redeem_script,
-        refund_after: details.timeout_block_height,
-        swap_address: swapAddress,
-        swap_amount: swapAmount,
-        swap_quote_received_at: new Date().toISOString(),
-      }, null, redeemInfoJsonSpacing);
+
+      const text = JSON.stringify(
+        {
+          redeem_script: details.redeem_script,
+          refund_address: address,
+          refund_after: details.timeout_block_height,
+          swap_address: swapAddress,
+          swap_amount: swapAmount,
+          swap_quote_received_at: new Date().toISOString(),
+        },
+        null,
+        redeemInfoJsonSpacing
+      );
 
       anchor.setAttribute('download', `details.swapaddress.redeem_script.txt`);
       anchor.setAttribute('href', `${encoding},${encodeURIComponent(text)}`);

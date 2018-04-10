@@ -8,7 +8,7 @@ const addressForPublicKey = require(`${macros}address_for_public_key`);
 const {broadcastTransaction} = require('./../chain');
 const {generateChainBlocks} = require('./../chain');
 const generateInvoice = require(`${macros}generate_invoice`);
-const generateKeyPair = require(`${macros}generate_keypair`);
+const {generateKeyPair} = require('./../chain');
 const {getBlockchainInfo} = require('./../chain');
 const mineTransaction = require(`${macros}mine_transaction`);
 const {refundTransaction} = require('./../swaps');
@@ -44,7 +44,13 @@ const swapTimeoutBlocks = 25;
 module.exports = (args, cbk) => {
   return asyncAuto({
     // Alice generates a keypair for her refund output.
-    generateAliceKeyPair: cbk => generateKeyPair({network}, cbk),
+    generateAliceKeyPair: cbk => {
+      try {
+        return cbk(null, generateKeyPair({network}));
+      } catch (e) {
+        return cbk([0, 'ExpectedGeneratedKeyPair', e]);
+      }
+    },
 
     // Chain sync is started. Alice will get block rewards for use in deposit
     spawnChainDaemon: ['generateAliceKeyPair', (res, cbk) => {
@@ -56,7 +62,13 @@ module.exports = (args, cbk) => {
     }],
 
     // Bob generates a keypair for his claim output
-    generateBobKeyPair: cbk => generateKeyPair({network}, cbk),
+    generateBobKeyPair: cbk => {
+      try {
+        return cbk(null, generateKeyPair({network}));
+      } catch (e) {
+        return cbk([0, 'ExpectedGeneratedKeyPair', e]);
+      }
+    },
 
     // Alice generates a Lightning invoice which gives a preimage/hash
     generatePaymentPreimage: ['generateAliceKeyPair', (res, cbk) => {

@@ -10,7 +10,7 @@ const {claimTransaction} = require('./../swaps');
 const {findSwapTransaction} = require('./../service');
 const {generateChainBlocks, getBlockchainInfo} = require('./../chain');
 const generateInvoice = require(`${macros}generate_invoice`);
-const generateKeyPair = require(`${macros}generate_keypair`);
+const {generateKeyPair} = require('./../chain');
 const mineTransaction = require(`${macros}mine_transaction`);
 const {returnResult} = require('./../async-util');
 const sendChainTokensTransaction = require(`${macros}send_chain_tokens_tx`);
@@ -41,10 +41,22 @@ const swapTimeoutBlockCount = 200;
 module.exports = (args, cbk) => {
   return asyncAuto({
     // Alice will make a keypair that she will use to claim her rewarded funds
-    generateAliceKeyPair: cbk => generateKeyPair({network}, cbk),
+    generateAliceKeyPair: cbk => {
+      try {
+        return cbk(null, generateKeyPair({network}));
+      } catch (e) {
+        return cbk([0, 'ExpectedGeneratedKeyPair', e]);
+      }
+    },
 
     // Bob will make a keypair that he will use if Alice doesn't do the swap
-    generateBobKeyPair: cbk => generateKeyPair({network}, cbk),
+    generateBobKeyPair: cbk => {
+      try {
+        return cbk(null, generateKeyPair({network}));
+      } catch (e) {
+        return cbk([0, 'ExpectedGeneratedKeyPair', e]);
+      }
+    },
 
     // Bob will make a Lightning invoice to pay
     generatePaymentPreimage: ['generateBobKeyPair', (res, cbk) => {
