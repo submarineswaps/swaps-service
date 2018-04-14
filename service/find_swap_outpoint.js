@@ -43,7 +43,7 @@ module.exports = (args, cbk) => {
     },
 
     // Derive swap details
-    swapDetails: ['validate', (_, cbk) => {
+    swapDetails: ['validate', ({}, cbk) => {
       try {
         return cbk(null, swapScriptDetails({
           redeem_script: args.redeem_script,

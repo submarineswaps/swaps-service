@@ -1,8 +1,10 @@
 const asyncAuto = require('async/auto');
 const asyncConstant = require('async/constant');
-const {decode} = require('bolt11');
+const {getRoutes} = require('ln-service');
+const {parseInvoice} = require('ln-service');
 
 const getPrice = require('./get_price');
+const {lightningDaemon} = require('./../lightning');
 const {returnResult} = require('./../async-util');
 
 /** Get invoice details
@@ -15,15 +17,16 @@ const {returnResult} = require('./../async-util');
   @returns via cbk
   {
     created_at: <Created At ISO 8601 Date String>
-    currency: <Currency Code String>
     description: <Payment Description String>
     [destination_label]: <Destination Label String>
+    destination_public_key: invoice.destination,
     [destination_url]: <Destination Url String>
-    [expires_at]: <Expires At ISO 8601 Date String>
+    expires_at: <Expires At ISO 8601 Date String>
     [fiat_currency_code]: <Fiat Currency Code String>
     [fiat_value]: <Fiat Value in Cents Number>
     id: <Invoice Id String>
-    is_testnet: <Is Testnet Bool>
+    is_expired: <Invoice is Expired Bool>
+    network: <Network Name String>
     tokens: <Tokens to Send Number>
   }
 */
@@ -38,7 +41,7 @@ module.exports = (args, cbk) => {
     // Decode the supplied invoice
     invoice: cbk => {
       try {
-        return cbk(null, decode(args.invoice));
+        return cbk(null, parseInvoice({invoice: args.invoice}));
       } catch (e) {
         return cbk([400, 'DecodeInvoiceFailure', e]);
       }
@@ -46,16 +49,33 @@ module.exports = (args, cbk) => {
 
     // Check that the supplied invoice is payable
     checkInvoice: ['invoice', ({invoice}, cbk) => {
-      if (!invoice.complete) {
-        return cbk([400, 'InvoiceNotComplete']);
-      }
-
-      if (!invoice.satoshis) {
+      if (!invoice.tokens) {
         return cbk([400, 'InvoiceMissingTokens']);
       }
 
-      if (!!args.min_tokens && invoice.satoshis < args.min_tokens) {
+      if (!!args.min_tokens && invoice.tokens < args.min_tokens) {
         return cbk([400, 'InvoiceTooSmall']);
+      }
+
+      return cbk();
+    }],
+
+    // See if this invoice is payable
+    getRoutes: ['checkInvoice', ({invoice}, cbk) => {
+      try {
+        const {destination} = invoice;
+        const lnd = lightningDaemon({});
+        const {tokens} = invoice;
+
+        return getRoutes({destination, lnd, tokens}, cbk);
+      } catch (e) {
+        return cbk([500, 'FailedToGetRoutes', e]);
+      }
+    }],
+
+    checkRoutes: ['getRoutes', ({getRoutes}, cbk) => {
+      if (!getRoutes.routes.length) {
+        return cbk([503, 'InsufficientCapacityForSwap']);
       }
 
       return cbk();
@@ -75,59 +95,36 @@ module.exports = (args, cbk) => {
       cbk);
     }],
 
-    // Invoice description
-    description: ['invoice', ({invoice}, cbk) => {
-      const description = invoice.tags.find(t => t.tagName === 'description');
-
-      if (!description) {
-        return cbk(null, '');
-      }
-
-      return cbk(null, description.data);
-    }],
-
-    id: ['invoice', ({invoice}, cbk) => {
-      const id = invoice.tags.find(t => t.tagName === 'payment_hash');
-
-      if (!id || !id.data) {
-        return cbk([500, 'InvoiceDecodingFailure']);
-      }
-
-      return cbk(null, id.data);
-    }],
-
     // Fiat value
     fiatValue: ['getPrice', 'invoice', ({getPrice, invoice}, cbk) => {
       if (!getPrice.quote) {
         return cbk();
       }
 
-      return cbk(null, Math.round(getPrice.quote * invoice.satoshis / 1e8));
+      return cbk(null, Math.round(getPrice.quote * invoice.tokens / 1e8));
     }],
 
     // Invoice Details
     invoiceDetails: [
       'currency',
-      'description',
       'fiatCurrency',
       'fiatValue',
-      'id',
       'invoice',
-      ({currency, description, fiatCurrency, fiatValue, id, invoice}, cbk) =>
+      ({currency, fiatCurrency, fiatValue, invoice}, cbk) =>
     {
       return cbk(null, {
-        currency,
-        description,
-        id,
-        created_at: invoice.timestampString,
+        created_at: invoice.created_at,
+        description: invoice.description,
         destination_label: null,
-        destination_public_key: invoice.payeeNodeKey,
+        destination_public_key: invoice.destination,
         destination_url: null,
-        expires_at: invoice.timeExpireDateString || null,
+        expires_at: invoice.expires_at,
         fiat_currency_code: fiatCurrency,
         fiat_value: fiatValue || null,
-        is_testnet: invoice.coinType === 'testnet',
-        tokens: invoice.satoshis,
+        id: invoice.id,
+        is_expired: invoice.is_expired,
+        network: invoice.network,
+        tokens: invoice.tokens,
       });
     }],
   },

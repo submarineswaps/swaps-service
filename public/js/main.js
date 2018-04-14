@@ -3,6 +3,7 @@ const App = {
   change_events: 'change keyup paste',
   check_for_swap_interval_ms: 5000,
   check_for_swap_interval: null,
+  grace_ms: 1800 * 1e3,
   invoice_details: {},
   invoice_refund_keypairs: {},
   swaps: {},
@@ -10,7 +11,7 @@ const App = {
 
 /** Changed the currency
 */
-App.changedCurrencySelection = function(_) {
+App.changedCurrencySelection = function({}) {
   const createSwapQuote = $(this).closest('.create-swap-quote');
   const currencyCode = $(this).val();
 
@@ -52,9 +53,13 @@ App.changedInvoice = function({}) {
     }
 
     if (!!err) {
+      console.log('ERR', err);
+
+      const [errCode, errMessage] = err;
+
       detailsDisplay.collapse('hide');
 
-      input.addClass('is-invalid', err.message === 'InvalidInvoice');
+      input.addClass('is-invalid', errMessage === 'InvalidInvoice');
 
       return;
     }
@@ -71,7 +76,7 @@ App.changedInvoice = function({}) {
 
 /** Changed the refund address
 */
-App.changedRefundAddress = function(_) {
+App.changedRefundAddress = function({}) {
   const input = $(this);
 
   const address = input.val().trim();
@@ -118,7 +123,7 @@ App.changedRefundAddress = function(_) {
 
 /** Changed the refund script
 */
-App.changedRefundScript = function(_) {
+App.changedRefundScript = function({}) {
   const redeemScript = $(this).val().trim();
 
   // Exit early when the refund address is blanked
@@ -463,7 +468,6 @@ App.getAddressDetails = ({address}, cbk) => {
   @returns via cbk
   {
     created_at: <Created At ISO 8601 Date String>
-    currency: <Currency Code String>
     description: <Payment Description String>
     [destination_label]: <Destination Label String>
     [destination_url]: <Destination Url String>
@@ -472,6 +476,7 @@ App.getAddressDetails = ({address}, cbk) => {
     [fiat_value]: <Fiat Value in Cents Number>
     id: <Invoice Id String>
     is_testnet: <Is Testnet Bool>
+    network: <Network Name String>
     tokens: <Tokens to Send Number>
   }
 */
@@ -495,19 +500,33 @@ App.getInvoiceDetails = ({invoice}, cbk) => {
         throw new Error('ExpectedCreatedAt');
       }
 
-      if (!details.currency) {
-        throw new Error('ExpectedCurrency');
-      }
-
       if (typeof details.description !== 'string') {
         throw new Error('ExpectedDescription');
+      }
+
+      if (!details.destination_public_key) {
+        throw new Error('ExpectedDestinationPublicKey');
+      }
+
+      if (!details.expires_at) {
+        throw new Error('ExpectedExpiresAt');
+      }
+
+      const latestDate = new Date(Date.now() + App.grace_ms).toISOString();
+
+      if (details.expires_at < latestDate) {
+        throw new Error('InvoiceExpiresTooSoon');
       }
 
       if (!details.id) {
         throw new Error('ExpectedId');
       }
 
-      if (details.is_testnet === undefined) {
+      if (details.is_expired !== false) {
+        throw new Error('ExpectedUnexpiredInvoice');
+      }
+
+      if (details.network !== 'testnet') {
         throw new Error('ExpectedIsTestnet');
       }
 
@@ -518,7 +537,7 @@ App.getInvoiceDetails = ({invoice}, cbk) => {
       return details;
     })
     .then(details => cbk(null, details))
-    .catch(err => cbk(err));
+    .catch(err => cbk([500, err.message]));
 };
 
 /** Get the status of a swap

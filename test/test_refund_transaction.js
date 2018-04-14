@@ -1,5 +1,6 @@
 const {equal} = require('tap');
 const {throws} = require('tap');
+const {Transaction} = require('bitcoinjs-lib');
 
 const {refundTransaction} = require('./../swaps');
 
@@ -76,7 +77,13 @@ const fixtures = {
     }],
   });
 
-  equal(transaction, '0100000001156a861dc99d2a12a5ff63f710d132f6eba774648efc006332b674aad5b47b5100000000b4483045022100ff18b4e6e6721aaa915af336f092709fc02c35fa532e97763f0fdc651ab8a4640220346c5f2a36ce92de651ec970648174310aa94d8be63d9751a005c63189a8e87601004c6876a820035ff161edf1fb1db2c334f3b85e736cfe49d117fcf0d4741146c148941488ee8763752102cab08827d262384d8e1349078c8432d671bb468b9f60c7a298c8a9c0137dd96b67027802b17576a914e7c4f66eabfdbae4861f3de5331ab4f5622ad83f8868ac0000000001a88b052a01000000160014153607c57d789c3da20a812aaf19a17bb9abe0eab6010000');
+  const tx = Transaction.fromHex(transaction);
+
+  // Eliminate non-deterministic signature and output value
+  tx.ins[0].script = Buffer.from([]);
+  tx.outs[0].value = 0;
+
+  equal(tx.toHex(), '0100000001156a861dc99d2a12a5ff63f710d132f6eba774648efc006332b674aad5b47b51000000000000000000010000000000000000160014153607c57d789c3da20a812aaf19a17bb9abe0eab6010000');
 }
 
 // Test a refund transaction failing due to dusty output

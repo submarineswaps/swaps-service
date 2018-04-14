@@ -1,12 +1,15 @@
 const asyncAuto = require('async/auto');
+const {createAddress} = require('ln-service');
+const {getRoutes} = require('ln-service');
+const {parseInvoice} = require('ln-service');
+const {payInvoice} = require('ln-service');
 
 const {broadcastTransaction} = require('./../chain');
 const {claimTransaction} = require('./../swaps');
-const {createAddress} = require('./../lightning');
 const {getBlockchainInfo} = require('./../chain');
 const {getChainFeeRate} = require('./../chain');
 const {getFee} = require('./../chain');
-const {payInvoice} = require('./../lightning');
+const {lightningDaemon} = require('./../lightning');
 const {returnResult} = require('./../async-util');
 const {swapScriptInTransaction} = require('./../swaps');
 
@@ -34,8 +37,23 @@ module.exports = (args, cbk) => {
     // Figure out what fee is needed to sweep the funds
     getFee: cbk => getChainFeeRate({network: args.network}, cbk),
 
-    // Make a new address to sweep out the funds to
-    getSweepAddress: cbk => createAddress({}, cbk),
+    // Parse the given invoice
+    invoice: cbk => {
+      try {
+        return cbk(null, parseInvoice({invoice: args.invoice}));
+      } catch (e) {
+        return cbk([400, 'DecodeInvoiceFailure', e]);
+      }
+    },
+
+    // Initialize the LN daemon connection
+    lnd: cbk => {
+      try {
+        return cbk(null, lightningDaemon({}));
+      } catch (e) {
+        return cbk([500, 'FailedToInitLightningDaemonConnection']);
+      }
+    },
 
     // Check completion arguments
     validate: cbk => {
@@ -74,23 +92,52 @@ module.exports = (args, cbk) => {
       }
     }],
 
+    // See if this invoice is payable
+    getRoutes: ['invoice', 'lnd', ({invoice, lnd}, cbk) => {
+      const {destination} = invoice;
+      const {tokens} = invoice;
+
+      return getRoutes({destination, lnd, tokens}, cbk);
+    }],
+
+    checkRoutes: ['getRoutes', ({getRoutes}, cbk) => {
+      if (!getRoutes.routes.length) {
+        return cbk([503, 'InsufficientCapacity']);
+      }
+
+      return cbk();
+    }],
+
+    // Make a new address to sweep out the funds to
+    getSweepAddress: ['checkRoutes', 'lnd', ({lnd}, cbk) => {
+      return createAddress({lnd}, cbk);
+    }],
+
     // Pay the invoice
     payInvoice: [
       'fundingUtxos',
       'getBlockchainInfo',
       'getFee',
       'getSweepAddress',
-      ({}, cbk) =>
+      'lnd',
+      ({lnd}, cbk) =>
     {
-      return payInvoice({invoice: args.invoice}, cbk);
+      return payInvoice({lnd, invoice: args.invoice, wss: []}, cbk);
     }],
 
     // Create a claim transaction to sweep the swap to the destination address
-    claimTransaction: ['payInvoice', (res, cbk) => {
+    claimTransaction: [
+      'fundingUtxos',
+      'getBlockchainInfo',
+      'getFee',
+      'getSweepAddress',
+      'payInvoice',
+      (res, cbk) =>
+    {
       try {
         return cbk(null, claimTransaction({
           current_block_height: res.getBlockchainInfo.current_height,
-          destination: res.getSweepAddress.chain_address,
+          destination: res.getSweepAddress.address,
           fee_tokens_per_vbyte: res.getFee.fee_tokens_per_vbyte,
           preimage: res.payInvoice.payment_secret,
           private_key: args.private_key,
@@ -103,11 +150,9 @@ module.exports = (args, cbk) => {
 
     // Broadcast the claim transaction
     broadcastTransaction: ['claimTransaction', ({claimTransaction}, cbk) => {
-      return broadcastTransaction({
-        network: args.network,
-        transaction: claimTransaction.transaction,
-      },
-      cbk);
+      const {transaction} = claimTransaction;
+
+      return broadcastTransaction({transaction, network: args.network}, cbk);
     }],
 
     // Return the details of the completed swap

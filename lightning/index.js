@@ -1,5 +1,4 @@
-const createAddress = require('./create_address');
-const payInvoice = require('./pay_invoice');
+const lightningDaemon = require('./lightning_daemon');
 
-module.exports = {createAddress, payInvoice};
+module.exports = {lightningDaemon};
 

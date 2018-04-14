@@ -34,7 +34,7 @@ module.exports = (args, cbk) => {
   return asyncAuto({
     // Make blocks to maturity
     generateBlocks: cbk => {
-      return asyncTimesSeries(args.blocks_count, (_, cbk) => {
+      return asyncTimesSeries(args.blocks_count, ({}, cbk) => {
         return chainRpc({
           cmd: generate,
           network: args.network,

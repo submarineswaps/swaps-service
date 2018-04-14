@@ -33,7 +33,8 @@ const swapTimeoutBlocks = 25;
   Alice waits out the timeout and takes her tokens back.
 
   {
-    is_refund_to_public_key_hash: <Is Refund to PK Hash Bool>
+    [is_refund_to_public_key_hash]: <Is Refund to PK Hash Bool> = false
+    swap_type: <Swap Type String>
   }
 
   @returns via cbk
@@ -88,7 +89,7 @@ module.exports = (args, cbk) => {
     }],
 
     // A bunch of blocks are made so Alice's rewards are mature
-    generateToMaturity: ['spawnChainDaemon', (_, cbk) => {
+    generateToMaturity: ['spawnChainDaemon', ({}, cbk) => {
       return generateChainBlocks({
         network,
         blocks_count: chain.maturity_block_count,
@@ -98,7 +99,7 @@ module.exports = (args, cbk) => {
     }],
 
     // Get the state of the chain at maturity when Alice is ready to spend
-    getMatureChainInfo: ['generateToMaturity', (_, cbk) => {
+    getMatureChainInfo: ['generateToMaturity', ({}, cbk) => {
       return getBlockchainInfo({network}, cbk);
     }],
 
@@ -156,7 +157,7 @@ module.exports = (args, cbk) => {
       (res, cbk) =>
     {
       return sendChainTokensTransaction({
-        destination: res.createChainSwapAddress.p2wsh_address,
+        destination: res.createChainSwapAddress[`${args.swap_type}_address`],
         private_key: res.generateAliceKeyPair.private_key,
         spend_transaction_id: res.aliceUtxo.transaction_id,
         spend_vout: res.aliceUtxo.vout,
@@ -175,7 +176,7 @@ module.exports = (args, cbk) => {
     }],
 
     // Alice checks the height after funding
-    getHeightAfterFunding: ['mineFundingTx', (_, cbk) => {
+    getHeightAfterFunding: ['mineFundingTx', ({}, cbk) => {
       return getBlockchainInfo({network}, cbk);
     }],
 
@@ -233,7 +234,7 @@ module.exports = (args, cbk) => {
     }],
 
     // Bob never gets the preimage and claims his funds. Many blocks go by
-    generateTimeoutBlocks: ['mineFundingTx', (_, cbk) => {
+    generateTimeoutBlocks: ['mineFundingTx', ({}, cbk) => {
       return generateChainBlocks({
         network,
         blocks_count: swapTimeoutBlocks,
@@ -242,7 +243,7 @@ module.exports = (args, cbk) => {
     }],
 
     // Grab the current height to use in the sweep tx
-    getHeightForRefund: ['generateTimeoutBlocks', (_, cbk) => {
+    getHeightForRefund: ['generateTimeoutBlocks', ({}, cbk) => {
       return getBlockchainInfo({network}, cbk);
     }],
 
@@ -282,26 +283,32 @@ module.exports = (args, cbk) => {
   returnResult({}, cbk));
 };
 
-test('perform swap and refund with a pkhash', t => {
-  return module.exports({is_refund_to_public_key_hash: true}, testErr => {
-    return stopChainDaemon({network}, stopErr => {
-      if (!!stopErr || !!testErr) {
-        throw new Error(testErr[1] || stopErr[1]);
-      }
+['p2sh', 'p2sh_p2wsh', 'p2wsh'].forEach(swapType => {
+  test(`perform swap and refund: pkhash refund, ${swapType} swap addr`, t => {
+    return module.exports({
+      is_refund_to_public_key_hash: true,
+      swap_type: swapType,
+    },
+    testErr => {
+      return stopChainDaemon({network}, stopErr => {
+        if (!!stopErr || !!testErr) {
+          throw new Error(testErr[1] || stopErr[1]);
+        }
 
-      return t.end();
+        return t.end();
+      });
     });
   });
-});
 
-test('perform swap and refund with refund key', t => {
-  return module.exports({}, testErr => {
-    return stopChainDaemon({network}, stopErr => {
-      if (!!stopErr || !!testErr) {
-        throw new Error(testErr[1] || stopErr[1]);
-      }
+  test(`perform swap and refund: pk refund, ${swapType} swap addr`, t => {
+    return module.exports({swap_type: swapType}, testErr => {
+      return stopChainDaemon({network}, stopErr => {
+        if (!!stopErr || !!testErr) {
+          throw new Error(testErr[1] || stopErr[1]);
+        }
 
-      return t.end();
+        return t.end();
+      });
     });
   });
 });

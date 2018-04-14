@@ -1,4 +1,5 @@
 const asyncAuto = require('async/auto');
+const {parseInvoice} = require('ln-service');
 const {Transaction} = require('bitcoinjs-lib');
 
 const macros = './../macros/';
@@ -12,7 +13,6 @@ const {generateKeyPair} = require('./../../chain');
 const {getBlockchainInfo} = require('./../../chain');
 const {getTransaction} = require('./../../chain');
 const mineTransaction = require(`${macros}mine_transaction`);
-const parseLightningInvoice = require(`${macros}parse_lightning_invoice`);
 const promptForInput = require(`${macros}prompt`);
 const {returnResult} = require('./../../async-util');
 const sendChainTokensTransaction = require(`${macros}send_chain_tokens_tx`);
@@ -168,10 +168,11 @@ module.exports = (args, cbk) => {
 
     // Bob needs to parse the invoice to find the hash to lock the swap to
     parseLightningInvoice: ['promptForLightingInvoice', (res, cbk) => {
-      return parseLightningInvoice({
-        invoice: res.promptForLightingInvoice.value,
-      },
-      cbk);
+      try {
+        return parseInvoice({invoice: res.promptForLightingInvoice.value});
+      } catch (e) {
+        return cbk([0, 'ExpectedValidInvoice', e]);
+      }
     }],
 
     // Determine the height at which this swap expires

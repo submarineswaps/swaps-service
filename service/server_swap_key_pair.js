@@ -9,11 +9,6 @@ const {OCW_CLAIM_BIP39_SEED} = process.env;
 const minIndex = 0;
 const maxIndex = 4294967295;
 
-if (!validateMnemonic(OCW_CLAIM_BIP39_SEED)) {
-  console.log([500, 'ExpectedValidMnemonic', generateMnemonic()]);
-  process.exit();
-}
-
 /** Server swap key pair
 
   {
@@ -31,6 +26,11 @@ if (!validateMnemonic(OCW_CLAIM_BIP39_SEED)) {
   }
 */
 module.exports = ({index, network}) => {
+  if (!validateMnemonic(OCW_CLAIM_BIP39_SEED)) {
+    console.log([500, 'ExpectedValidMnemonic', generateMnemonic()]);
+    process.exit();
+  }
+
   if (index === undefined || index < minIndex || index > maxIndex) {
     throw new Error('ExpectedValidIndex');
   }

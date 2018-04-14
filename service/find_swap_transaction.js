@@ -60,7 +60,7 @@ module.exports = (args, cbk) => {
       return cbk();
     },
 
-    swap: ['validate', (_, cbk) => {
+    swap: ['validate', ({}, cbk) => {
       return cbk(null, swapAddress({
         destination_public_key: args.destination_public_key,
         payment_hash: args.payment_hash,

@@ -29,8 +29,14 @@ const swapTimeoutBlockCount = 200;
 
 /** Test a claim success script against regtest
 
+  Alice and Bob will execute a successful swap:
+  : Alice creates a swap address with both public keys and pay hash
+  : Bob sends funds to the swap address
+  : Alice sweeps the funds into her address
+
   {
     [is_refund_to_public_key_hash]: <Is Refund to PKHash Flow Bool>
+    swap_type: <Swap Address Type String>
   }
 
   @returns via cbk
@@ -85,7 +91,7 @@ module.exports = (args, cbk) => {
     }],
 
     // The chain needs to progress to maturity for Bob to spend his rewards
-    generateToMaturity: ['spawnChainDaemon', (_, cbk) => {
+    generateToMaturity: ['spawnChainDaemon', ({}, cbk) => {
       return generateChainBlocks({
         network,
         blocks_count: maturityBlockCount,
@@ -136,7 +142,7 @@ module.exports = (args, cbk) => {
     // Bob makes a send transaction to fund the swap with his coins
     fundSwapAddress: ['bobUtxo', 'createChainSwapAddress', (res, cbk) => {
       return sendChainTokensTransaction({
-        destination: res.createChainSwapAddress.p2wsh_address,
+        destination: res.createChainSwapAddress[`${args.swap_type}_address`],
         private_key: res.generateBobKeyPair.private_key,
         spend_transaction_id: res.bobUtxo.transaction_id,
         spend_vout: res.bobUtxo.vout,
@@ -300,38 +306,42 @@ module.exports = (args, cbk) => {
 
     // Alice's rewarded coins are confirmed back to an address she controls
     mineClaimTransaction: ['claimTransaction', ({claimTransaction}, cbk) => {
-      return mineTransaction({
-        network,
-        transaction: claimTransaction.transaction,
-      },
-      cbk);
+      const {transaction} = claimTransaction;
+
+      return mineTransaction({network, transaction}, cbk);
     }],
   },
   returnResult({}, cbk));
 };
 
-// Make sure that we can swap with a pkhash
-test('perform swap with pkhash', t => {
-  return module.exports({is_refund_to_public_key_hash: true}, testErr => {
-    return stopChainDaemon({network}, stopErr => {
-      if (!!stopErr || !!testErr) {
-        throw new Error(testErr[1] || stopErr[1]);
-      }
+['p2sh', 'p2sh_p2wsh', 'p2wsh'].forEach(swapType => {
+  // Make sure that we can swap with a pkhash
+  test(`perform swap: pkhash refund, ${swapType} swap address`, t => {
+    return module.exports({
+      is_refund_to_public_key_hash: true,
+      swap_type: swapType,
+    },
+    testErr => {
+      return stopChainDaemon({network}, stopErr => {
+        if (!!stopErr || !!testErr) {
+          throw new Error(testErr[1] || stopErr[1]);
+        }
 
-      return t.end();
+        return t.end();
+      });
     });
   });
-});
 
-// Make sure that we can swap with a public key
-test('perform swap with public key refund', t => {
-  return module.exports({}, testErr => {
-    return stopChainDaemon({network}, stopErr => {
-      if (!!stopErr || !!testErr) {
-        throw new Error(testErr[1] || stopErr[1]);
-      }
+  // Make sure that we can swap with a public key
+  test(`perform swap: public key refund, ${swapType} swap address`, t => {
+    return module.exports({swap_type: swapType}, testErr => {
+      return stopChainDaemon({network}, stopErr => {
+        if (!!stopErr || !!testErr) {
+          throw new Error(testErr[1] || stopErr[1]);
+        }
 
-      return t.end();
+        return t.end();
+      });
     });
   });
 });
