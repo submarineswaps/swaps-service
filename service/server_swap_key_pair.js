@@ -4,7 +4,7 @@ const {mnemonicToSeed} = require('bip39');
 const {networks} = require('bitcoinjs-lib');
 const {validateMnemonic} = require('bip39');
 
-const {OCW_CLAIM_BIP39_SEED} = process.env;
+const {SSS_CLAIM_BIP39_SEED} = process.env;
 
 const minIndex = 0;
 const maxIndex = 4294967295;
@@ -26,7 +26,7 @@ const maxIndex = 4294967295;
   }
 */
 module.exports = ({index, network}) => {
-  if (!validateMnemonic(OCW_CLAIM_BIP39_SEED)) {
+  if (!validateMnemonic(SSS_CLAIM_BIP39_SEED)) {
     console.log([500, 'ExpectedValidMnemonic', generateMnemonic()]);
     process.exit();
   }
@@ -39,7 +39,7 @@ module.exports = ({index, network}) => {
     throw new Error('ExpectedValidNetwork');
   }
 
-  const seed = mnemonicToSeed(OCW_CLAIM_BIP39_SEED);
+  const seed = mnemonicToSeed(SSS_CLAIM_BIP39_SEED);
 
   const root = HDNode.fromSeedBuffer(seed, networks[network]);
 

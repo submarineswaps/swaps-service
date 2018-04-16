@@ -11,13 +11,13 @@ const walnut = require('walnut');
 const apiRouter = require('./routers/api');
 
 const {NODE_ENV} = process.env;
-const {OCW_PORT} = process.env;
+const {SSS_PORT} = process.env;
 const {PORT} = process.env;
 
 const browserifyPath = `${__dirname}/public/browserify/index.js`;
 const isProduction = NODE_ENV === 'production';
 const morganLogLevel = 'dev';
-const port = PORT || OCW_PORT || 9889;
+const port = PORT || SSS_PORT || 9889;
 
 const app = express();
 

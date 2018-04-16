@@ -21,6 +21,7 @@ const blockSearchRateLimit = 300;
     [refund_public_key]: <Refund Public Key Hex String>
     [refund_public_key_hash]: <Refund Public Key Hash Hex String>
     timeout_block_height: <Swap Expiration Date Number>
+    tokens: <Tokens Output Number>
   }
 
   @returns via cbk
@@ -38,23 +39,27 @@ module.exports = (args, cbk) => {
     // Check the arguments
     validate: cbk => {
       if (!args.block_search_depth) {
-        return cbk([500, 'ExpectedBlockSearchDepth']);
+        return cbk([400, 'ExpectedBlockSearchDepth']);
       }
 
       if (!args.destination_public_key) {
-        return cbk([500, 'ExpectedDestinationPublicKey']);
+        return cbk([400, 'ExpectedDestinationPublicKey']);
       }
 
       if (!args.payment_hash) {
-        return cbk([500, 'ExpectedPaymentHash']);
+        return cbk([400, 'ExpectedPaymentHash']);
       }
 
       if (!args.refund_public_key && !args.refund_public_key_hash) {
-        return cbk([500, 'ExpectedRefundKeyOrKeyHash']);
+        return cbk([400, 'ExpectedRefundKeyOrKeyHash']);
       }
 
       if (!args.timeout_block_height) {
-        return cbk([500, 'ExpectedTimeoutBlockHeight']);
+        return cbk([400, 'ExpectedTimeoutBlockHeight']);
+      }
+
+      if (!args.tokens) {
+        return cbk([400, 'ExpectedTokens']);
       }
 
       return cbk();
@@ -84,6 +89,7 @@ module.exports = (args, cbk) => {
       return findScriptPubInMempool({
         network: args.network,
         output_scripts: outputScripts,
+        tokens: args.tokens,
       },
       cbk);
     }],
@@ -106,6 +112,7 @@ module.exports = (args, cbk) => {
             block_hash: cursor,
             network: args.network,
             output_scripts: outputScripts,
+            tokens: args.tokens,
           },
           (err, res) => {
             if (!!err) {

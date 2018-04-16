@@ -3,14 +3,17 @@ const asyncConstant = require('async/constant');
 const {getRoutes} = require('ln-service');
 const {parseInvoice} = require('ln-service');
 
+const {getChainFeeRate} = require('./../chain');
 const getPrice = require('./get_price');
 const {lightningDaemon} = require('./../lightning');
 const {returnResult} = require('./../async-util');
 
+const approxTxVSize = 200;
+
 /** Get invoice details
 
   {
-    [min_tokens]: <Minimum Tokens Number>
+    [max_invoice_fee_rate]: <Max invoice Fee Rate Number>
     invoice: <Invoice String>
   }
 
@@ -73,9 +76,32 @@ module.exports = (args, cbk) => {
       }
     }],
 
-    checkRoutes: ['getRoutes', ({getRoutes}, cbk) => {
+    // Make sure the routing fee is not too high
+    checkRoutingFee: ['getRoutes', 'invoice', ({getRoutes, invoice}, cbk) => {
+      const maxFee = Math.max(...getRoutes.routes.map(({fee}) => fee));
+
       if (!getRoutes.routes.length) {
         return cbk([503, 'InsufficientCapacityForSwap']);
+      }
+
+      if (maxFee / invoice.tokens > args.max_invoice_fee_rate) {
+        return cbk([503, 'RoutingFeesTooHighToSwap']);
+      }
+
+      return cbk();
+    }],
+
+    // Get the current chain fees
+    chainFee: ['invoice', ({invoice}, cbk) => {
+      return getChainFeeRate({network: invoice.network}, cbk);
+    }],
+
+    // Make sure the chain fee is not too high
+    checkChainFee: ['chainFee', 'invoice', ({chainFee, invoice}, cbk) => {
+      const approxFee = chainFee.fee_tokens_per_vbyte * approxTxVSize;
+
+      if (approxFee / invoice.tokens > args.max_invoice_fee_rate) {
+        return cbk([503, 'ChainFeesTooHighToSwap']);
       }
 
       return cbk();

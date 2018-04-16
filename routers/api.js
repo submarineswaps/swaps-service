@@ -8,7 +8,7 @@ const {getAddressDetails} = require('./../service');
 const {getInvoiceDetails} = require('./../service');
 const {returnJson} = require('./../async-util');
 
-const minInvoiceTokens = 1e5;
+const maxInvoiceFeeRate = 0.005;
 
 /** Make an api router
 
@@ -37,7 +37,7 @@ module.exports = ({log}) => {
 
     return getInvoiceDetails({
       invoice,
-      min_tokens: minInvoiceTokens,
+      max_invoice_fee_rate: maxInvoiceFeeRate,
     },
     returnJson({log, res}));
   });

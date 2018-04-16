@@ -1,5 +1,9 @@
+const asyncAuto = require('async/auto');
+
 const chainRpc = require('./chain_rpc');
+const getBlockchainInfo = require('./get_blockchain_info');
 const parseTokenValue = require('./parse_token_value');
+const returnResult = require('./../async-util');
 
 const cmd = require('./conf/rpc_commands').estimateSmartFee;
 

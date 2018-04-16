@@ -1,4 +1,5 @@
 const asyncAuto = require('async/auto');
+const {parseInvoice} = require('ln-service');
 const {Transaction} = require('bitcoinjs-lib');
 
 const completeSwapTransaction = require('./complete_swap_transaction');
@@ -14,7 +15,8 @@ const blockSearchDepth = 9;
 const minSwapTokens = 1e5;
 const minBlocksUntilRefundHeight = 70;
 const network = 'testnet';
-const requiredConfCount = 2;
+const requiredConfCount = 1;
+const swapRate = 0.015;
 
 /** Check the status of a swap
 
@@ -41,6 +43,15 @@ module.exports = (args, cbk) => {
   return asyncAuto({
     // Get the current chain height
     getChainInfo: cbk => getBlockchainInfo({network}, cbk),
+
+    // Parse the encoded invoice
+    invoice: cbk => {
+      try {
+        return cbk(null, parseInvoice({invoice: args.invoice}));
+      } catch (e) {
+        return cbk([400, 'InvalidInvoice', e]);
+      }
+    },
 
     // Check arguments
     validate: cbk => {
@@ -142,7 +153,8 @@ module.exports = (args, cbk) => {
     findSwapTransaction: [
       'checkDestinationPublicKey',
       'checkTimelockHeight',
-      ({}, cbk) =>
+      'invoice',
+      ({invoice}, cbk) =>
     {
       return findSwapTransaction({
         network,
@@ -151,6 +163,7 @@ module.exports = (args, cbk) => {
         payment_hash: args.payment_hash,
         refund_public_key_hash: args.refund_public_key_hash,
         timeout_block_height: args.timeout_block_height,
+        tokens: invoice.tokens + Math.round(invoice.tokens * swapRate),
       },
       cbk);
     }],
