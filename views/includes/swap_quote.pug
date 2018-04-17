@@ -83,27 +83,31 @@
                 span #{' '}
                 span Pay to Swap Address
             .collapse.hide.make-payment
-              .form-group.swap-payment-details
-                label
-                  span Send
-                  span #{' '}
-                  strong tBTC
-                  span #{' '}
-                  span to Swap Address:
-                input.form-control.form-control-lg.swap-address(
-                  readonly,
-                  type="text",
-                  value="Loading...",
-                )
-              .form-group.swap-payment-details
-                label Amount:
-                input.form-control.form-control-lg.swap-amount(
-                  readonly,
-                  type="text",
-                  value="Loading..."
-                )
-                small.form-text.text-muted
-                  | Make sure to send the exact amount!
+              .row
+                .col-8
+                  .form-group.swap-payment-details
+                    label
+                      span Send
+                      span #{' '}
+                      strong tBTC
+                      span #{' '}
+                      span to Swap Address:
+                    input.form-control.form-control-lg.swap-address(
+                      readonly,
+                      type="text",
+                      value="Loading...",
+                    )
+                  .form-group.swap-payment-details
+                    label Amount:
+                    input.form-control.form-control-lg.swap-amount(
+                      readonly,
+                      type="text",
+                      value="Loading..."
+                    )
+                    small.form-text.text-muted
+                      | Make sure to send the exact amount!
+                .col-4
+                  .pb-4.pt-4.qr-code
               .alert.alert-secondary.waiting-notification(role="alert")
                 h4.alert-heading.collapse.hide.tx-found Swap Pending
                 h5.pull-right

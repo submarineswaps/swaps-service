@@ -715,6 +715,29 @@ App.presentCompletedSwap = args => {
   return;
 };
 
+/** Get qr code
+
+  {
+    address: <Address String>
+    amount: <Amount String>
+  }
+
+  @returns
+  <QR Code Img Object>
+*/
+App.qrCode = ({address, amount}) => {
+  const addressLink = `bitcoin:${address}?amount=${amount}`;
+  const back = 'rgb(250, 250, 250)';
+  const rounded = 100;
+  const size = 300;
+
+  const qr = kjua({back, rounded, size, text: addressLink});
+
+  $(qr).css({height: 'auto', 'max-width': '160px', width: '100%'});
+
+  return qr;
+};
+
 /** Show invoice
 
   {
@@ -805,10 +828,14 @@ App.submitCreateSwapQuote = function(event) {
     const swapAddress = details.swap_p2sh_p2wsh_address;
     const swapAmount = App.format({tokens: details.swap_amount});
 
-    const addr = `bitcoin:${swapAddress}?amount=${swapAmount}`;
+    const qs = $.param({amount: swapAmount, message: details.redeem_script});
+
+    const addr = `bitcoin:${swapAddress}?${qs}`;
+    const qrCode = App.qrCode({address: swapAddress, amount: swapAmount});
 
     quote.data({payment_hash: details.payment_hash});
     quote.find('.chain-link').prop('href', addr);
+    quote.find('.qr-code').append(qrCode);
     quote.find('.redeem-script').val(details.redeem_script);
     quote.find('.swap-address').val(swapAddress);
     quote.find('.swap-amount').val(swapAmount);

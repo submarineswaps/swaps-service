@@ -1,5 +1,6 @@
 const asyncAuto = require('async/auto');
 const {createAddress} = require('ln-service');
+const {createInvoice} = require('ln-service');
 const {getRoutes} = require('ln-service');
 const {parseInvoice} = require('ln-service');
 const {payInvoice} = require('ln-service');
@@ -113,15 +114,27 @@ module.exports = (args, cbk) => {
       return createAddress({lnd}, cbk);
     }],
 
-    // Pay the invoice
-    payInvoice: [
+    // Hack around the locking failure of paying invoices twice
+    createLockingInvoice: [
       'fundingUtxos',
       'getBlockchainInfo',
       'getFee',
       'getSweepAddress',
+      'invoice',
       'lnd',
-      ({lnd}, cbk) =>
+      ({invoice, lnd}, cbk) =>
     {
+      return createInvoice({
+        lnd,
+        payment_secret: invoice.id,
+        tokens: 1,
+        wss: [],
+      },
+      cbk);
+    }],
+
+    // Pay the invoice
+    payInvoice: ['createLockingInvoice', 'lnd', ({lnd}, cbk) => {
       return payInvoice({lnd, invoice: args.invoice, wss: []}, cbk);
     }],
 
