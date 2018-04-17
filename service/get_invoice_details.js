@@ -56,10 +56,6 @@ module.exports = (args, cbk) => {
         return cbk([400, 'InvoiceMissingTokens']);
       }
 
-      if (!!args.min_tokens && invoice.tokens < args.min_tokens) {
-        return cbk([400, 'InvoiceTooSmall']);
-      }
-
       return cbk();
     }],
 

@@ -53,13 +53,25 @@ App.changedInvoice = function({}) {
     }
 
     if (!!err) {
-      console.log('ERR', err);
-
       const [errCode, errMessage] = err;
 
       detailsDisplay.collapse('hide');
 
-      input.addClass('is-invalid', errMessage === 'InvalidInvoice');
+      input.addClass('is-invalid');
+
+      let text;
+
+      switch (errMessage) {
+      case 'ChainFeesTooHighToSwap':
+        text = 'Value too low for a chain swap. Use a higher value invoice?';
+        break;
+
+      default:
+        text = '';
+        break;
+      }
+
+      swap.find('.invoice-issue').text(text);
 
       return;
     }
@@ -487,11 +499,8 @@ App.getInvoiceDetails = ({invoice}, cbk) => {
       case 200:
         return Promise.resolve(r);
 
-      case 400:
-        return Promise.reject(new Error('InvalidInvoice'));
-
       default:
-        return Promise.reject(new Error(r.statusText));
+        return Promise.reject(r);
       }
     })
     .then(r => r.json())
@@ -537,7 +546,13 @@ App.getInvoiceDetails = ({invoice}, cbk) => {
       return details;
     })
     .then(details => cbk(null, details))
-    .catch(err => cbk([500, err.message]));
+    .catch(err => {
+      if (!!err.text) {
+        return err.text().then(text => cbk([err.status, text]));
+      }
+
+      return cbk([500, err.message]);
+    });
 };
 
 /** Get the status of a swap

@@ -46,6 +46,10 @@ module.exports = (args, cbk) => {
 
     // Parse the encoded invoice
     invoice: cbk => {
+      if (!args.invoice) {
+        return cbk([400, 'ExpectedInvoice']);
+      }
+
       try {
         return cbk(null, parseInvoice({invoice: args.invoice}));
       } catch (e) {
@@ -54,13 +58,13 @@ module.exports = (args, cbk) => {
     },
 
     // Check arguments
-    validate: cbk => {
+    validate: ['invoice', ({invoice}, cbk) => {
       if (!args.destination_public_key) {
         return cbk([400, 'ExpectedDestinationPublicKey']);
       }
 
-      if (!args.invoice) {
-        return cbk([400, 'ExpectedInvoice']);
+      if (!!invoice.is_expired) {
+        return cbk([410, 'InvoiceExpired']);
       }
 
       if (!args.payment_hash) {
@@ -84,7 +88,7 @@ module.exports = (args, cbk) => {
       }
 
       return cbk();
-    },
+    }],
 
     // Pull out the swap keypair from the HD seed
     serverKeyPair: ['validate', ({}, cbk) => {
@@ -215,9 +219,10 @@ module.exports = (args, cbk) => {
     swapTransaction: [
       'checkTransactionDetected',
       'findSwapTransaction',
+      'invoice',
       'remainingConfs',
       'serverKeyPair',
-      ({findSwapTransaction, remainingConfs, serverKeyPair}, cbk) =>
+      ({findSwapTransaction, invoice, remainingConfs, serverKeyPair}, cbk) =>
     {
       // Exit early and abort swap when there are remaining confirmations
       if (!!remainingConfs) {
