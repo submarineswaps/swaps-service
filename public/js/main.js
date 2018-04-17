@@ -1,7 +1,7 @@
 const App = {
   address_details: {},
   change_events: 'change keyup paste',
-  check_for_swap_interval_ms: 3000,
+  check_for_swap_interval_ms: 2000,
   check_for_swap_interval: null,
   grace_ms: 1800 * 1e3,
   invoice_details: {},
@@ -43,6 +43,8 @@ App.changedInvoice = function({}) {
 
   // Exit early when the invoice has been removed
   if (!invoice) {
+    App.updatedSwapDetails({swap});
+
     return input.removeClass('is-invalid').removeClass('is-valid');
   }
 
@@ -66,6 +68,10 @@ App.changedInvoice = function({}) {
         text = 'Value too low for a chain swap. Use a higher value invoice?';
         break;
 
+      case 'InvoiceExpiresTooSoon':
+        text = 'This invoice expires too soon, get a fresh invoice?';
+        break;
+
       default:
         text = '';
         break;
@@ -77,6 +83,10 @@ App.changedInvoice = function({}) {
     }
 
     App.invoice_details[invoice] = details;
+
+    const keyPair = blockchain.generateKeyPair({network: 'testnet'});
+
+    App.invoice_refund_keypairs[invoice] = keyPair;
 
     App.showInvoice({invoice, swap});
 
@@ -131,6 +141,27 @@ App.changedRefundAddress = function({}) {
 
     return;
   });
+};
+
+/** Changed refund key generation preference
+*/
+App.changedRefundPreference = function({}) {
+  const swap = $(this).closest('.create-swap-quote');
+
+  const isPaperWallet = !!$(this).is(':checked');
+
+  swap.find('.paper-wallet-label').toggleClass('text-muted', !isPaperWallet);
+  swap.find('.refund-address-entry').prop('hidden', isPaperWallet);
+
+  if (isPaperWallet) {
+    swap.find('.refund-address').removeAttr('required');
+  } else {
+    swap.find('.refund-address').prop('required', true);
+  }
+
+  App.updatedSwapDetails({swap});
+
+  return;
 };
 
 /** Changed the refund script
@@ -643,6 +674,7 @@ App.init = args => {
   $('.sign-with-refund-details').submit(App.submitSignWithRefundDetails);
   $('.refund-details-script').on(App.change_events, App.changedRefundScript);
   $('.select-currency').change(App.changedCurrencySelection);
+  $('#use-paper-wallet').change(App.changedRefundPreference);
 
   return;
 };
@@ -787,11 +819,16 @@ App.submitCreateSwapQuote = function(event) {
 
   const addressInput = swap.find('.refund-address');
   const invoiceInput = swap.find('.pay-to-lightning-invoice');
+  const isPaperWallet = !!swap.find('#use-paper-wallet').is(':checked');
 
   const address = addressInput.val().trim();
   const invoice = invoiceInput.val().trim();
 
-  if (!App.address_details[address] || !App.invoice_details[invoice]) {
+  if (!App.invoice_details[invoice]) {
+    return;
+  }
+
+  if (!isPaperWallet && !App.address_details[address]) {
     return;
   }
 
@@ -808,10 +845,14 @@ App.submitCreateSwapQuote = function(event) {
 
   $('.quotes').prepend(quote);
 
+  const refundKey = App.invoice_refund_keypairs[invoice];
+
+  const refundAddress = !isPaperWallet ? address : refundKey.p2pkh_address;
+
   return App.createSwap({
     invoice,
     currency: 'tBTC',
-    refund_address: address,
+    refund_address: refundAddress,
   },
   (err, details) => {
     if (!!err) {
@@ -848,6 +889,7 @@ App.submitCreateSwapQuote = function(event) {
 
       const text = JSON.stringify(
         {
+          private_key: !isPaperWallet ? undefined : refundKey.private_key,
           redeem_script: details.redeem_script,
           refund_address: address,
           refund_after: details.timeout_block_height,
@@ -1096,7 +1138,9 @@ App.updatedSwapDetails = ({swap}) => {
     swap.find('.refund-address-entry').collapse('show');
   }
 
-  if (!!hasAddress) {
+  const isPaperRefund = !!swap.find('#use-paper-wallet').is(':checked');
+
+  if (!!hasAddress && !isPaperRefund) {
     swap.find('.refund-address')
       .addClass('is-valid')
       .removeClass('is-invalid');
@@ -1106,7 +1150,7 @@ App.updatedSwapDetails = ({swap}) => {
     .toggleClass('is-valid', !!hasInvoiceDetails)
     .toggleClass('is-invalid', !hasInvoiceDetails && !!invoice);
 
-  const isReady = !!hasAddress && !!hasInvoiceDetails;
+  const isReady = (!!hasAddress || !!isPaperRefund) && !!hasInvoiceDetails;
 
   swap.find('.make').toggleClass('disabled', !isReady);
 

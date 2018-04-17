@@ -45,7 +45,7 @@ form.collapse.create-swap-quote.mb-4.show
       .input-group.input-group-lg.mb-3
         .input-group-prepend
           label.input-group-text
-            i.fa.fa-link
+            i.fa.fa-btc.fa-fw
         select.custom-select.form-control.select-currency
           option(selected, value="tBTC")
             | Testnet BTC (on-chain for off-chain)
@@ -58,7 +58,12 @@ form.collapse.create-swap-quote.mb-4.show
             | Fee: 1.5%
       small.form-text.text-muted
         | You will make an on-chain payment using this currency.
-    .collapse.form-group.hide.refund-address-entry
+    .mb-4
+      .custom-control.custom-checkbox
+        input.custom-control-input#use-paper-wallet(checked, type="checkbox")
+        label.custom-control-label.paper-wallet-label(for="use-paper-wallet")
+          | Generate refund paper wallet
+    .form-group.refund-address-entry(hidden)
       label
         span Refund Address:
       .input-group.input-group-lg.mb-3
@@ -68,7 +73,6 @@ form.collapse.create-swap-quote.mb-4.show
         input.form-control.refund-address(
           autocomplete="off",
           placeholder="Enter a refund address...",
-          required,
           spellcheck="false",
           type="text"
         )
@@ -89,6 +93,5 @@ form.collapse.create-swap-quote.mb-4.show
         span
           | address with a private key you control to use for a refund if
           | things go wrong.
-    button.btn.btn-block.btn-lg.btn-primary.disabled.make(type="submit")
-      i.fa.fa-exchange.mr-2
-      span.mr-2 Pay
+    button.btn.btn-lg.btn-primary.disabled.make(type="submit")
+      span.mr-2 Pay to Swap
