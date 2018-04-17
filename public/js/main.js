@@ -214,6 +214,7 @@ App.checkSwap = ({button, id, quote}) => {
       quote.find('.plural-confirmation').prop('hidden', !isPluralConfs);
       quote.find('.tx-found').collapse('show');
       quote.find('.waiting-label').collapse('hide');
+      quote.find('.qr-code').hide()
 
       quote.find('.waiting-notification')
         .removeClass('alert-secondary')
