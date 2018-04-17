@@ -6,10 +6,12 @@ const {returnResult} = require('./../async-util');
 
 const cachedTx = {};
 const cacheTxMs = 60 * 60 * 1000;
+const notFoundIndex = -1;
 
 /** Determine if a transaction has a script pub output
 
   {
+    is_ignoring_tokens: <Is Ignoring Tokens Value Bool>
     output_scripts: [<Output Script Hex String>]
     network: <Network Name String>
     tokens: <Tokens Paid Number>
@@ -31,7 +33,7 @@ module.exports = (args, cbk) => {
         return cbk([400, 'ExpectedNetwork']);
       }
 
-      if (!args.tokens) {
+      if (!args.tokens && !args.is_ignoring_tokens) {
         return cbk([400, 'ExpectedTokens']);
       }
 
@@ -74,13 +76,10 @@ module.exports = (args, cbk) => {
 
     // Determine if the transaction has a script pub
     hasScriptPub: ['transaction', ({transaction}, cbk) => {
-      const scriptPubs = args.output_scripts;
-
       const hasScriptPub = transaction.outs
-        .map(n => ({script: n.script.toString('hex'), tokens: n.value}))
-        .find(({script, tokens}) => {
-          return scriptPubs.find(n => script === n) && tokens === args.tokens;
-        });
+        .filter(({value}) => !args.is_ignoring_tokens && value === args.tokens)
+        .map(({script}) => script.toString('hex'))
+        .find(script => args.output_scripts.indexOf(script) !== notFoundIndex);
 
       return cbk(null, !!hasScriptPub);
     }],

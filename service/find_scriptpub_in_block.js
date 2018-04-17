@@ -14,9 +14,10 @@ let cachedBlocks = {};
 
   {
     block_hash: <Block Hash Hex String>
+    [is_ignoring_tokens]: <Is Ignoring Tokens Value Bool>
     network: <Network Name String>
     output_scripts: [<Output Script Hex String>]
-    tokens: <Find Output with Tokens Number>
+    [tokens]: <Find Output with Tokens Number>
   }
 
   @returns via cbk
@@ -41,7 +42,7 @@ module.exports = (args, cbk) => {
         return cbk([400, 'ExpectedOutputScripts']);
       }
 
-      if (!args.tokens) {
+      if (!args.tokens && !args.is_ignoring_tokens) {
         return cbk([400, 'ExpectedTokens']);
       }
 
@@ -80,6 +81,7 @@ module.exports = (args, cbk) => {
         checkFanOutLimit,
         (id, cbk) => {
           return transactionHasScriptPub({
+            is_ignoring_tokens: args.is_ignoring_tokens,
             network: args.network,
             output_scripts: args.output_scripts,
             tokens: args.tokens,

@@ -13,9 +13,10 @@ let cachedMempool = {};
 /** Scan the mempool to find a transaction that matches script-pubs
 
   {
+    [is_ignoring_tokens]: <Is Ignoring Tokens Value Bool>
     network: <Network Name String>
     output_scripts: [<Output Script Hex String>]
-    tokens: <Output Tokens Number>
+    [tokens]: <Output Tokens Number>
   }
 
   @returns via cbk
@@ -38,6 +39,23 @@ module.exports = (args, cbk) => {
       return getMempool({network: args.network}, cbk);
     },
 
+    // Check arguments
+    validate: cbk => {
+      if (!args.network) {
+        return cbk([400, 'ExpectedNetwork']);
+      }
+
+      if (!Array.isArray(args.output_scripts) || !args.output_scripts.length) {
+        return cbk([400, 'ExpectedOutputScripts']);
+      }
+
+      if (!args.tokens && !args.is_ignoring_tokens) {
+        return cbk([400, 'ExpectedTokens']);
+      }
+
+      return cbk();
+    },
+
     setMempoolCache: ['getMempool', ({getMempool}, cbk) => {
       if (!!getMempool.is_cached_result) {
         return cbk();
@@ -55,6 +73,7 @@ module.exports = (args, cbk) => {
         getMempool.transaction_ids,
         checkFanOutLimit,
         (id, cbk) => transactionHasScriptPub({
+          is_ignoring_tokens: args.is_ignoring_tokens,
           network: args.network,
           output_scripts: args.output_scripts,
           tokens: args.tokens,

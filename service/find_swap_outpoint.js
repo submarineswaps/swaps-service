@@ -72,6 +72,7 @@ module.exports = (args, cbk) => {
       return findSwapTransaction({
         block_search_depth: blockSearchDepth,
         destination_public_key: swapDetails.destination_public_key,
+        is_ignoring_tokens: true,
         network: args.network,
         payment_hash: swapDetails.payment_hash,
         refund_public_key_hash: swapDetails.refund_public_key_hash,

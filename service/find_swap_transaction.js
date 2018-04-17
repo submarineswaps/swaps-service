@@ -16,12 +16,13 @@ const blockSearchRateLimit = 300;
   {
     block_search_depth: <Block Search Depth Number>
     destination_public_key: <Destination Public Key Serialized String>
+    [is_ignoring_tokens]: <Is Ignoring Tokens Value Bool> = false
     network: <Network Name String>
     payment_hash: <Payment Hash String>
     [refund_public_key]: <Refund Public Key Hex String>
     [refund_public_key_hash]: <Refund Public Key Hash Hex String>
     timeout_block_height: <Swap Expiration Date Number>
-    tokens: <Tokens Output Number>
+    [tokens]: <Tokens Output Number>
   }
 
   @returns via cbk
@@ -58,7 +59,7 @@ module.exports = (args, cbk) => {
         return cbk([400, 'ExpectedTimeoutBlockHeight']);
       }
 
-      if (!args.tokens) {
+      if (!args.tokens && !args.is_ignoring_tokens) {
         return cbk([400, 'ExpectedTokens']);
       }
 
@@ -87,6 +88,7 @@ module.exports = (args, cbk) => {
     // Look in the mempool for the transaction
     findTransactionInMempool: ['outputScripts', ({outputScripts}, cbk) => {
       return findScriptPubInMempool({
+        is_ignoring_tokens: args.is_ignoring_tokens,
         network: args.network,
         output_scripts: outputScripts,
         tokens: args.tokens,
@@ -110,6 +112,7 @@ module.exports = (args, cbk) => {
         cbk => {
           return findScriptPubInBlock({
             block_hash: cursor,
+            is_ignoring_tokens: args.is_ignoring_tokens,
             network: args.network,
             output_scripts: outputScripts,
             tokens: args.tokens,
