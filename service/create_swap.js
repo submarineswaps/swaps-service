@@ -7,7 +7,6 @@ const {returnResult} = require('./../async-util');
 const serverSwapKeyPair = require('./server_swap_key_pair');
 const {swapAddress} = require('./../swaps');
 
-const minSwapTokens = 1e5;
 const network = 'testnet';
 const swapRate = 0.015;
 const timeoutBlockCount = 144;
@@ -128,18 +127,8 @@ module.exports = (args, cbk) => {
       return cbk(null, Math.round(getInvoiceDetails.tokens * swapRate));
     }],
 
-    // Make sure the amount is enough
-    checkAmount: ['getInvoiceDetails', ({getInvoiceDetails}, cbk) => {
-      if (getInvoiceDetails.tokens < minSwapTokens) {
-        return cbk([400, 'SwapAmountTooSmall']);
-      }
-
-      return cbk();
-    }],
-
     // Swap details
     swap: [
-      'checkAmount',
       'fee',
       'getInvoiceDetails',
       'refundAddress',

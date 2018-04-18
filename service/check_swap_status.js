@@ -12,7 +12,6 @@ const {swapOutput} = require('./../swaps');
 const {swapScriptDetails} = require('./../swaps');
 
 const blockSearchDepth = 9;
-const minSwapTokens = 1e5;
 const minBlocksUntilRefundHeight = 70;
 const network = 'testnet';
 const requiredConfCount = 1;
@@ -201,10 +200,6 @@ module.exports = (args, cbk) => {
         });
       } catch (e) {
         return cbk([500, 'ExpectedSwapUtxoDetails', e]);
-      }
-
-      if (swapUtxo.output_tokens < minSwapTokens) {
-        return cbk([400, 'RejectedDustSwap']);
       }
 
       return cbk(null, {
