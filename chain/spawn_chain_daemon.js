@@ -21,9 +21,8 @@ const unableToStartServer = /Unable.to.start.server/;
 */
 module.exports = (args, cbk) => {
   const miningKey = Buffer.from(args.mining_public_key, 'hex');
-  const rpcHost = chainServer.regtest.rpc_host;
+  const [rpcHost, rpcPort] = chainServer.regtest.rpc_host.split(':');
   const rpcPass = chainServer.regtest.rpc_pass;
-  const rpcPort = chainServer.regtest.rpc_port;
   const rpcUser = chainServer.regtest.rpc_user;
   const tmpDir = `/tmp/${uuidv4()}`;
 

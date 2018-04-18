@@ -33,7 +33,13 @@ const {swapScriptInTransaction} = require('./../swaps');
 module.exports = (args, cbk) => {
   return asyncAuto({
     // Check the current state of the blockchain to get a good locktime
-    getBlockchainInfo: cbk => getBlockchainInfo({network: args.network}, cbk),
+    getBlockchainInfo: cbk => {
+      return getBlockchainInfo({
+        is_cache_ok: true,
+        network: args.network,
+      },
+      cbk);
+    },
 
     // Figure out what fee is needed to sweep the funds
     getFee: cbk => getChainFeeRate({network: args.network}, cbk),

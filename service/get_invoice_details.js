@@ -9,6 +9,8 @@ const {lightningDaemon} = require('./../lightning');
 const {returnResult} = require('./../async-util');
 
 const approxTxVSize = 200;
+const cachedFee = {};
+const cacheFeeMs = 60 * 1000;
 
 /** Get invoice details
 
@@ -89,11 +91,27 @@ module.exports = (args, cbk) => {
 
     // Get the current chain fees
     chainFee: ['invoice', ({invoice}, cbk) => {
+      const fee = cachedFee[invoice.network];
+
+      if (!!fee && fee.expires_at > Date.now()) {
+        return cbk(null, {
+          fee_tokens_per_vbyte: fee.fee_tokens_per_vbyte,
+          is_cached_fee: true,
+        });
+      }
+
       return getChainFeeRate({network: invoice.network}, cbk);
     }],
 
     // Make sure the chain fee is not too high
     checkChainFee: ['chainFee', 'invoice', ({chainFee, invoice}, cbk) => {
+      if (!chainFee.is_cached_fee) {
+        cachedFee[invoice.network] = {
+          expires_at: Date.now() + cacheFeeMs,
+          fee_tokens_per_vbyte: chainFee.fee_tokens_per_vbyte,
+        };
+      }
+
       const approxFee = chainFee.fee_tokens_per_vbyte * approxTxVSize;
 
       if (approxFee / invoice.tokens > args.max_invoice_fee_rate) {

@@ -61,7 +61,7 @@ module.exports = (args, cbk) => {
 
     // Parse the transaction hex
     transaction: ['getTransaction', ({getTransaction}, cbk) => {
-      if (!getTransaction.is_cached_result) {
+      if (args.network !== 'regtest' && !getTransaction.is_cached_result) {
         cachedTx[args.transaction_id] = getTransaction.transaction;
 
         setTimeout(() => cachedTx[args.transaction_id] = null, cacheTxMs);

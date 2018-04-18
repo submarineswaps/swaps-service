@@ -70,7 +70,7 @@ module.exports = (args, cbk) => {
 
     // Find transaction in block
     findTransaction: ['getBlock', ({getBlock}, cbk) => {
-      if (!getBlock.is_cached_result) {
+      if (args.network !== 'regtest' && !getBlock.is_cached_result) {
         cachedBlocks[args.block_hash] = getBlock;
 
         setTimeout(() => cachedBlocks[args.block_hash] = null, cacheBlockMs);

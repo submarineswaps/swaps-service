@@ -42,7 +42,7 @@ const swapRate = 0.015;
 module.exports = (args, cbk) => {
   return asyncAuto({
     // Get the current chain height
-    getChainInfo: cbk => getBlockchainInfo({network}, cbk),
+    getChainInfo: cbk => getBlockchainInfo({is_cache_ok: true, network}, cbk),
 
     // Parse the encoded invoice
     invoice: cbk => {
