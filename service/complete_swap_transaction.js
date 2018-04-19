@@ -115,17 +115,11 @@ module.exports = (args, cbk) => {
       return cbk();
     }],
 
-    // Make a new address to sweep out the funds to
-    getSweepAddress: ['checkRoutes', 'lnd', ({lnd}, cbk) => {
-      return createAddress({lnd}, cbk);
-    }],
-
     // Hack around the locking failure of paying invoices twice
     createLockingInvoice: [
       'fundingUtxos',
       'getBlockchainInfo',
       'getFee',
-      'getSweepAddress',
       'invoice',
       'lnd',
       ({invoice, lnd}, cbk) =>
@@ -139,8 +133,23 @@ module.exports = (args, cbk) => {
       cbk);
     }],
 
+    // Make a new address to sweep out the funds to
+    getSweepAddress: [
+      'checkRoutes',
+      'createLockingInvoice',
+      'lnd',
+      ({lnd}, cbk) =>
+    {
+      return createAddress({lnd}, cbk);
+    }],
+
     // Pay the invoice
-    payInvoice: ['createLockingInvoice', 'lnd', ({lnd}, cbk) => {
+    payInvoice: [
+      'createLockingInvoice',
+      'getSweepAddress',
+      'lnd',
+      ({lnd}, cbk) =>
+    {
       return payInvoice({lnd, invoice: args.invoice, wss: []}, cbk);
     }],
 
