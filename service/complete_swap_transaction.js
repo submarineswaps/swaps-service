@@ -33,7 +33,13 @@ const {swapScriptInTransaction} = require('./../swaps');
 module.exports = (args, cbk) => {
   return asyncAuto({
     // Check the current state of the blockchain to get a good locktime
-    getBlockchainInfo: cbk => getBlockchainInfo({network: args.network}, cbk),
+    getBlockchainInfo: cbk => {
+      return getBlockchainInfo({
+        is_cache_ok: true,
+        network: args.network,
+      },
+      cbk);
+    },
 
     // Figure out what fee is needed to sweep the funds
     getFee: cbk => getChainFeeRate({network: args.network}, cbk),
@@ -109,17 +115,11 @@ module.exports = (args, cbk) => {
       return cbk();
     }],
 
-    // Make a new address to sweep out the funds to
-    getSweepAddress: ['checkRoutes', 'lnd', ({lnd}, cbk) => {
-      return createAddress({lnd}, cbk);
-    }],
-
     // Hack around the locking failure of paying invoices twice
     createLockingInvoice: [
       'fundingUtxos',
       'getBlockchainInfo',
       'getFee',
-      'getSweepAddress',
       'invoice',
       'lnd',
       ({invoice, lnd}, cbk) =>
@@ -127,6 +127,16 @@ module.exports = (args, cbk) => {
       const {id} = invoice;
 
       return createInvoice({lnd, payment_secret: id, tokens: 1}, cbk);
+    }],
+
+    // Make a new address to sweep out the funds to
+    getSweepAddress: [
+      'checkRoutes',
+      'createLockingInvoice',
+      'lnd',
+      ({lnd}, cbk) =>
+    {
+      return createAddress({lnd}, cbk);
     }],
 
     // Pay the invoice

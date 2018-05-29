@@ -1,11 +1,14 @@
 const {log} = console;
 
+const {join} = require('path');
+
 const browserify = require('browserify-middleware');
 const compression = require('compression');
 const cors = require('cors');
 const express = require('express');
 const {hidePoweredBy} = require('helmet');
 const morgan = require('morgan');
+const serveFavicon = require('serve-favicon');
 const walnut = require('walnut');
 
 const apiRouter = require('./routers/api');
@@ -26,6 +29,8 @@ app.use(compression());
 app.use(cors());
 
 app.get('/js/blockchain.js', browserify(browserifyPath));
+
+app.use(serveFavicon(join(__dirname, 'public', 'favicon.ico')));
 
 app.use(express.static('public'));
 app.use(morgan(morganLogLevel));

@@ -7,9 +7,9 @@ const {SSS_CHAIN_RPC_HOST} = process.env;
 const {SSS_CHAIN_RPC_PASS} = process.env;
 const {SSS_CHAIN_RPC_USER} = process.env;
 
-const [regtestRpcHost] = regtest.rpc_host.split(':');
+const chainTimeoutMs = 3000;
+const [regtestRpcHost, regtestRpcPort] = regtest.rpc_host.split(':');
 const regtestRpcPass = regtest.rpc_pass;
-const regtestRpcPort = regtest.rpc_port;
 const regtestRpcUser = regtest.rpc_user;
 const stopAfterErrorsMs = 3000;
 const [testnetRpcHost, testnetRpcPort] = (SSS_CHAIN_RPC_HOST || '').split(':');
@@ -53,6 +53,7 @@ module.exports = ({cmd, network, params}, cbk) => {
   const user = credentials.user[network];
 
   chainRpc.init(host, port, user, pass);
+  chainRpc.setTimeout(chainTimeoutMs);
 
   // Should the params be a single argument instead of array, array-ize it.
   const niceParams = !Array.isArray(params || []) ? [params] : params || [];

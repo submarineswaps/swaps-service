@@ -36,7 +36,13 @@ const blockSearchRateLimit = 300;
 module.exports = (args, cbk) => {
   return asyncAuto({
     // Get the current block tip hash
-    getChainInfo: cbk => getBlockchainInfo({network: args.network}, cbk),
+    getChainInfo: cbk => {
+      return getBlockchainInfo({
+        is_cache_ok: args.network !== 'regtest',
+        network: args.network,
+      },
+      cbk);
+    },
 
     // Check the arguments
     validate: cbk => {

@@ -1,5 +1,4 @@
 const asyncAuto = require('async/auto');
-const asyncConstant = require('async/constant');
 const {getPendingChannels} = require('ln-service');
 const {getRoutes} = require('ln-service');
 const {parseInvoice} = require('ln-service');
@@ -10,7 +9,10 @@ const {lightningDaemon} = require('./../lightning');
 const {returnResult} = require('./../async-util');
 
 const approxTxVSize = 200;
+const currency = 'BTC';
 const defaultMaxFeeRate = 0.01;
+const fiatCurrency = 'USD';
+const longFeeEstimateBlocks = 144;
 
 /** Get invoice details
 
@@ -37,12 +39,6 @@ const defaultMaxFeeRate = 0.01;
 */
 module.exports = (args, cbk) => {
   return asyncAuto({
-    // Assumed currency code
-    currency: asyncConstant('BTC'),
-
-    // Fiat currency
-    fiatCurrency: asyncConstant('USD'),
-
     // Decode the supplied invoice
     invoice: cbk => {
       try {
@@ -61,15 +57,6 @@ module.exports = (args, cbk) => {
       }
     },
 
-    // Check that the supplied invoice is payable
-    checkInvoice: ['invoice', ({invoice}, cbk) => {
-      if (!invoice.tokens) {
-        return cbk([400, 'InvoiceMissingTokens']);
-      }
-
-      return cbk();
-    }],
-
     // Destination public key of send
     destination: ['invoice', ({invoice}, cbk) => {
       return cbk(null, invoice.destination);
@@ -77,6 +64,15 @@ module.exports = (args, cbk) => {
 
     // Tokens to send
     tokens: ['invoice', ({invoice}, cbk) => cbk(null, invoice.tokens)],
+
+    // Check that the supplied invoice is payable
+    checkInvoice: ['tokens', ({tokens}, cbk) => {
+      if (!tokens) {
+        return cbk([400, 'InvoiceMissingTokens']);
+      }
+
+      return cbk();
+    }],
 
     // Pull the pending channels to see if we have a related pending channel
     getPending: ['lnd', ({lnd}, cbk) => getPendingChannels({lnd}, cbk)],
@@ -99,10 +95,9 @@ module.exports = (args, cbk) => {
       ({destination, getMinRoutes, getPending}, cbk) =>
     {
       const hasPendingChan = getPending.pending_channels
+        .filter(n => !n.is_opening)
         .map(n => n.partner_public_key)
         .find(n => n === destination);
-
-      console.log('PENDING', getPending.pending_channels, hasPendingChan);
 
       if (!getMinRoutes.routes.length && !!hasPendingChan) {
         return cbk([503, 'PendingChannelToDestination']);
@@ -147,7 +142,11 @@ module.exports = (args, cbk) => {
 
     // Get the current chain fees
     chainFee: ['invoice', ({invoice}, cbk) => {
-      return getChainFeeRate({blocks: 144, network: invoice.network}, cbk);
+      return getChainFeeRate({
+        blocks: longFeeEstimateBlocks,
+        network: invoice.network,
+      },
+      cbk);
     }],
 
     // Make sure the chain fee is not too high
@@ -162,12 +161,7 @@ module.exports = (args, cbk) => {
     }],
 
     // Grab the fiat price
-    getPrice: [
-      'checkInvoice',
-      'currency',
-      'fiatCurrency',
-      ({currency, fiatCurrency}, cbk) =>
-    {
+    getPrice: ['checkInvoice', ({}, cbk) => {
       return getPrice({
         from_currency_code: currency,
         to_currency_code: fiatCurrency,
@@ -185,13 +179,7 @@ module.exports = (args, cbk) => {
     }],
 
     // Invoice Details
-    invoiceDetails: [
-      'currency',
-      'fiatCurrency',
-      'fiatValue',
-      'invoice',
-      ({currency, fiatCurrency, fiatValue, invoice}, cbk) =>
-    {
+    invoiceDetails: ['fiatValue', 'invoice', ({fiatValue, invoice}, cbk) => {
       return cbk(null, {
         created_at: invoice.created_at,
         description: invoice.description,

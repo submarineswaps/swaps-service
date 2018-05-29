@@ -12,7 +12,6 @@ const {swapOutput} = require('./../swaps');
 const {swapScriptDetails} = require('./../swaps');
 
 const blockSearchDepth = 9;
-const minSwapTokens = 1e5;
 const minBlocksUntilRefundHeight = 70;
 const network = 'testnet';
 const requiredConfCount = 1;
@@ -43,7 +42,7 @@ const swapRate = 0.015;
 module.exports = (args, cbk) => {
   return asyncAuto({
     // Get the current chain height
-    getChainInfo: cbk => getBlockchainInfo({network}, cbk),
+    getChainInfo: cbk => getBlockchainInfo({is_cache_ok: true, network}, cbk),
 
     // Parse the encoded invoice
     invoice: cbk => {
@@ -207,10 +206,6 @@ module.exports = (args, cbk) => {
         });
       } catch (e) {
         return cbk([500, 'ExpectedSwapUtxoDetails', e]);
-      }
-
-      if (swapUtxo.output_tokens < minSwapTokens) {
-        return cbk([400, 'RejectedDustSwap']);
       }
 
       return cbk(null, {

@@ -5,9 +5,13 @@ const chainRpc = require('./chain_rpc');
 const {getBestBlockHash} = require('./conf/rpc_commands');
 const {getBlockCount} = require('./conf/rpc_commands');
 
+const cacheChainInfoMs = 5000;
+const cached = {};
+
 /** Get info about the best chain
 
   {
+    [is_cache_ok]: <Is Cache Allowed Bool>
     network: <Network Name String>
   }
 
@@ -17,7 +21,17 @@ const {getBlockCount} = require('./conf/rpc_commands');
     current_height: <Block Height Number>
   }
 */
-module.exports = ({network}, cbk) => {
+module.exports = (args, cbk) => {
+  const {network} = args;
+  const now = Date.now();
+
+  if (!!args.is_cache_ok && (cached[network] || {}).expires_at > Date.now()) {
+    return cbk(null, {
+      current_hash: cached[network].current_hash,
+      current_height: cached[network].current_height,
+    });
+  }
+
   return asyncAuto({
     // Determine the current chain tip hash
     getCurrentHash: cbk => chainRpc({network, cmd: getBestBlockHash}, cbk),
@@ -29,6 +43,12 @@ module.exports = ({network}, cbk) => {
     if (!!err) {
       return cbk(err);
     }
+
+    cached[network] = {
+      expires_at: Date.now() + cacheChainInfoMs,
+      current_hash: getCurrentHash,
+      current_height: getCurrentHeight,
+    };
 
     return cbk(null, {
       current_hash: getCurrentHash,
