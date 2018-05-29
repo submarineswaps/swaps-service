@@ -41,7 +41,7 @@ const vRatio = chainConstants.witness_byte_discount_denominator;
     private_key: <Claim Private Key WIF String>
     utxos: [{
       redeem: <Redeem Script Hex String>
-      [script]: <Script Pub Hex String>
+      [script]: <Script Pub Hex String> // Required for legacy P2SH
       tokens: <Tokens Number>
       transaction_id: <Transaction Id String>
       vout: <Vout Number>

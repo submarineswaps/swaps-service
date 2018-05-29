@@ -21,7 +21,7 @@ module.exports = ({network, transaction}, cbk) => {
     getTransaction: cbk => {
       return getTransaction({
         network,
-        transaction_id: Transaction.fromHex(transaction).getId(),
+        id: Transaction.fromHex(transaction).getId(),
       },
       cbk);
     },

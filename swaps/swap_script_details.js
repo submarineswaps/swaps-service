@@ -20,7 +20,7 @@ const {fromOutputScript} = address;
   }
 
   @throws
-  <Error> on derive issue
+  <Error> on failure to derive swap details
 
   @returns
   {
@@ -51,7 +51,7 @@ module.exports = args => {
   const scriptAssembly = toASM(script.decompile(redeemScript)).split(' ');
 
   switch (scriptAssembly.length) {
-  case 12:
+  case 12: // Public key swap script
     {
       const [
         OP_SHA256, pkPaymentHash, OP_EQUAL,
@@ -123,7 +123,7 @@ module.exports = args => {
     }
     break;
 
-  case 17:
+  case 17: // Public key hash swap script
     {
       const [
         OP_DUP,

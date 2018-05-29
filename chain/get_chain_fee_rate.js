@@ -13,6 +13,7 @@ const defaultBlockCount = 6;
 /** Get blockchain fee rate
 
   {
+    [blocks]: <Block Count Number> // defaults to 6
     network: <Network Name String>
   }
 
@@ -21,8 +22,10 @@ const defaultBlockCount = 6;
     fee_tokens_per_vbyte: <Fee Tokens per Vbyte Number>
   }
 */
-module.exports = ({network}, cbk) => {
-  return chainRpc({cmd, network, params: [defaultBlockCount]}, (err, res) => {
+module.exports = ({blocks, network}, cbk) => {
+  const params = !blocks ? [defaultBlockCount] : [blocks];
+
+  return chainRpc({cmd, network, params}, (err, res) => {
     if (!!err) {
       return cbk(err);
     }
@@ -35,7 +38,9 @@ module.exports = ({network}, cbk) => {
 
     const value = (res.feerate / bytesPerKb).toString();
 
-    try { parsedValue = parseTokenValue({value}); } catch (e) {
+    try {
+      parsedValue = parseTokenValue({value});
+    } catch (e) {
       return cbk([500, 'FailedToParseTokenValue', e]);
     }
 

@@ -68,12 +68,24 @@ App.changedInvoice = function({}) {
         text = 'Value too low for a chain swap. Use a higher value invoice?';
         break;
 
+      case 'InsufficientCapacityForSwap':
+        text = 'Value is too high to swap. Use a lower value invoice?';
+        break;
+
       case 'InvoiceExpiresTooSoon':
         text = 'This invoice expires too soon, get a fresh invoice?';
         break;
 
+      case 'NoCapacityToDestination':
+        text = 'Can\'t send to this destination, establishing connectivity...';
+        break;
+
+      case 'PendingChannelToDestination':
+        text = 'Channel to destination is still opening, try again later...';
+        break;
+
       default:
-        text = '';
+        text = 'Unexpected error :( try again or with a different invoice?';
         break;
       }
 

@@ -56,11 +56,7 @@ module.exports = (args, cbk) => {
     // Grab the full details of each blocks, including transaction info
     blocks: ['generateBlocks', ({generateBlocks}, cbk) => {
       return asyncMapSeries(generateBlocks, (blockHash, cbk) => {
-        return getBlockDetails({
-          block_hash: blockHash,
-          network: args.network,
-        },
-        cbk);
+        return getBlockDetails({id: blockHash, network: args.network}, cbk);
       },
       cbk);
     }],

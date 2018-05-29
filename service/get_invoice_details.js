@@ -1,5 +1,6 @@
 const asyncAuto = require('async/auto');
 const asyncConstant = require('async/constant');
+const {getPendingChannels} = require('ln-service');
 const {getRoutes} = require('ln-service');
 const {parseInvoice} = require('ln-service');
 
@@ -9,11 +10,12 @@ const {lightningDaemon} = require('./../lightning');
 const {returnResult} = require('./../async-util');
 
 const approxTxVSize = 200;
+const defaultMaxFeeRate = 0.01;
 
 /** Get invoice details
 
   {
-    [max_invoice_fee_rate]: <Max invoice Fee Rate Number>
+    [max_invoice_fee_rate]: <Fractional Max invoice Fee Rate Number>
     invoice: <Invoice String>
   }
 
@@ -50,6 +52,15 @@ module.exports = (args, cbk) => {
       }
     },
 
+    // LND Connection
+    lnd: cbk => {
+      try {
+        return cbk(null, lightningDaemon({}));
+      } catch (e) {
+        return cbk([500, 'FailedToInstantiateLndConnection']);
+      }
+    },
+
     // Check that the supplied invoice is payable
     checkInvoice: ['invoice', ({invoice}, cbk) => {
       if (!invoice.tokens) {
@@ -59,21 +70,68 @@ module.exports = (args, cbk) => {
       return cbk();
     }],
 
-    // See if this invoice is payable
-    getRoutes: ['checkInvoice', ({invoice}, cbk) => {
-      try {
-        const {destination} = invoice;
-        const lnd = lightningDaemon({});
-        const {tokens} = invoice;
+    // Destination public key of send
+    destination: ['invoice', ({invoice}, cbk) => {
+      return cbk(null, invoice.destination);
+    }],
 
-        return getRoutes({destination, lnd, tokens}, cbk);
-      } catch (e) {
-        return cbk([500, 'FailedToGetRoutes', e]);
+    // Tokens to send
+    tokens: ['invoice', ({invoice}, cbk) => cbk(null, invoice.tokens)],
+
+    // Pull the pending channels to see if we have a related pending channel
+    getPending: ['lnd', ({lnd}, cbk) => getPendingChannels({lnd}, cbk)],
+
+    // Try a minimal route query to see if we can ever send to this destination
+    getMinRoutes: ['destination', 'lnd', ({destination, lnd}, cbk) => {
+      const maxFeeRate = args.max_invoice_fee_rate || defaultMaxFeeRate;
+
+      // Minimal tokens are where the fees wouldn't consume all of the tokens
+      const tokens = approxTxVSize / maxFeeRate;
+
+      return getRoutes({destination, lnd, tokens}, cbk);
+    }],
+
+    // Check the minimal send route query to make sure we can do any swap
+    checkMinimallyRouteable: [
+      'destination',
+      'getMinRoutes',
+      'getPending',
+      ({destination, getMinRoutes, getPending}, cbk) =>
+    {
+      const hasPendingChan = getPending.pending_channels
+        .map(n => n.partner_public_key)
+        .find(n => n === destination);
+
+      console.log('PENDING', getPending.pending_channels, hasPendingChan);
+
+      if (!getMinRoutes.routes.length && !!hasPendingChan) {
+        return cbk([503, 'PendingChannelToDestination']);
       }
+
+      if (!getMinRoutes.routes.length) {
+        return cbk([503, 'NoCapacityToDestination']);
+      }
+
+      return cbk();
+    }],
+
+    // See if this invoice is payable
+    getRoutes: [
+      'destination',
+      'lnd',
+      'tokens',
+      ({destination, lnd, tokens}, cbk) =>
+    {
+      return getRoutes({destination, lnd, tokens}, cbk);
     }],
 
     // Make sure the routing fee is not too high
-    checkRoutingFee: ['getRoutes', 'invoice', ({getRoutes, invoice}, cbk) => {
+    checkRoutingFee: [
+      'checkMinimallyRouteable',
+      'getRoutes',
+      'invoice',
+      ({getRoutes, invoice}, cbk) =>
+    {
       const maxFee = Math.max(...getRoutes.routes.map(({fee}) => fee));
 
       if (!getRoutes.routes.length) {
@@ -89,7 +147,7 @@ module.exports = (args, cbk) => {
 
     // Get the current chain fees
     chainFee: ['invoice', ({invoice}, cbk) => {
-      return getChainFeeRate({network: invoice.network}, cbk);
+      return getChainFeeRate({blocks: 144, network: invoice.network}, cbk);
     }],
 
     // Make sure the chain fee is not too high

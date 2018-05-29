@@ -22,6 +22,10 @@ were successfully swept with the preimage of the off-chain HTLC.
 A **destination key** is the key that combines with the swapping preimage hash
 to control the claim success funds.
 
+## `funding_transaction`
+
+A **funding transaction** funds the swap by paying out to the `swap_address`.
+
 ## `refund_success`
 
 The **refund success** case happens when the swap is cancelled by waiting out
@@ -31,6 +35,11 @@ the locktime.
 
 If the depositor attempts to pull out of the swap too early, they hit a
 **refund too early** case and are blocked by the `OP_CLTV` condition.
+
+## `resolution_transaction`
+
+A **resolution transaction** spends the `funding_transaction` output that pays
+to the `swap_address` in order to claim or refund the swap funds.
 
 ## `swap_address`
 

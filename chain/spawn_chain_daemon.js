@@ -18,6 +18,11 @@ const unableToStartServer = /Unable.to.start.server/;
   {
     mining_public_key: <Mining Public Key String>
   }
+
+  @returns via cbk
+  {
+    is_ready: <Chain Daemon is Ready Bool>
+  }
 */
 module.exports = (args, cbk) => {
   const miningKey = Buffer.from(args.mining_public_key, 'hex');
@@ -50,7 +55,7 @@ module.exports = (args, cbk) => {
     }
 
     if (rpcServerReady.test(`${data}`)) {
-      return cbk();
+      return cbk(null, {is_ready: true});
     }
 
     return;

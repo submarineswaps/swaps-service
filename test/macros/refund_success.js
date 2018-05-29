@@ -1,28 +1,22 @@
 const asyncAuto = require('async/auto');
-const asyncConstant = require('async/constant');
-const {test} = require('tap');
 
-const macros = './macros/';
-
-const addressForPublicKey = require(`${macros}address_for_public_key`);
-const {broadcastTransaction} = require('./../chain');
-const {generateChainBlocks} = require('./../chain');
-const generateInvoice = require(`${macros}generate_invoice`);
-const {generateKeyPair} = require('./../chain');
-const {getBlockchainInfo} = require('./../chain');
-const mineTransaction = require(`${macros}mine_transaction`);
-const {refundTransaction} = require('./../swaps');
-const {returnResult} = require('./../async-util');
-const sendChainTokensTransaction = require(`${macros}send_chain_tokens_tx`);
-const {spawnChainDaemon} = require('./../chain');
-const {stopChainDaemon} = require('./../chain');
-const {swapAddress} = require('./../swaps');
-const {swapScriptInTransaction} = require('./../swaps');
-
-const chain = require('./../chain').constants;
+const addressForPublicKey = require('./address_for_public_key');
+const {broadcastTransaction} = require('./../../chain');
+const {clearCache} = require('./../../cache');
+const {constants} = require('./../../chain');
+const {generateChainBlocks} = require('./../../chain');
+const generateInvoice = require('./generate_invoice');
+const {generateKeyPair} = require('./../../chain');
+const {getBlockchainInfo} = require('./../../chain');
+const mineTransaction = require('./mine_transaction');
+const {refundTransaction} = require('./../../swaps');
+const sendChainTokensTransaction = require('./send_chain_tokens_tx');
+const {spawnChainDaemon} = require('./../../chain');
+const {stopChainDaemon} = require('./../../chain');
+const {swapAddress} = require('./../../swaps');
+const {swapScriptInTransaction} = require('./../../swaps');
 
 const generateDelayMs = 2;
-const network = 'regtest';
 const staticFeePerVirtualByte = 100;
 const swapTimeoutBlocks = 25;
 
@@ -33,13 +27,9 @@ const swapTimeoutBlocks = 25;
   Alice waits out the timeout and takes her tokens back.
 
   {
+    network: <Network Name String>
     [is_refund_to_public_key_hash]: <Is Refund to PK Hash Bool> = false
     swap_type: <Swap Type String>
-  }
-
-  @returns via cbk
-  {
-    network: <Network Name String>
   }
 */
 module.exports = (args, cbk) => {
@@ -47,7 +37,7 @@ module.exports = (args, cbk) => {
     // Alice generates a keypair for her refund output.
     generateAliceKeyPair: cbk => {
       try {
-        return cbk(null, generateKeyPair({network}));
+        return cbk(null, generateKeyPair({network: args.network}));
       } catch (e) {
         return cbk([0, 'ExpectedGeneratedKeyPair', e]);
       }
@@ -56,7 +46,7 @@ module.exports = (args, cbk) => {
     // Chain sync is started. Alice will get block rewards for use in deposit
     spawnChainDaemon: ['generateAliceKeyPair', (res, cbk) => {
       return spawnChainDaemon({
-        network,
+        network: args.network,
         mining_public_key: res.generateAliceKeyPair.public_key,
       },
       cbk);
@@ -65,7 +55,7 @@ module.exports = (args, cbk) => {
     // Bob generates a keypair for his claim output
     generateBobKeyPair: cbk => {
       try {
-        return cbk(null, generateKeyPair({network}));
+        return cbk(null, generateKeyPair({network: args.network}));
       } catch (e) {
         return cbk([0, 'ExpectedGeneratedKeyPair', e]);
       }
@@ -79,28 +69,19 @@ module.exports = (args, cbk) => {
       cbk);
     }],
 
-    // Alice makes an address to claim her refund
-    createAliceAddress: ['generateAliceKeyPair', (res, cbk) => {
-      return addressForPublicKey({
-        network,
-        public_key: res.generateAliceKeyPair.public_key,
-      },
-      cbk);
-    }],
-
     // A bunch of blocks are made so Alice's rewards are mature
     generateToMaturity: ['spawnChainDaemon', ({}, cbk) => {
       return generateChainBlocks({
-        network,
-        blocks_count: chain.maturity_block_count,
+        blocks_count: constants.maturity_block_count,
         delay: generateDelayMs,
+        network: args.network,
       },
       cbk);
     }],
 
     // Get the state of the chain at maturity when Alice is ready to spend
     getMatureChainInfo: ['generateToMaturity', ({}, cbk) => {
-      return getBlockchainInfo({network}, cbk);
+      return getBlockchainInfo({network: args.network}, cbk);
     }],
 
     // Determine the height at which a refund is possible
@@ -145,7 +126,7 @@ module.exports = (args, cbk) => {
       return cbk(null, {
         tokens: firstCoinbaseOutput.tokens,
         transaction_id: coinbaseTransaction.id,
-        vout: chain.coinbase_tx_index,
+        vout: constants.coinbase_tx_index,
       });
     }],
 
@@ -169,7 +150,7 @@ module.exports = (args, cbk) => {
     // The swap funding transaction is mined
     mineFundingTx: ['fundSwapAddress', ({fundSwapAddress}, cbk) => {
       return mineTransaction({
-        network,
+        network: args.network,
         transaction: fundSwapAddress.transaction,
       },
       cbk);
@@ -177,7 +158,7 @@ module.exports = (args, cbk) => {
 
     // Alice checks the height after funding
     getHeightAfterFunding: ['mineFundingTx', ({}, cbk) => {
-      return getBlockchainInfo({network}, cbk);
+      return getBlockchainInfo({network: args.network}, cbk);
     }],
 
     // Alice picks up her funding utxos
@@ -198,7 +179,6 @@ module.exports = (args, cbk) => {
 
     // Alice makes a transaction to claim her refund too early
     tooEarlyRefundTx: [
-      'createAliceAddress',
       'fundingTransactionUtxos',
       'generateAliceKeyPair',
       'getHeightAfterFunding',
@@ -206,7 +186,7 @@ module.exports = (args, cbk) => {
     {
       try {
         return cbk(null, refundTransaction({
-          destination: res.createAliceAddress.p2wpkh_address,
+          destination: res.generateAliceKeyPair.p2wpkh_address,
           fee_tokens_per_vbyte: staticFeePerVirtualByte,
           is_public_key_hash_refund: args.is_refund_to_public_key_hash,
           private_key: res.generateAliceKeyPair.private_key,
@@ -221,12 +201,22 @@ module.exports = (args, cbk) => {
     // Alice tries to claim her refund right away but hits `refund_too_early`
     broadcastEarlyRefundTx: ['tooEarlyRefundTx', (res, cbk) => {
       return broadcastTransaction({
-        network,
+        network: args.network,
         transaction: res.tooEarlyRefundTx.transaction,
       },
       err => {
-        if (!err) {
+        if (!Array.isArray(err)) {
           return cbk([0, 'ExpectedTxFailsCltvCheck']);
+        }
+
+        const [code, msg] = err;
+
+        if (code !== 503) {
+          return cbk([0, 'ExpectedRemoteErrorForBroadcastFailure']);
+        }
+
+        if (msg !== 'TransactionBroadcastFailed') {
+          return cbk([0, 'ExpectedTransactionBroadcastFailure']);
         }
 
         return cbk();
@@ -236,20 +226,19 @@ module.exports = (args, cbk) => {
     // Bob never gets the preimage and claims his funds. Many blocks go by
     generateTimeoutBlocks: ['mineFundingTx', ({}, cbk) => {
       return generateChainBlocks({
-        network,
         blocks_count: swapTimeoutBlocks,
+        network: args.network,
       },
       cbk);
     }],
 
     // Grab the current height to use in the sweep tx
     getHeightForRefund: ['generateTimeoutBlocks', ({}, cbk) => {
-      return getBlockchainInfo({network}, cbk);
+      return getBlockchainInfo({network: args.network}, cbk);
     }],
 
     // Alice will claim her refunded tokens after the timeout
     sweepTransaction: [
-      'createAliceAddress',
       'createChainSwapAddress',
       'fundingTransactionUtxos',
       'generateAliceKeyPair',
@@ -259,7 +248,7 @@ module.exports = (args, cbk) => {
     {
       try {
         cbk(null, refundTransaction({
-          destination: res.createAliceAddress.p2wpkh_address,
+          destination: res.generateAliceKeyPair.p2wpkh_address,
           fee_tokens_per_vbyte: staticFeePerVirtualByte,
           is_public_key_hash_refund: args.is_refund_to_public_key_hash,
           private_key: res.generateAliceKeyPair.private_key,
@@ -274,42 +263,24 @@ module.exports = (args, cbk) => {
     // Mine the sweep transaction into a block
     mineSweepTransaction: ['sweepTransaction', ({sweepTransaction}, cbk) => {
       return mineTransaction({
-        network,
+        network: args.network,
         transaction: sweepTransaction.transaction,
       },
       cbk);
     }],
   },
-  returnResult({}, cbk));
+  (err, res) => {
+    if (!!res && !!res.spawnChainDaemon && !!res.spawnChainDaemon.is_ready) {
+      return stopChainDaemon({network: args.network}, stopErr => {
+        return cbk(stopErr || err);
+      });
+    }
+
+    if (!!err) {
+      return cbk(err);
+    }
+
+    return clearCache({cache: 'memory'}, cbk);
+  });
 };
-
-['p2sh', 'p2sh_p2wsh', 'p2wsh'].forEach(swapType => {
-  test(`perform swap and refund: pkhash refund, ${swapType} swap addr`, t => {
-    return module.exports({
-      is_refund_to_public_key_hash: true,
-      swap_type: swapType,
-    },
-    testErr => {
-      return stopChainDaemon({network}, stopErr => {
-        if (!!stopErr || !!testErr) {
-          throw new Error(testErr[1] || stopErr[1]);
-        }
-
-        return t.end();
-      });
-    });
-  });
-
-  test(`perform swap and refund: pk refund, ${swapType} swap addr`, t => {
-    return module.exports({swap_type: swapType}, testErr => {
-      return stopChainDaemon({network}, stopErr => {
-        if (!!stopErr || !!testErr) {
-          throw new Error(testErr[1] || stopErr[1]);
-        }
-
-        return t.end();
-      });
-    });
-  });
-});
 

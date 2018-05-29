@@ -5,8 +5,8 @@ const {getRawTransaction} = require('./conf/rpc_commands');
 /** Get a raw transaction
 
   {
+    id: <Transaction Id String>
     network: <Network Name String>
-    transaction_id: <Transaction Id String>
   }
 
   @returns via cbk
@@ -14,19 +14,19 @@ const {getRawTransaction} = require('./conf/rpc_commands');
     [transaction]: <Transaction Hex String>
   }
 */
-module.exports = (args, cbk) => {
-  if (!args.network) {
-    return cbk([500, 'ExpectedNetwork']);
+module.exports = ({id, network}, cbk) => {
+  if (!id) {
+    return cbk([500, 'ExpectedIdForTransaction']);
   }
 
-  if (!args.transaction_id) {
-    return cbk([500, 'ExpectedTransactionId']);
+  if (!network) {
+    return cbk([500, 'ExpectedNetworkToLookForTransaction']);
   }
 
   return chainRpc({
+    network,
     cmd: getRawTransaction,
-    network: args.network,
-    params: [args.transaction_id],
+    params: [id],
   },
   (err, transaction) => {
     if (!!err) {

@@ -15,6 +15,7 @@ const blockSearchRateLimit = 300;
 
   {
     block_search_depth: <Block Search Depth Number>
+    cache: <Cache To Use String>
     destination_public_key: <Destination Public Key Serialized String>
     [is_ignoring_tokens]: <Is Ignoring Tokens Value Bool> = false
     network: <Network Name String>
@@ -43,6 +44,10 @@ module.exports = (args, cbk) => {
         return cbk([400, 'ExpectedBlockSearchDepth']);
       }
 
+      if (!args.cache) {
+        return cbk([400, 'ExpectedCache']);
+      }
+
       if (!args.destination_public_key) {
         return cbk([400, 'ExpectedDestinationPublicKey']);
       }
@@ -66,6 +71,7 @@ module.exports = (args, cbk) => {
       return cbk();
     },
 
+    // Swap details
     swap: ['validate', ({}, cbk) => {
       return cbk(null, swapAddress({
         destination_public_key: args.destination_public_key,
@@ -88,6 +94,7 @@ module.exports = (args, cbk) => {
     // Look in the mempool for the transaction
     findTransactionInMempool: ['outputScripts', ({outputScripts}, cbk) => {
       return findScriptPubInMempool({
+        cache: args.cache,
         is_ignoring_tokens: args.is_ignoring_tokens,
         network: args.network,
         output_scripts: outputScripts,
@@ -111,6 +118,7 @@ module.exports = (args, cbk) => {
         () => !!txId || !cursor || count === args.block_search_depth,
         cbk => {
           return findScriptPubInBlock({
+            cache: args.cache,
             block_hash: cursor,
             is_ignoring_tokens: args.is_ignoring_tokens,
             network: args.network,
@@ -123,8 +131,8 @@ module.exports = (args, cbk) => {
             }
 
             count++;
-            cursor = res.previous_block_hash;
-            txId = res.transaction_id;
+            cursor = !res ? null : res.previous_block_hash;
+            txId = !res ? null : res.transaction_id;
 
             return setTimeout(cbk, blockSearchRateLimit);
           });
@@ -146,8 +154,8 @@ module.exports = (args, cbk) => {
       }
 
       return getTransaction({
+        id: scanBlocks.transaction_id,
         network: args.network,
-        transaction_id: scanBlocks.transaction_id,
       },
       cbk);
     }],

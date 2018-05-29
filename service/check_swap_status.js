@@ -21,6 +21,7 @@ const swapRate = 0.015;
 /** Check the status of a swap
 
   {
+    cache: <Cache Name String>
     destination_public_key: <Destination Public Key String>
     invoice: <Lightning Invoice String>
     payment_hash: <Payment Hash String>
@@ -59,6 +60,10 @@ module.exports = (args, cbk) => {
 
     // Check arguments
     validate: ['invoice', ({invoice}, cbk) => {
+      if (!args.cache) {
+        return cbk([400, 'ExpectedCacheForSwapDetails']);
+      }
+
       if (!args.destination_public_key) {
         return cbk([400, 'ExpectedDestinationPublicKey']);
       }
@@ -163,6 +168,7 @@ module.exports = (args, cbk) => {
       return findSwapTransaction({
         network,
         block_search_depth: blockSearchDepth,
+        cache: args.cache,
         destination_public_key: args.destination_public_key,
         payment_hash: args.payment_hash,
         refund_public_key_hash: args.refund_public_key_hash,

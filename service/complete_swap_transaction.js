@@ -124,18 +124,14 @@ module.exports = (args, cbk) => {
       'lnd',
       ({invoice, lnd}, cbk) =>
     {
-      return createInvoice({
-        lnd,
-        payment_secret: invoice.id,
-        tokens: 1,
-        wss: [],
-      },
-      cbk);
+      const {id} = invoice;
+
+      return createInvoice({lnd, payment_secret: id, tokens: 1}, cbk);
     }],
 
     // Pay the invoice
     payInvoice: ['createLockingInvoice', 'lnd', ({lnd}, cbk) => {
-      return payInvoice({lnd, invoice: args.invoice, wss: []}, cbk);
+      return payInvoice({lnd, invoice: args.invoice}, cbk);
     }],
 
     // Create a claim transaction to sweep the swap to the destination address

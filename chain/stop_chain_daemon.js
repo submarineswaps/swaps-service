@@ -8,5 +8,7 @@ const {stop} = require('./conf/rpc_commands');
     network: <Network Name String>
   }
 */
-module.exports = ({network}, cbk) => chainRpc({network, cmd: stop}, cbk);
+module.exports = ({network}, cbk) => {
+  return chainRpc({network, cmd: stop}, cbk);
+};
 

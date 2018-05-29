@@ -259,8 +259,8 @@ module.exports = (args, cbk) => {
     // Lookup the transaction
     getFundingTransaction: ['network', 'promptForFundingTxId', (res, cbk) => {
       return getTransaction({
+        id: res.promptForFundingTxId.value,
         network: res.network,
-        transaction_id: res.promptForFundingTxId.value,
       },
       cbk);
     }],

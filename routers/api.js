@@ -64,6 +64,7 @@ module.exports = ({log}) => {
   // POST a swap check request
   router.post('/swaps/:payment_hash/', ({body, params}, res) => {
     return checkSwapStatus({
+      cache: 'memory',
       destination_public_key: body.destination_public_key,
       invoice: body.invoice,
       payment_hash: params.payment_hash,

@@ -1,29 +1,25 @@
 const asyncAuto = require('async/auto');
-const asyncConstant = require('async/constant');
-const {test} = require('tap');
 
-const macros = './macros/';
-
-const addressForPublicKey = require(`${macros}address_for_public_key`);
-const {broadcastTransaction} = require('./../chain');
-const {claimTransaction} = require('./../swaps');
-const {findSwapTransaction} = require('./../service');
-const {generateChainBlocks, getBlockchainInfo} = require('./../chain');
-const generateInvoice = require(`${macros}generate_invoice`);
-const {generateKeyPair} = require('./../chain');
-const mineTransaction = require(`${macros}mine_transaction`);
-const {returnResult} = require('./../async-util');
-const sendChainTokensTransaction = require(`${macros}send_chain_tokens_tx`);
-const {spawnChainDaemon, stopChainDaemon} = require('./../chain');
-const {swapAddress} = require('./../swaps');
-const {swapScriptInTransaction} = require('./../swaps');
-
-const chain = require('./../chain').constants;
+const addressForPublicKey = require('./address_for_public_key');
+const {broadcastTransaction} = require('./../../chain');
+const {claimTransaction} = require('./../../swaps');
+const {clearCache} = require('./../../cache');
+const {constants} = require('./../../chain');
+const {findSwapTransaction} = require('./../../service');
+const {generateChainBlocks} = require('./../../chain');
+const generateInvoice = require('./generate_invoice');
+const {generateKeyPair} = require('./../../chain');
+const {getBlockchainInfo} = require('./../../chain'); 
+const mineTransaction = require('./mine_transaction');
+const sendChainTokensTransaction = require('./send_chain_tokens_tx');
+const {spawnChainDaemon} = require('./../../chain');
+const {stopChainDaemon} = require('./../../chain');
+const {swapAddress} = require('./../../swaps');
+const {swapScriptInTransaction} = require('./../../swaps');
 
 const blockSearchDepth = 9;
-const coinbaseIndex = chain.coinbase_tx_index;
-const maturityBlockCount = chain.maturity_block_count;
-const network = 'regtest';
+const coinbaseIndex = constants.coinbase_tx_index;
+const maturityBlockCount = constants.maturity_block_count;
 const staticFeePerVirtualByte = 100;
 const swapTimeoutBlockCount = 200;
 
@@ -36,12 +32,8 @@ const swapTimeoutBlockCount = 200;
 
   {
     [is_refund_to_public_key_hash]: <Is Refund to PKHash Flow Bool>
-    swap_type: <Swap Address Type String>
-  }
-
-  @returns via cbk
-  {
     network: <Network Name String>
+    swap_type: <Swap Address Type String>
   }
 */
 module.exports = (args, cbk) => {
@@ -49,7 +41,7 @@ module.exports = (args, cbk) => {
     // Alice will make a keypair that she will use to claim her rewarded funds
     generateAliceKeyPair: cbk => {
       try {
-        return cbk(null, generateKeyPair({network}));
+        return cbk(null, generateKeyPair({network: args.network}));
       } catch (e) {
         return cbk([0, 'ExpectedGeneratedKeyPair', e]);
       }
@@ -58,7 +50,7 @@ module.exports = (args, cbk) => {
     // Bob will make a keypair that he will use if Alice doesn't do the swap
     generateBobKeyPair: cbk => {
       try {
-        return cbk(null, generateKeyPair({network}));
+        return cbk(null, generateKeyPair({network: args.network}));
       } catch (e) {
         return cbk([0, 'ExpectedGeneratedKeyPair', e]);
       }
@@ -72,19 +64,10 @@ module.exports = (args, cbk) => {
       cbk);
     }],
 
-    // Alice makes an address she will use to sweep out her coins to later
-    createAliceAddress: ['generateAliceKeyPair', (res, cbk) => {
-      return addressForPublicKey({
-        network,
-        public_key: res.generateAliceKeyPair.public_key,
-      },
-      cbk);
-    }],
-
     // We'll bring up a fake chain for this test, with Bob getting the rewards
     spawnChainDaemon: ['generateBobKeyPair', ({generateBobKeyPair}, cbk) => {
       return spawnChainDaemon({
-        network,
+        network: args.network,
         mining_public_key: generateBobKeyPair.public_key,
       },
       cbk);
@@ -93,7 +76,7 @@ module.exports = (args, cbk) => {
     // The chain needs to progress to maturity for Bob to spend his rewards
     generateToMaturity: ['spawnChainDaemon', ({}, cbk) => {
       return generateChainBlocks({
-        network,
+        network: args.network,
         blocks_count: maturityBlockCount,
       },
       cbk);
@@ -154,7 +137,7 @@ module.exports = (args, cbk) => {
     // The chain progresses and confirms the swap funding
     mineFundingTx: ['fundSwapAddress', ({fundSwapAddress}, cbk) => {
       return mineTransaction({
-        network,
+        network: args.network,
         transaction: fundSwapAddress.transaction,
       },
       cbk);
@@ -162,8 +145,10 @@ module.exports = (args, cbk) => {
 
     // Find the funding transaction
     findFundingTransaction: [
+      'bobUtxo',
       'generateAliceKeyPair',
       'generateBobKeyPair',
+      'generatePaymentPreimage',
       'mineFundingTx',
       (res, cbk) =>
     {
@@ -173,36 +158,38 @@ module.exports = (args, cbk) => {
       const refundPk = !isPkHash ? res.generateBobKeyPair.public_key : null;
 
       return findSwapTransaction({
-        network,
+        cache: 'memory',
+        network: args.network,
         block_search_depth: blockSearchDepth,
         destination_public_key: res.generateAliceKeyPair.public_key,
         payment_hash: res.generatePaymentPreimage.payment_hash,
         refund_public_key: refundPk,
         refund_public_key_hash: refundPkHash,
         timeout_block_height: maturityBlockCount + swapTimeoutBlockCount,
+        tokens: res.bobUtxo.tokens,
       },
       cbk);
     }],
 
     // Alice gets the height of the chain for her claim tx
-    getHeightForSweepTransaction: ['mineFundingTx', (res, cbk) => {
-      return getBlockchainInfo({network}, cbk);
+    getHeightForSweepTransaction: ['mineFundingTx', ({}, cbk) => {
+      return getBlockchainInfo({network: args.network}, cbk);
     }],
 
     // Alice grabs the utxo she can spend to herself from the funded swap utxo
     fundingTransactionUtxos: [
       'createChainSwapAddress',
       'findFundingTransaction',
-      (res, cbk) =>
+      ({createChainSwapAddress, findFundingTransaction}, cbk) =>
     {
-      if (!res.findFundingTransaction.transaction) {
+      if (!findFundingTransaction.transaction) {
         return cbk([0, 'ExpectedFundedSwapTransaction']);
       }
 
       try {
         return cbk(null, swapScriptInTransaction({
-          redeem_script: res.createChainSwapAddress.redeem_script,
-          transaction: res.findFundingTransaction.transaction,
+          redeem_script: createChainSwapAddress.redeem_script,
+          transaction: findFundingTransaction.transaction,
         }));
       } catch (e) {
         return cbk([0, e.message, e]);
@@ -211,14 +198,15 @@ module.exports = (args, cbk) => {
 
     // Make sure that we are ready to claim
     readyToClaim: [
-      'createAliceAddress', // Got an address to sweep claimed funds to
       'fundingTransactionUtxos', // Figured out which utxos are swap ones
+      'generateAliceKeyPair',
+      'generatePaymentPreimage',
       'getHeightForSweepTransaction', // Got a good locktime for the sweep tx
       (res, cbk) =>
     {
       return cbk(null, {
         current_block_height: res.getHeightForSweepTransaction.current_height,
-        destination: res.createAliceAddress.p2wpkh_address,
+        destination: res.generateAliceKeyPair.p2wpkh_address,
         fee_tokens_per_vbyte: staticFeePerVirtualByte,
         preimage: res.generatePaymentPreimage.payment_preimage,
         private_key: res.generateAliceKeyPair.private_key,
@@ -245,7 +233,7 @@ module.exports = (args, cbk) => {
     // Make sure that using a bad preimage fails the claim tx broadcast
     confirmFailWithBadPreimage: ['claimWithBadPreimage', (res, cbk) => {
       return broadcastTransaction({
-        network,
+        network: args.network,
         transaction: res.claimWithBadPreimage.transaction,
       },
       err => {
@@ -274,14 +262,24 @@ module.exports = (args, cbk) => {
     }],
 
     // Make sure that using a bad claim signature fails the tx broadcast
-    confirmFailWithBadSig: ['claimWithBobSig', (res, cbk) => {
+    confirmFailWithBadSig: ['claimWithBobSig', ({claimWithBobSig}, cbk) => {
       return broadcastTransaction({
-        network: res.network,
-        transaction: res.claimWithBobSig.transaction,
+        network: args.network,
+        transaction: claimWithBobSig.transaction,
       },
       err => {
-        if (!err) {
-          return cbk([0, 'Expect fail to spend with bad sig']);
+        if (!Array.isArray(err)) {
+          return cbk([0, 'ExpectBadSigFails']);
+        }
+
+        const [code, msg] = err;
+
+        if (code !== 503) {
+          return cbk([0, 'ExpectedRemoteFailureCode']);
+        }
+
+        if (msg !== 'TransactionBroadcastFailed') {
+          return cbk([0, 'ExpectedTransactionBroadcastFailure']);
         }
 
         return cbk();
@@ -308,41 +306,21 @@ module.exports = (args, cbk) => {
     mineClaimTransaction: ['claimTransaction', ({claimTransaction}, cbk) => {
       const {transaction} = claimTransaction;
 
-      return mineTransaction({network, transaction}, cbk);
+      return mineTransaction({network: args.network, transaction}, cbk);
     }],
   },
-  returnResult({}, cbk));
+  (err, res) => {
+    if (!!res.spawnChainDaemon && !!res.spawnChainDaemon.is_ready) {
+      return stopChainDaemon({network: args.network}, stopErr => {
+        return cbk(stopErr || err);
+      });
+    }
+
+    if (!!err) {
+      return cbk(err);
+    }
+
+    return clearCache({cache: 'memory'}, cbk);
+  });
 };
-
-['p2sh', 'p2sh_p2wsh', 'p2wsh'].forEach(swapType => {
-  // Make sure that we can swap with a pkhash
-  test(`perform swap: pkhash refund, ${swapType} swap address`, t => {
-    return module.exports({
-      is_refund_to_public_key_hash: true,
-      swap_type: swapType,
-    },
-    testErr => {
-      return stopChainDaemon({network}, stopErr => {
-        if (!!stopErr || !!testErr) {
-          throw new Error(testErr[1] || stopErr[1]);
-        }
-
-        return t.end();
-      });
-    });
-  });
-
-  // Make sure that we can swap with a public key
-  test(`perform swap: public key refund, ${swapType} swap address`, t => {
-    return module.exports({swap_type: swapType}, testErr => {
-      return stopChainDaemon({network}, stopErr => {
-        if (!!stopErr || !!testErr) {
-          throw new Error(testErr[1] || stopErr[1]);
-        }
-
-        return t.end();
-      });
-    });
-  });
-});
 

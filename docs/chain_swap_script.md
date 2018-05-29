@@ -1,7 +1,7 @@
 # Chain Swap Script
 
-The on-chain swap script for Orion defines how the tokens are sent to be
-compensated for the payment of an off-chain invoice.
+The on-chain swap script defines how the tokens are sent to be compensated for
+the payment of an off-chain invoice.
 
 ## Pseudocode
 

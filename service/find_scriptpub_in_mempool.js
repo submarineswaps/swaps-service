@@ -41,6 +41,10 @@ module.exports = (args, cbk) => {
 
     // Check arguments
     validate: cbk => {
+      if (!args.cache) {
+        return cbk([400, 'ExpectedCacheForFoundScriptPubs']);
+      }
+
       if (!args.network) {
         return cbk([400, 'ExpectedNetwork']);
       }
@@ -73,6 +77,7 @@ module.exports = (args, cbk) => {
         getMempool.transaction_ids,
         checkFanOutLimit,
         (id, cbk) => transactionHasScriptPub({
+          cache: args.cache,
           is_ignoring_tokens: args.is_ignoring_tokens,
           network: args.network,
           output_scripts: args.output_scripts,

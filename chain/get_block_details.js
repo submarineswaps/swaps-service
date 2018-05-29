@@ -10,7 +10,7 @@ const {returnResult} = require('./../async-util');
 /** Get details for a block
 
   {
-    block_hash: <Block Hash Hex String>
+    id: <Block Hash Hex String>
     network: <Network Name String>
   }
 
@@ -24,25 +24,15 @@ const {returnResult} = require('./../async-util');
     }]
   }
 */
-module.exports = (args, cbk) => {
+module.exports = ({id, network}, cbk) => {
   return asyncAuto({
     // Get the high level block details, with transaction ids
-    getBlock: cbk => {
-      return getBlock({
-        block_hash: args.block_hash,
-        network: args.network
-      },
-      cbk);
-    },
+    getBlock: cbk => getBlock({id, network}, cbk),
 
     // Get the transactions out of the blocks
     getTransactions: ['getBlock', ({getBlock}, cbk) => {
-      return asyncMapSeries(getBlock.transaction_ids, (txId, cbk) => {
-        return getTransaction({
-          network: args.network,
-          transaction_id: txId,
-        },
-        cbk);
+      return asyncMapSeries(getBlock.transaction_ids, (id, cbk) => {
+        return getTransaction({id, network}, cbk);
       },
       cbk);
     }],

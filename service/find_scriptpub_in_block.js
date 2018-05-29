@@ -2,17 +2,18 @@ const asyncAuto = require('async/auto');
 const asyncDetectLimit = require('async/detectLimit');
 
 const {getBlock} = require('./../chain');
+const {getJsonFromCache} = require('./../cache');
 const {returnResult} = require('./../async-util');
+const {setJsonInCache} = require('./../cache');
 const transactionHasScriptPub = require('./transaction_has_scriptpub');
 
 const cacheBlockMs = 30 * 1000;
 const checkFanOutLimit = 2;
 
-let cachedBlocks = {};
-
 /** Scan a block to find a transaction that matches script-pubs
 
   {
+    cache: <Cache Type String>
     block_hash: <Block Hash Hex String>
     [is_ignoring_tokens]: <Is Ignoring Tokens Value Bool>
     network: <Network Name String>
@@ -34,6 +35,10 @@ module.exports = (args, cbk) => {
         return cbk([400, 'ExpectedBlockHash']);
       }
 
+      if (!args.cache) {
+        return cbk([400, 'ExpectedCacheTypeForResultCaching']);
+      }
+
       if (!args.network) {
         return cbk([400, 'ExpectedNetwork']);
       }
@@ -49,38 +54,56 @@ module.exports = (args, cbk) => {
       return cbk();
     },
 
-    // Get the transaction ids in the referenced block hash
-    getBlock: cbk => {
-      const cachedBlock = cachedBlocks[args.block_hash];
+    // Get a block out of the cache
+    getCachedBlock: ['validate', ({}, cbk) => {
+      return getJsonFromCache({
+        cache: args.cache,
+        key: args.block_hash,
+        type: 'block',
+      },
+      cbk);
+    }],
 
-      if (!!cachedBlock) {
+    // Get the transaction ids in the referenced block hash
+    getBlock: ['getCachedBlock', ({getCachedBlock}, cbk) => {
+      if (!!getCachedBlock && Array.isArray(getCachedBlock.transaction_ids)) {
         return cbk(null, {
           is_cached_result: true,
-          previous_block_hash: cachedBlock.previous_block_hash,
-          transaction_ids: cachedBlock.transaction_ids,
+          previous_block_hash: getCachedBlock.previous_block_hash,
+          transaction_ids: getCachedBlock.transaction_ids,
         });
       }
 
-      return getBlock({
-        block_hash: args.block_hash,
-        network: args.network,
+      return getBlock({id: args.block_hash, network: args.network}, cbk);
+    }],
+
+    // Add the block to the cache
+    setCachedBlock: ['getBlock', ({getBlock}, cbk) => {
+      if (!!getBlock.is_cached_result) {
+        return cbk();
+      }
+
+      return setJsonInCache({
+        cache: args.cache,
+        key: args.block_hash,
+        ms: cacheBlockMs,
+        type: 'block',
+        value: {
+          previous_block_hash: getBlock.previous_block_hash,
+          transaction_ids: getBlock.transaction_ids,
+        },
       },
       cbk);
-    },
+    }],
 
     // Find transaction in block
     findTransaction: ['getBlock', ({getBlock}, cbk) => {
-      if (!getBlock.is_cached_result) {
-        cachedBlocks[args.block_hash] = getBlock;
-
-        setTimeout(() => cachedBlocks[args.block_hash] = null, cacheBlockMs);
-      }
-
       return asyncDetectLimit(
         getBlock.transaction_ids,
         checkFanOutLimit,
         (id, cbk) => {
           return transactionHasScriptPub({
+            cache: args.cache,
             is_ignoring_tokens: args.is_ignoring_tokens,
             network: args.network,
             output_scripts: args.output_scripts,
@@ -93,6 +116,7 @@ module.exports = (args, cbk) => {
       );
     }],
 
+    // Final found result
     found: ['findTransaction', 'getBlock', (res, cbk) => {
       return cbk(null, {
         previous_block_hash: res.getBlock.previous_block_hash,

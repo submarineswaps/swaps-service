@@ -1,16 +1,18 @@
 const asyncAuto = require('async/auto');
 const {Transaction} = require('bitcoinjs-lib');
 
+const {getJsonFromCache} = require('./../cache');
 const {getTransaction} = require('./../chain');
 const {returnResult} = require('./../async-util');
+const {setJsonInCache} = require('./../cache');
 
-const cachedTx = {};
 const cacheTxMs = 60 * 60 * 1000;
 const notFoundIndex = -1;
 
 /** Determine if a transaction has a script pub output
 
   {
+    cache: <Cache Type String>
     is_ignoring_tokens: <Is Ignoring Tokens Value Bool>
     output_scripts: [<Output Script Hex String>]
     network: <Network Name String>
@@ -25,12 +27,16 @@ module.exports = (args, cbk) => {
   return asyncAuto({
     // Check arguments
     validate: cbk => {
-      if (!Array.isArray(args.output_scripts) || !args.output_scripts.length) {
-        return cbk([400, 'ExpectedOutputScripts']);
+      if (!args.cache) {
+        return cbk([400, 'ExpectedCacheTypeToCheckCachedResult']);
       }
 
       if (!args.network) {
         return cbk([400, 'ExpectedNetwork']);
+      }
+
+      if (!Array.isArray(args.output_scripts) || !args.output_scripts.length) {
+        return cbk([400, 'ExpectedOutputScripts']);
       }
 
       if (!args.tokens && !args.is_ignoring_tokens) {
@@ -44,27 +50,57 @@ module.exports = (args, cbk) => {
       return cbk();
     },
 
-    // Get the transaction
-    getTransaction: ['validate', ({}, cbk) => {
-      const transaction = cachedTx[args.transaction_id];
+    // See if we have a cached result to this query
+    getCachedTransaction: ['validate', ({}, cbk) => {
+      return getJsonFromCache({
+        cache: args.cache,
+        key: args.transaction_id,
+        type: 'transaction',
+      },
+      cbk);
+    }],
 
-      if (!!transaction) {
-        return cbk(null, {transaction, is_cached_result: true});
+    // Get the transaction
+    getTransaction: ['getCachedTransaction', ({getCachedTransaction}, cbk) => {
+      if (!!getCachedTransaction && !!getCachedTransaction.transaction) {
+        return cbk(null, {
+          is_cached_result: true,
+          transaction: getCachedTransaction.transaction,
+        });
       }
 
       return getTransaction({
+        id: args.transaction_id,
         network: args.network,
-        transaction_id: args.transaction_id,
+      },
+      cbk);
+    }],
+
+    // Set the cached transaction
+    setCachedTransaction: ['getTransaction', ({getTransaction}, cbk) => {
+      if (!getTransaction || !getTransaction.transaction) {
+        return cbk([500, 'ExpectedKnownTransaction']);
+      }
+
+      // Exit early when there is no need to cache a fresh result
+      if (!!getTransaction.is_cached_result) {
+        return cbk();
+      }
+
+      return setJsonInCache({
+        cache: args.cache,
+        key: args.transaction_id,
+        ms: cacheTxMs,
+        type: 'transaction',
+        value: getTransaction.transaction,
       },
       cbk);
     }],
 
     // Parse the transaction hex
     transaction: ['getTransaction', ({getTransaction}, cbk) => {
-      if (!getTransaction.is_cached_result) {
-        cachedTx[args.transaction_id] = getTransaction.transaction;
-
-        setTimeout(() => cachedTx[args.transaction_id] = null, cacheTxMs);
+      if (!getTransaction || !getTransaction.transaction) {
+        return cbk([500, 'ExpectedKnownTransaction']);
       }
 
       try {
