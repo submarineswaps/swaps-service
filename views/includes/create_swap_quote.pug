@@ -6,7 +6,7 @@ form.collapse.create-swap-quote.mb-4.show
       .input-group.input-group-lg.mb-3
         .input-group-prepend
           span.input-group-text
-            i.fa.fa-fw.fa-bolt
+            i.fa-bolt.fa-fw.fas
         input.form-control.pay-to-lightning-invoice(
           autofocus,
           placeholder="Enter Lightning invoice to pay...",
@@ -36,16 +36,16 @@ form.collapse.create-swap-quote.mb-4.show
             span.payment-public-key
             a(href="#").destination-url.text-dark
           p.card-text.description
-            i.fa.fa-quote-left.mr-2.text-muted
+            i.fa-quote-left.fas.mr-2.text-muted
             span.payment-description.mr-2
-            i.fa.fa-quote-right.text-muted
+            i.fa-quote-right.fas.text-muted
     .form-group
       label
         strong Pay With:
       .input-group.input-group-lg.mb-3
         .input-group-prepend
           label.input-group-text
-            i.fa.fa-btc.fa-fw
+            i.fab.fa-btc.fa-fw
         select.custom-select.form-control.select-currency
           option(selected, value="tBTC")
             | Testnet BTC (on-chain for off-chain)
@@ -69,7 +69,7 @@ form.collapse.create-swap-quote.mb-4.show
       .input-group.input-group-lg.mb-3
         .input-group-prepend
           span.input-group-text
-            i.fa.fa-fw.fa-undo
+            i.fa-fw.fas.fa-undo-alt
         input.form-control.refund-address(
           autocomplete="off",
           placeholder="Enter a refund address...",

@@ -10,7 +10,7 @@
             href="#pay",
             role="tab"
           )
-            i.fa.fa-exchange.mr-1
+            i.fa-exchange-alt.fas.mr-1
             span #{' '}
             span Pay to Swap
         li.nav-item
@@ -21,7 +21,7 @@
             href="#refund",
             role="tab"
           )
-            i.fa.fa-info.mr-1
+            i.fa-info-circle.fas.mr-1
             span #{' '}
             span Contract Details
         li.nav-item
@@ -32,7 +32,7 @@
             href="#cancel",
             role="tab"
           )
-            i.fa.fa-trash.mr-1
+            i.fas.fa-trash.mr-1
             span #{' '}
             span Cancel
     .card-body
@@ -57,11 +57,11 @@
               span.fiat-currency-code USD
               span )
             p.description
-              i.fa.fa-quote-left.mr-1.text-muted
+              i.fa-quote-left.fas.mr-1.text-muted
               span #{' '}
               span.payment-description.mr-1
               span #{' '}
-              i.fa.fa-quote-right.text-muted
+              i.fa-quote-right.fas.text-muted
             hr
             p.mb-0
               span Sending to
@@ -74,12 +74,12 @@
               a.btn.btn-primary.download-file.save-redeem-script(href="#")
                 span 1.
                 span.mr-1 #{' '}
-                i.fa.fa-download.mr-2
+                i.fa-download.fas.mr-2
                 span Save Refund Details
               a.btn.btn-primary.disabled.chain-link(href="#")
                 span 2.
                 span.mr-1 #{' '}
-                i.fa.fa-btc.mr-1
+                i.fab.fa-btc.mr-1
                 span #{' '}
                 span Pay to Swap Address
             .collapse.hide.make-payment
@@ -110,9 +110,9 @@
                   .pb-4.pt-4.qr-code
               .alert.alert-secondary.waiting-notification(role="alert")
                 h4.alert-heading.collapse.hide.tx-found Swap Pending
-                h5.pull-right
-                  i.fa.fa-asterisk.fa-spin
-                a.alert-link.check-swap.mr-4.pull-right(
+                h5.float-right
+                  i.fa-asterisk.fas.fa-spin
+                a.alert-link.check-swap.mr-4.float-right(
                   data-pending_title="Checking...",
                   href='#',
                   title="Check?",
@@ -186,7 +186,7 @@
             | Don't want to go through with the swap? You can cancel your swap
             | at any time before sending payment.
           button.btn.btn-block.btn-lg.btn-danger.delete-swap.mb-2
-            i.fa.fa-trash
+            i.fas.fa-trash.mr-2
             span #{' '}
             span Cancel Swap
           p.card-text.text-muted
