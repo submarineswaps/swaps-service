@@ -1,7 +1,7 @@
 const App = {
   address_details: {},
   change_events: 'change keyup paste',
-  check_for_swap_interval_ms: 2000,
+  check_for_swap_interval_ms: 3000,
   check_for_swap_interval: null,
   grace_ms: 1800 * 1e3,
   invoice_details: {},
@@ -41,12 +41,21 @@ App.changedInvoice = function({}) {
 
   detailsDisplay.collapse('hide');
 
+  $('.has-invoice-problem').prop('hidden', true);
+
   // Exit early when the invoice has been removed
   if (!invoice) {
     App.updatedSwapDetails({swap});
 
+    $('.looking-up-invoice').prop('hidden', true);
+    $('.not-looking-up-invoice').prop('hidden', false);
+    $('.has-invoice-problem').prop('hidden', true);
+
     return input.removeClass('is-invalid').removeClass('is-valid');
   }
+
+  $('.looking-up-invoice').prop('hidden', false);
+  $('.not-looking-up-invoice').prop('hidden', true);
 
   return App.getInvoiceDetails({invoice}, (err, details) => {
     // Exit early when input has changed while the fetch was happening.
@@ -54,11 +63,17 @@ App.changedInvoice = function({}) {
       return;
     }
 
+    $('.looking-up-invoice').prop('hidden', true);
+    $('.not-looking-up-invoice').prop('hidden', false);
+    $('.has-invoice-problem').prop('hidden', true);
+
     if (!!err) {
       const [errCode, errMessage] = err;
 
       detailsDisplay.collapse('hide');
 
+      $('.has-invoice-problem').prop('hidden', false);
+      $('.not-looking-up-invoice').prop('hidden', true);
       input.addClass('is-invalid');
 
       let text;
@@ -66,6 +81,10 @@ App.changedInvoice = function({}) {
       switch (errMessage) {
       case 'ChainFeesTooHighToSwap':
         text = 'Value too low for a chain swap. Use a higher value invoice?';
+        break;
+
+      case 'DecodeInvoiceFailure':
+        text = 'Couldn\'t read this invoice. Try a different one?';
         break;
 
       case 'InsufficientCapacityForSwap':
@@ -802,20 +821,38 @@ App.showInvoice = args => {
 
   const fiat = invoice.fiat_value / cents;
   const hasDestinationUrl = !!invoice.destination_url;
-  const isTestnet = invoice.is_testnet;
+
+  let symbolForFiat;
+  let symbolForNetwork;
+
+  switch (invoice.network) {
+  case 'testnet':
+    symbolForFiat = 'tUSD';
+    symbolForNetwork = 'tBTC';
+    break;
+
+  case 'bitcoin':
+    symbolForFiat = 'USD';
+    symbolForNetwork = 'BTC';
+    break;
+
+  default:
+    symbolForNetwork = '';
+    symbolForNetwork = '';
+    break;
+  }
 
   details.find('.destination-url').prop('href', invoice.destination_url);
   details.find('.destination-url').text(invoice.destination_label);
   details.find('.destination-url').prop('hidden', !hasDestinationUrl);
   details.find('.payment-public-key').text(invoice.destination_public_key);
   details.find('.payment-public-key').prop('hidden', !!hasDestinationUrl);
-  details.find('.fiat-currency-code').text(invoice.fiat_currency_code);
+  details.find('.fiat-currency-code').text(symbolForFiat);
   details.find('.fiat-send-amount').text(currencyFormatter.format(fiat));
   details.find('.description').prop('hidden', !invoice.description);
   details.find('.payment-description').text(invoice.description);
   details.find('.send-amount').text(App.format({tokens: invoice.tokens}));
-  details.find('.send-currency-code').text(invoice.currency);
-  details.find('.testnet-currency-qualifier').prop('hidden', !isTestnet);
+  details.find('.send-currency-code').text(symbolForNetwork);
 
   details.collapse('show');
 

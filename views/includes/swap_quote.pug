@@ -47,14 +47,12 @@
               span #{' '}
               span.send-amount
               span #{' '}
-              span.testnet-currency-qualifier t
-              span.send-currency-code BTC
+              span.send-currency-code
               span #{' '}
               span (
               span.fiat-send-amount
               span #{' '}
-              span.testnet-currency-qualifier t
-              span.fiat-currency-code USD
+              span.fiat-currency-code
               span )
             p.description
               i.fa-quote-left.fas.mr-1.text-muted
@@ -89,7 +87,7 @@
                     label
                       span Send
                       span #{' '}
-                      strong tBTC
+                      strong
                       span #{' '}
                       span to Swap Address:
                     input.form-control.form-control-lg.swap-address(
@@ -102,7 +100,7 @@
                     input.form-control.form-control-lg.swap-amount(
                       readonly,
                       type="text",
-                      value="Loading..."
+                      value="Loading...",
                     )
                     small.form-text.text-muted
                       | Make sure to send the exact amount!
