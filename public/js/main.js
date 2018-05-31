@@ -15,6 +15,12 @@ App.changedCurrencySelection = function({}) {
   const createSwapQuote = $(this).closest('.create-swap-quote');
   const currencyCode = $(this).val();
 
+  const iconToShow = `.icon-${currencyCode.toLowerCase()}`;
+
+  createSwapQuote.find('.coin-icon').prop('hidden', true);
+
+  createSwapQuote.find(iconToShow).removeAttr('hidden');
+
   createSwapQuote.find('.address-currency-label').text(currencyCode);
 
   return;
@@ -346,6 +352,7 @@ App.clickedNewSwap = function(event) {
 
   $('.create-swap-quote').collapse('show');
   $('.new-swap').addClass('disabled');
+  $('.presented.swap-success').remove();
 
   return;
 };
