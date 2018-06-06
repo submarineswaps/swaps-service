@@ -2,11 +2,52 @@ form.collapse.create-swap-quote.mb-4.show
   .swap-settings
     .form-group
       label
-        h4.text-primary Pay Invoice:
+        h4.text-primary Swap:
+      .input-group.input-group-lg.mb-3
+        .input-group-prepend
+          label.input-group-text
+            span.coin-icon.icon-tltc(hidden)
+              svg.svg-litecoin(
+                aria-hidden="true",
+                role="img",
+                viewBox="0.847 0.876 329.254 329.256",
+                xmlns="http://www.w3.org/2000/svg",
+              )
+                path(
+                  d="M330.102 165.503c0 90.922-73.705 164.629-164.626 164.629C74.554 330.132.848 256.425.848 165.503.848 74.582 74.554.876 165.476.876c90.92 0 164.626 73.706 164.626 164.627",
+                  fill="currentColor",
+                )
+                path(
+                  d="M295.15 165.505c0 71.613-58.057 129.675-129.674 129.675-71.616 0-129.677-58.062-129.677-129.675 0-71.619 58.061-129.677 129.677-129.677 71.618 0 129.674 58.057 129.674 129.677",
+                  fill="currentColor",
+                )
+                path(
+                  d="M155.854 209.482l10.693-40.264 25.316-9.249 6.297-23.663-.215-.587-24.92 9.104 17.955-67.608h-50.921l-23.481 88.23-19.605 7.162-6.478 24.395 19.59-7.156-13.839 51.998h135.521l8.688-32.362h-84.601",
+                  fill="#e4e7eb",
+                )
+            i.coin-icon.fab.fa-bitcoin.fa-fw.icon-tbtc
+            i.coin-icon.fas.fa-stop-circle.fa-fw.icon-tbch(hidden)
+        select.custom-select.form-control.select-currency
+          option(selected, value="tBTC")
+            | Testnet Bitcoin
+          option(disabled, value="tLTC")
+            | Testnet Litecoin
+          option(disabled, value="tBCH")
+            | Testnet Bcash (coming soon)
+        .input-group-append
+          label.input-group-text
+            | Fee: 1.5%
+      small.form-text.text-muted
+        | You will make an on-chain payment using this currency.
+    .form-group
+      label
+        h4.text-primary To pay a Lightning invoice:
       .input-group.input-group-lg.mb-3
         .input-group-prepend
           span.input-group-text
-            i.fa.fa-fw.fa-bolt
+            i.fa-asterisk.fa-fw.fa-spin.fas.looking-up-invoice(hidden)
+            i.fa-bolt.fa-fw.fas.not-looking-up-invoice
+            i.fa-frown.fa-fw.fas.has-invoice-problem.text-danger(hidden)
         input.form-control.pay-to-lightning-invoice(
           autofocus,
           placeholder="Enter Lightning invoice to pay...",
@@ -19,16 +60,16 @@ form.collapse.create-swap-quote.mb-4.show
       .bg-light.card
         .card-body.pb-3
           h4.card-title
+            span Send
+            span #{' '}
             span.send-amount
             span #{' '}
-            span.testnet-currency-qualifier t
-            span.send-currency-code BTC
+            span.send-currency-code
             span #{' '}
             span (
             span.fiat-send-amount
             span #{' '}
-            span.testnet-currency-qualifier t
-            span.fiat-currency-code USD
+            span.fiat-currency-code
             span )
           h6.card-subtitle.mb-2.text-muted
             span to
@@ -36,28 +77,9 @@ form.collapse.create-swap-quote.mb-4.show
             span.payment-public-key
             a(href="#").destination-url.text-dark
           p.card-text.description
-            i.fa.fa-quote-left.mr-2.text-muted
+            i.fa-quote-left.fas.mr-2.text-muted
             span.payment-description.mr-2
-            i.fa.fa-quote-right.text-muted
-    .form-group
-      label
-        strong Pay With:
-      .input-group.input-group-lg.mb-3
-        .input-group-prepend
-          label.input-group-text
-            i.fa.fa-btc.fa-fw
-        select.custom-select.form-control.select-currency
-          option(selected, value="tBTC")
-            | Testnet BTC (on-chain for off-chain)
-          option(disabled, value="tLTC")
-            | Testnet LTC (coming soon)
-          option(disabled, value="tBCH")
-            | Testnet BCash (coming soon)
-        .input-group-append
-          label.input-group-text
-            | Fee: 1.5%
-      small.form-text.text-muted
-        | You will make an on-chain payment using this currency.
+            i.fa-quote-right.fas.text-muted
     .mb-4
       .custom-control.custom-checkbox
         input.custom-control-input#use-paper-wallet(checked, type="checkbox")
@@ -69,7 +91,7 @@ form.collapse.create-swap-quote.mb-4.show
       .input-group.input-group-lg.mb-3
         .input-group-prepend
           span.input-group-text
-            i.fa.fa-fw.fa-undo
+            i.fa-fw.fas.fa-undo-alt
         input.form-control.refund-address(
           autocomplete="off",
           placeholder="Enter a refund address...",
@@ -95,3 +117,4 @@ form.collapse.create-swap-quote.mb-4.show
           | things go wrong.
     button.btn.btn-lg.btn-primary.disabled.make(type="submit")
       span.mr-2 Pay to Swap
+      i.fa-chevron-circle-right.fas
