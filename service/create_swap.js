@@ -6,6 +6,7 @@ const getInvoiceDetails = require('./get_invoice_details');
 const {returnResult} = require('./../async-util');
 const serverSwapKeyPair = require('./server_swap_key_pair');
 const {swapAddress} = require('./../swaps');
+const {watchSwapOutput} = require('./../scan');
 
 const network = 'testnet';
 const swapRate = 0.015;
@@ -14,6 +15,7 @@ const timeoutBlockCount = 144;
 /** Create a swap quote.
 
   {
+    cache: <Swap Cache Type String>
     currency: <Currency Code String>
     invoice: <Lightning Invoice String>
     refund_address: <Chain Address String>
@@ -53,6 +55,10 @@ module.exports = (args, cbk) => {
 
     // Validate basic arguments
     validate: cbk => {
+      if (!args.cache) {
+        return cbk([400, 'ExpectedCacheToPlaceCreatedSwap']);
+      }
+
       if (args.currency !== 'tBTC') {
         return cbk([400, 'ExpectedKnownCurrency']);
       }
@@ -97,6 +103,7 @@ module.exports = (args, cbk) => {
       return cbk(null, {public_key_hash: details.hash || details.data});
     }],
 
+    // Swap timeout block height
     timeoutBlockHeight: ['getBlockchainInfo', ({getBlockchainInfo}, cbk) => {
       return cbk(null, getBlockchainInfo.current_height + timeoutBlockCount);
     }],
@@ -125,6 +132,22 @@ module.exports = (args, cbk) => {
     // Swap fee component
     fee: ['getInvoiceDetails', ({getInvoiceDetails}, cbk) => {
       return cbk(null, Math.round(getInvoiceDetails.tokens * swapRate));
+    }],
+
+    // Add the created swap to the watch list
+    watchSwap: [
+      'swapAddress',
+      'swapKeyIndex',
+      ({swapAddress, swapKeyIndex}, cbk) =>
+    {
+      return watchSwapOutput({
+        network,
+        cache: args.cache,
+        index: swapKeyIndex,
+        invoice: args.invoice,
+        script: swapAddress.redeem_script,
+      },
+      cbk);
     }],
 
     // Swap details

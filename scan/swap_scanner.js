@@ -30,9 +30,12 @@ const mempoolListener = require('./mempool_listener');
   // Notification that a claim transaction is seen for a swap
   @event 'claim'
   {
+    id: <Transaction Id String>
     network: <Network Name String>
+    outpoint: <Outpoint String>
+    preimage: <Preimage Hex String>
     script: <Redeem Script Hex String>
-    transaction: <Transaction Hex String>
+    type: <Type String> // 'claim'
   }
 
   // Notification that an error was encountered by the scanner
@@ -49,17 +52,18 @@ const mempoolListener = require('./mempool_listener');
     output: <Output Script Hex String>
     script: <Redeem Script Hex String>
     tokens: <Token Count Number>
-    transaction: <Transaction Hex String>
+    type: <Type String> // 'funding'
     vout: <Output Index Number>
   }
 
   // Notification that a refund transaction is seen for a swap
   @event 'refund'
   {
-    confirmations: [<Block Hash String>]
+    id: <Transaction Id String>
     network: <Network Name String>
+    outpoint: <Spent Outpoint String>
     script: <Redeem Script Hex String>
-    transaction: <Transaction Hex String>
+    type: <Type String> 'refund'
   }
 */
 module.exports = ({cache, network}) => {
@@ -90,7 +94,50 @@ module.exports = ({cache, network}) => {
         }
 
         // Notify on all found swaps
-        return detected.swaps.forEach(swap => scanner.emit(swap.type, swap));
+        return detected.swaps.forEach(swap => {
+          switch (swap.type) {
+          case 'claim':
+            scanner.emit(swap.type, {
+              id,
+              network,
+              index: swap.index,
+              outpoint: swap.outpoint,
+              preimage: swap.preimage,
+              script: swap.script,
+              type: swap.type,
+            });
+            break;
+
+          case 'funding':
+            scanner.emit(swap.type, {
+              id,
+              network,
+              index: swap.index,
+              invoice: swap.invoice,
+              output: swap.output,
+              script: swap.script,
+              tokens: swap.tokens,
+              type: swap.type,
+              vout: swap.vout
+            });
+            break;
+
+          case 'refund':
+            scanner.emit(swap.type, {
+              id,
+              network,
+              index: swap.index,
+              outpoint: swap.outpoint,
+              script: swap.script,
+              type: swap.type,
+            });
+            break;
+
+          default:
+            scanner.emit('error', [500, 'UnknownSwapType']);
+            break;
+          }
+        });
       });
     });
 

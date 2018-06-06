@@ -102,7 +102,7 @@ module.exports = args => {
       return;
     }
 
-    const scriptDetails = swapScriptDetails({redeem_script: redeem});
+    const scriptDetails = swapScriptDetails({script: redeem});
 
     if (script === scriptDetails.p2sh_output_script) {
       return;
@@ -130,7 +130,7 @@ module.exports = args => {
       return;
     }
 
-    const scriptDetails = swapScriptDetails({redeem_script: redeem});
+    const scriptDetails = swapScriptDetails({script: redeem});
 
     if (script === scriptDetails.p2sh_p2wsh_output_script) {
       return;
@@ -162,7 +162,7 @@ module.exports = args => {
 
   // Anticipate the final weight of the transaction
   const anticipatedWeight = args.utxos.reduce((sum, utxo) => {
-    const scriptDetails = swapScriptDetails({redeem_script: utxo.redeem});
+    const scriptDetails = swapScriptDetails({script: utxo.redeem});
 
     if (utxo.script === scriptDetails.p2sh_output_script) {
       return sum;
@@ -198,7 +198,7 @@ module.exports = args => {
       return;
     }
 
-    const scriptDetails = swapScriptDetails({redeem_script: redeem});
+    const scriptDetails = swapScriptDetails({script: redeem});
 
     if (script === scriptDetails.p2sh_p2wsh_output_script) {
       return;
@@ -225,7 +225,7 @@ module.exports = args => {
 
   // Sign each input and include the normal redeem script for nested p2sh
   args.utxos.forEach(({redeem, script, tokens}, i) => {
-    const scriptDetails = swapScriptDetails({redeem_script: redeem});
+    const scriptDetails = swapScriptDetails({script: redeem});
 
     if (script === scriptDetails.p2sh_output_script) {
       return;

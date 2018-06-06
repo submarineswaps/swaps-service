@@ -188,7 +188,7 @@ App.changedRefundScript = function({}) {
     return $('.redeem-refund-address, .timeout-block-height').val('');
   }
 
-  const details = blockchain.swapScriptDetails({redeem_script: redeemScript});
+  const details = blockchain.swapScriptDetails({script: redeemScript});
 
   $('.dump-refund-address').text(details.refund_p2wpkh_address);
   $('.timeout-block-height').val(details.timelock_block_height);
@@ -213,13 +213,9 @@ App.changedRefundScript = function({}) {
 */
 App.checkSwap = ({button, id, quote}) => {
   return App.getSwap({
-    destination_public_key: App.swaps[id].destination_public_key,
     invoice: App.swaps[id].invoice,
-    payment_hash: App.swaps[id].payment_hash,
     redeem_script: App.swaps[id].redeem_script,
-    refund_public_key_hash: App.swaps[id].refund_public_key_hash,
     swap_key_index: App.swaps[id].swap_key_index,
-    timeout_block_height: App.swaps[id].timeout_block_height,
   },
   (err, res) => {
     if (!!App.swaps[id].is_completed) {
@@ -602,13 +598,8 @@ App.getInvoiceDetails = ({invoice}, cbk) => {
 /** Get the status of a swap
 
   {
-    destination_public_key: <Destination Public Key String>
     invoice: <Invoice BOLT 11 String>
-    payment_hash: <Payment Hash String>
     redeem_script: <Redeem Script String>
-    refund_public_key_hash: <Refund Public Key Hash String>
-    swap_key_index: <Swap Key Index Number>
-    timeout_block_height: <Timeout Block Height Number>
   }
 
   @returns via cbk
@@ -619,45 +610,20 @@ App.getInvoiceDetails = ({invoice}, cbk) => {
   }
 */
 App.getSwap = (args, cbk) => {
-  if (!args.destination_public_key) {
-    return cbk([0, 'ExpectedDestinationPublicKey']);
-  }
-
   if (!args.invoice) {
     return cbk([0, 'ExpectedInvoice']);
-  }
-
-  if (!args.payment_hash) {
-    return cbk([0, 'ExpectedPaymentHash']);
   }
 
   if (!args.redeem_script) {
     return cbk([0, 'ExpectedRedeemScript']);
   }
 
-  if (!args.refund_public_key_hash) {
-    return cbk([0, 'ExpectedRefundPublicKeyHash']);
-  }
-
-  if (!args.swap_key_index) {
-    return cbk([0, 'ExpectedSwapKeyIndex']);
-  }
-
-  if (!args.timeout_block_height) {
-    return cbk([0, 'ExpectedTimeoutBlockHeight']);
-  }
-
   const post = {
-    destination_public_key: args.destination_public_key,
     invoice: args.invoice,
-    payment_hash: args.payment_hash,
     redeem_script: args.redeem_script,
-    refund_public_key_hash: args.refund_public_key_hash,
-    swap_key_index: args.swap_key_index,
-    timeout_block_height: args.timeout_block_height,
   };
 
-  App.makeRequest({post, api: `swaps/${args.payment_hash}`})
+  App.makeRequest({post, api: `swaps/check`})
     .then(details => {
       if (!details.payment_secret && details.conf_wait_count === undefined) {
         throw new Error('ExpectedPaymentSecretOrConfirmationsWaitCount');
@@ -1025,7 +991,7 @@ App.submitOnlineRefundRecovery = function(event) {
       $('.refund-tx-vout').val(details.utxo.output_index);
       $('.timeout-block-height').val(details.timelock_block_height);
 
-      const swap = blockchain.swapScriptDetails({redeem_script: redeemScript});
+      const swap = blockchain.swapScriptDetails({script: redeemScript});
 
       $('.refund-p2sh-p2wsh-swap-address').text(swap.p2sh_p2wsh_address);
       $('.refund-p2sh-swap-address').text(swap.p2sh_address);
@@ -1069,7 +1035,7 @@ App.submitSignWithRefundDetails = function(e) {
   let swapDetails;
 
   try {
-    swapDetails = blockchain.swapScriptDetails({redeem_script: redeemScript});
+    swapDetails = blockchain.swapScriptDetails({script: redeemScript});
   } catch (e) {
     return console.log('FailedToDeriveSwapDetails', e);
   }

@@ -4,9 +4,11 @@ const asyncMap = require('async/map');
 const {networks} = require('bitcoinjs-lib');
 const {Transaction} = require('bitcoinjs-lib');
 
-const {fromOutputScript} = address;
+const {addressDetails} = require('./../chain');
 const getWatchedOutput = require('./get_watched_output');
 const {returnResult} = require('./../async-util');
+
+const {fromOutputScript} = address;
 
 /** Return swap transactions detected in the outputs of a transaction.
 
@@ -78,18 +80,25 @@ module.exports = ({cache, network, transaction}, cbk) => {
 
       const outputAddresses = outputs.map(({script, value}, i) => {
         try {
+          const address = fromOutputScript(script, networks[net]);
+
           return {
-            address: fromOutputScript(script, networks[net]),
+            address,
             index: i,
             output: script.toString('hex'),
             tokens: value,
+            type: addressDetails({address}).type,
           };
         } catch (e) {
           return null;
         }
       });
 
-      return cbk(null, outputAddresses.filter(n => !!n));
+      const scriptAddresses = outputAddresses
+        .filter(n => !!n)
+        .filter(({type}) => type === 'p2sh' || type === 'p2wsh');
+
+      return cbk(null, scriptAddresses);
     }],
 
     // Addresses watched by the scanner

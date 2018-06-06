@@ -20,14 +20,15 @@ const cacheSwapsMs = 1000 * 60 * 60 * 2;
   @return via cbk
   {
     swaps: [{
-      [id]: <Transaction Id Hex String>
-      [index]: <Key Index Number>
-      [invoice] <BOLT 11 Invoice String>
-      [output]: <Output Script Hex String>
-      script: <Swap Redeem Script String>
+      index: <Redeem Script Claim Key Index Number>
+      [invoice] <Funding Related BOLT 11 Invoice String>
+      [outpoint]: <Resolution Spent Outpoint String>
+      [output]: <Funding Output Script Hex String>
+      [preimage]: <Claim Preimage Hex String>
+      script: <Swap Redeem Script Hex String>
       [tokens]: <Token Count Number>
-      [transaction]: <Hex Serialized Transaction String>
       type: <Transaction Type String> claim|funding|refund
+      [vout]: <Funding Output Index Number>
     }]
   }
 */
@@ -113,13 +114,7 @@ module.exports = ({cache, id, network}, cbk) => {
       const fundingSwaps = !swapsFromOutputs ? [] : swapsFromOutputs.swaps;
       const resolutionSwaps = !swapsFromInputs ? [] : swapsFromInputs.swaps;
 
-      const swaps = fundingSwaps.concat(resolutionSwaps).map(swap => {
-        swap.transaction = getTransaction.transaction;
-
-        return swap;
-      });
-
-      return cbk(null, swaps);
+      return cbk(null, [].concat(fundingSwaps).concat(resolutionSwaps));
     }],
 
     // Set cached swap status

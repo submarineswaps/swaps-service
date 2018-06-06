@@ -17,7 +17,7 @@ module.exports = ({script, witness}) => {
   const [redeemScript] = scriptElements({script, witness}).reverse();
 
   try {
-    return !!swapScriptDetails({redeem_script: redeemScript});
+    return !!swapScriptDetails({script: redeemScript});
   } catch (e) {
     return false;
   }

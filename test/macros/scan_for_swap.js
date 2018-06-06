@@ -3,6 +3,7 @@ const asyncConstant = require('async/constant');
 const {ints} = require('random-lib');
 const {Transaction} = require('bitcoinjs-lib');
 
+const {addDetectedSwap} = require('./../../pool');
 const {broadcastTransaction} = require('./../../chain');
 const {claimTransaction} = require('./../../swaps');
 const {clearCache} = require('./../../cache');
@@ -11,6 +12,7 @@ const {generateChainBlocks} = require('./../../chain');
 const generateInvoice = require('./generate_invoice');
 const {generateKeyPair} = require('./../../chain');
 const {getBlockchainInfo} = require('./../../chain');
+const {getDetectedSwaps} = require('./../../pool');
 const mineTransaction = require('./mine_transaction');
 const {refundTransaction} = require('./../../swaps');
 const sendChainTokensTransaction = require('./send_chain_tokens_tx');
@@ -33,7 +35,7 @@ const swapTimeoutBlockCount = 2;
   {
     cache: <Cache Type String>
     network: <Network Name String>
-    type: <Resolution Type String> 'claim|funding'
+    type: <Resolution Type String> 'claim|refund'
   }
 */
 module.exports = ({cache, network, type}, cbk) => {
@@ -142,7 +144,7 @@ module.exports = ({cache, network, type}, cbk) => {
       });
     }],
 
-    // Watch a swap
+    // Add the swap address to the scanner watch list
     watchSwap: [
       'createSwapAddress',
       'generateSwapInvoice',
@@ -205,6 +207,30 @@ module.exports = ({cache, network, type}, cbk) => {
       });
     }],
 
+    // Notify the swap elements pool there was a funding tx detected
+    addFundingToPool: [
+      'generateSwapInvoice',
+      'waitForMempoolSwap',
+      ({generateSwapInvoice, waitForMempoolSwap}, cbk) =>
+    {
+      return addDetectedSwap({
+        cache,
+        funding: {
+          network,
+          id: waitForMempoolSwap.id,
+          index: waitForMempoolSwap.index,
+          invoice: waitForMempoolSwap.invoice,
+          output: waitForMempoolSwap.output,
+          script: waitForMempoolSwap.script,
+          tokens: waitForMempoolSwap.tokens,
+          type: waitForMempoolSwap.type,
+          vout: waitForMempoolSwap.vout,
+        },
+        id: generateSwapInvoice.payment_hash,
+      },
+      cbk);
+    }],
+
     // Push the funding transaction into the mempool
     broadcastFunding: ['fundingTransaction', ({fundingTransaction}, cbk) => {
       return broadcastTransaction({
@@ -212,22 +238,6 @@ module.exports = ({cache, network, type}, cbk) => {
         transaction: fundingTransaction.transaction,
       },
       cbk);
-    }],
-
-    // Make sure there are block swap announcements
-    swapFunded: [
-      'broadcastFunding',
-      'generateSwapInvoice',
-      'waitForMempoolSwap',
-      ({generateSwapInvoice}, cbk) =>
-    {
-      return scanner.once('funding', swap => {
-        if (swap.invoice !== generateSwapInvoice.invoice) {
-          return cbk([0, 'ExpectedSwapInvoice']);
-        }
-
-        return cbk(null, {swap});
-      });
     }],
 
     // Mine funding transaction into a block
@@ -240,6 +250,21 @@ module.exports = ({cache, network, type}, cbk) => {
       const {transaction} = fundingTransaction;
 
       return mineTransaction({network, transaction}, cbk);
+    }],
+
+    // Make sure there are block swap announcements
+    swapFunded: [
+      'generateSwapInvoice',
+      'initializeScanner',
+      ({generateSwapInvoice}, cbk) =>
+    {
+      return scanner.once('funding', swap => {
+        if (swap.invoice !== generateSwapInvoice.invoice) {
+          return cbk([0, 'ExpectedSwapInvoice']);
+        }
+
+        return cbk(null, {swap});
+      });
     }],
 
     // Get the current blockchain height for the claim transaction
@@ -348,11 +373,27 @@ module.exports = ({cache, network, type}, cbk) => {
       return cbk(null, transaction);
     }],
 
+    // Broadcast the claim or refund transaction
+    broadcastResolution: ['resolutionTx', ({resolutionTx}, cbk) => {
+      return setTimeout(() => {
+        const transaction = resolutionTx;
+
+        return broadcastTransaction({network, transaction}, cbk);
+      },
+      500);
+    }],
+
     // Wait for the resolution transaction to enter the mempool
-    resolutionInMempool: ['resolutionTx', ({resolutionTx}, cbk) => {
+    resolutionInMempool: [
+      'initializeScanner',
+      'resolutionTx',
+      ({resolutionTx}, cbk) =>
+    {
+      const expectedId = Transaction.fromHex(resolutionTx).getId();
+
       return scanner.once(type, swap => {
         try {
-          if (swap.id !== Transaction.fromHex(resolutionTx).getId()) {
+          if (swap.id !== expectedId) {
             throw new Error('ExpectedResolutionTransaction');
           }
         } catch (e) {
@@ -363,11 +404,38 @@ module.exports = ({cache, network, type}, cbk) => {
       });
     }],
 
-    // Broadcast the claim or refund transaction
-    broadcastResolution: ['resolutionTx', ({resolutionTx}, cbk) => {
-      const transaction = resolutionTx;
+    // Add the found resolution to the pool
+    addResolutionToPool: [
+      'generateSwapInvoice',
+      'resolutionInMempool',
+      ({generateSwapInvoice, resolutionInMempool}, cbk) =>
+    {
+      const {id} = resolutionInMempool;
+      const {network} = resolutionInMempool;
+      const {outpoint} = resolutionInMempool;
+      const {preimage} = resolutionInMempool;
+      const {script} = resolutionInMempool;
 
-      return broadcastTransaction({network, transaction}, cbk);
+      switch (type) {
+      case 'claim':
+        return addDetectedSwap({
+          cache,
+          claim: {id, network, outpoint, preimage, script, type},
+          id: generateSwapInvoice.payment_hash,
+        },
+        cbk);
+
+      case 'refund':
+        return addDetectedSwap({
+          cache,
+          refund: {id, network, outpoint, script, type},
+          id: generateSwapInvoice.payment_hash,
+        },
+        cbk);
+
+      default:
+        return cbk([0, 'UnexpectedSwapTypeToAdd', type]);
+      }
     }],
 
     // Make sure the resolution confirmation is announced
@@ -380,6 +448,61 @@ module.exports = ({cache, network, type}, cbk) => {
       const transaction = resolutionTx;
 
       return mineTransaction({network, transaction}, cbk);
+    }],
+
+    // Get the detected swap elements from the pool
+    getDetectedSwaps: [
+      'addFundingToPool',
+      'addResolutionToPool',
+      'confirmResolution',
+      'generateSwapInvoice',
+      ({generateSwapInvoice}, cbk) =>
+    {
+      return getDetectedSwaps({
+        cache,
+        id: generateSwapInvoice.payment_hash,
+      },
+      cbk);
+    }],
+
+    // Check that the detected swap elements in the pool are correct
+    checkDetectedSwaps: ['getDetectedSwaps', ({getDetectedSwaps}, cbk) => {
+      const {claim} = getDetectedSwaps;
+      const {funding} = getDetectedSwaps;
+      const {refund} = getDetectedSwaps;
+
+      if (funding.length !== 1) {
+        return cbk([0, 'ExpectedFundingTransactionDetected']);
+      }
+
+      switch (type) {
+      case 'claim':
+        if (claim.length !== 1) {
+          return cbk([0, 'ExpectedClaimTransactionDetected']);
+        }
+
+        if (!!refund.length) {
+          return cbk([0, 'ExpectedRefundNotPresent']);
+        }
+
+        break;
+
+      case 'refund':
+        if (refund.length !== 1) {
+          return cbk([0, 'ExpectedRefundTransactionDetected']);
+        }
+
+        if (!!claim.length) {
+          return cbk([0, 'ExpectedClaimNotPresent']);
+        }
+
+        break;
+
+      default:
+        return cbk([0, 'UnexpectedSwapResolutionType']);
+      }
+
+      return cbk();
     }],
   },
   (err, res) => {

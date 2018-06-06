@@ -65,7 +65,7 @@ module.exports = ({address, cache}, cbk) => {
       const {script} = getCachedAddress;
 
       try {
-        const scriptDetails = swapScriptDetails({redeem_script: script});
+        const scriptDetails = swapScriptDetails({script});
 
         return cbk(null, scriptDetails.destination_public_key);
       } catch (e) {

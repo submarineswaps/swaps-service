@@ -21,6 +21,8 @@ const swapResolutions = require('./../swaps/swap_resolutions');
     swaps: [{
       id: <Transaction Id Hex String>
       index: <Swap Key Index Number>
+      outpoint: <Spent Outpoint String>
+      [preimage]: <Preimage Hex String>
       script: <Redeem Script Hex String>
       type: <Swap Type String> 'claim|refund'
     }]
@@ -51,7 +53,7 @@ module.exports = ({cache, transaction}, cbk) => {
     },
 
     // Derive swap resolutions related to the transaction
-    swapResolutions: ['validate', ({}, cbk) => {
+    swaps: ['validate', ({}, cbk) => {
       try {
         return cbk(null, swapResolutions({transaction}).resolutions);
       } catch (e) {
@@ -60,28 +62,29 @@ module.exports = ({cache, transaction}, cbk) => {
     }],
 
     // Find key ids for swaps
-    foundSwaps: ['id', 'swapResolutions', ({id, swapResolutions}, cbk) => {
-      return asyncMap(swapResolutions, ({script, type}, cbk) => {
+    foundSwaps: ['id', 'swaps', ({id, swaps}, cbk) => {
+      return asyncMap(swaps, ({outpoint, preimage, script, type}, cbk) => {
         return getSwapKeyIndex({cache, script}, (err, res) => {
           if (!!err) {
             return cbk(err);
           }
-
           if (!res || res.index === undefined) {
             return cbk();
           }
 
-          return cbk(null, {id, script, type, index: res.index});
+          const {index} = res;
+
+          return cbk(null, {id, index, outpoint, preimage, script, type});
         });
       },
       cbk);
     }],
 
-    // Final set of swaps
-    swaps: ['foundSwaps', ({foundSwaps}, cbk) => {
+    // Final set of swaps, swaps where the index is known
+    knownSwaps: ['foundSwaps', ({foundSwaps}, cbk) => {
       return cbk(null, {swaps: foundSwaps.filter(n => !!n)});
     }],
   },
-  returnResult({of: 'swaps'}, cbk));
+  returnResult({of: 'knownSwaps'}, cbk));
 };
 

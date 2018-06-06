@@ -12,6 +12,7 @@ const serveFavicon = require('serve-favicon');
 const walnut = require('walnut');
 
 const apiRouter = require('./routers/api');
+const {swapScanner} = require('./scan');
 
 const {NODE_ENV} = process.env;
 const {SSS_PORT} = process.env;
@@ -23,6 +24,19 @@ const morganLogLevel = 'dev';
 const port = PORT || SSS_PORT || 9889;
 
 const app = express();
+const scanner = swapScanner({cache: 'memory', network: 'testnet'});
+
+scanner.on('claim', swap => {
+  console.log('SWAP CLAIMED', swap);
+
+  return;
+});
+scanner.on('error', err => log);
+scanner.on('funding', swap => {
+  console.log("SWAP FUNDED", swap);
+
+  return;
+});
 
 app.use(hidePoweredBy())
 app.use(compression());

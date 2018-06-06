@@ -6,6 +6,8 @@ const fixtures = {
   np2wsh_claim_transaction: {
     expected: {
       count: 1,
+      outpoint: '3804dfee643317d0108d74ccbd96a46321abf92df2487a1b60c345772c45b4cc:0',
+      preimage: '04c1b5544ea904139b443d56db7a49f5d5bef5a22fdaf0241b3889cb588d2d96',
       script: '76a820e2a18c356623279b664c46396f56a9d4210c70f07e5aca56702feceec3c7dc0787637521021f905f25401ac8d22a1125bff0bd309754b226764cf6d8c6b1005388fa0d1af6670351ba13b17576a914a03357088c2ca6bb10c0c62cadcd8c592cc683db8868ac',
       type: 'claim',
     },
@@ -14,6 +16,8 @@ const fixtures = {
   np2wsh_refund_transaction: {
     expected: {
       count: 1,
+      outpoint: 'a5bfde178095e4e8ef1aa31792023c5887dd9425e9dd411b5b2e4be238209317:0',
+      preimage: null,
       script: '76a8209b12afefaa28b210cf7ca711da1f14dd31ce226b0520d6953c542d420bd728ea87637521025a8799600d2388def96838a8a213d86758eb060dbceb1157e2f1412e4aaad3496703eeb113b17576a91402712c67099a80d34f7e82dd91ab6f2e1feac9848868ac',
       type: 'refund',
     },
@@ -38,9 +42,10 @@ fixturesToTest.forEach(({expected, transaction}) => {
   equal(resolutions.length, expected.count);
 
   // Check that the resolution type and redeem script are accurately derived
-  resolutions.forEach(({script, type}) => {
+  resolutions.forEach(({outpoint, preimage, script, type}) => {
+    equal(outpoint, expected.outpoint);
+    equal(preimage, expected.preimage);
     equal(script, expected.script);
-
     equal(type, expected.type);
 
     return;

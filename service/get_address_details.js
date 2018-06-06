@@ -1,8 +1,6 @@
-const {address, networks} = require('bitcoinjs-lib');
+const {addressDetails} = require('./../chain');
 
-const publicKeyHashLength = 20;
-
-/** Get address details
+/** Derive address details
 
   {
     address: <Address String>
@@ -18,72 +16,21 @@ const publicKeyHashLength = 20;
     version: <Address Version Number>
   }
 */
-module.exports = (args, cbk) => {
-  if (!args.address) {
-    return cbk([400, 'ExpectedAddress']);
+module.exports = ({address}, cbk) => {
+  try {
+    const details = addressDetails({address});
+
+    return cbk(null, {
+      type: details.type,
+      data: details.data,
+      hash: details.hash,
+      is_testnet: details.is_testnet,
+      prefix: details.prefix,
+      version: details.version,
+    });
+  } catch (e) {
+    console.log(e);
+    return cbk([400, 'ExpectedValidAddress', e]);
   }
-
-  let base58Address;
-  let bech32Address;
-
-  try { base58Address = address.fromBase58Check(args.address); } catch (e) {
-    base58Address = null;
-  }
-
-  try { bech32Address = address.fromBech32(args.address); } catch (e) {
-    bech32Address = null;
-  }
-
-  const details = base58Address || bech32Address;
-
-  // Exit early: address does not parse as a bech32 or base58 address
-  if (!details) {
-    return cbk([400, 'ExpectedValidAddress']);
-  }
-
-  let isTestnet;
-  const isWitness = !!details.prefix;
-  let type;
-
-  switch (details.version) {
-  case 0: // P2PKH Mainnet
-    isTestnet = details.prefix === 'tb';
-
-    if (isWitness && details.data.length === publicKeyHashLength) {
-      type = 'p2wpkh';
-    } else if (isWitness && details.data.length === witnessScriptHashLength) {
-      type = 'p2wsh';
-    } else {
-      type = 'p2pkh';
-    }
-    break;
-
-  case 5: // P2SH Mainnet
-    isTestnet = false;
-    type = 'p2sh';
-    break;
-
-  case 111: // P2PKH Testnet
-    isTestnet = true;
-    type = 'p2pkh';
-    break;
-
-  case 196: // P2SH Testnet
-    isTestnet = true;
-    type = 'p2sh';
-    break;
-
-  default:
-    return cbk([400, 'UnknownAddressVersion']);
-  }
-
-  return cbk(null, {
-    type,
-    data: !details.data ? null : details.data.toString('hex'),
-    hash: !details.hash ? null : details.hash.toString('hex'),
-    is_testnet: isTestnet,
-    prefix: details.prefix,
-    version: details.version,
-  });
 };
 

@@ -4,6 +4,8 @@ let memoryCache;
 
 /** Get the memory cache
 
+  The memory cache is only suitable for testing in a regtest environment.
+
   {}
 
   @returns

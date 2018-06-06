@@ -34,7 +34,7 @@ module.exports = ({cache, script}, cbk) => {
     // Pull out swap details from the redeem script
     swapDetails: ['validate', ({}, cbk) => {
       try {
-        return cbk(null, swapScriptDetails({redeem_script: script}));
+        return cbk(null, swapScriptDetails({script}));
       } catch (e) {
         return cbk([500, 'FailedToDeriveSwapDetails', e]);
       }

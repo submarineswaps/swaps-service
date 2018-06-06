@@ -54,6 +54,7 @@ module.exports = ({log}) => {
   // POST a new swap
   router.post('/swaps/', ({body}, res) => {
     return createSwap({
+      cache: 'memory',
       currency: body.currency,
       invoice: body.invoice,
       refund_address: body.refund_address,
@@ -62,16 +63,12 @@ module.exports = ({log}) => {
   });
 
   // POST a swap check request
-  router.post('/swaps/:payment_hash/', ({body, params}, res) => {
+  router.post('/swaps/check', ({body, params}, res) => {
     return checkSwapStatus({
       cache: 'memory',
-      destination_public_key: body.destination_public_key,
       invoice: body.invoice,
-      payment_hash: params.payment_hash,
-      redeem_script: body.redeem_script,
-      refund_public_key_hash: body.refund_public_key_hash,
-      swap_key_index: body.swap_key_index,
-      timeout_block_height: body.timeout_block_height,
+      network: 'testnet',
+      script: body.redeem_script,
     },
     returnJson({log, res}));
   });

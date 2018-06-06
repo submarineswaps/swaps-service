@@ -12,11 +12,17 @@ const {getChainFeeRate} = require('./../chain');
 const {getFee} = require('./../chain');
 const {lightningDaemon} = require('./../lightning');
 const {returnResult} = require('./../async-util');
+const {setJsonInCache} = require('./../cache');
 const {swapScriptInTransaction} = require('./../swaps');
+
+const swapSuccessCacheMs = 1000 * 60 * 60 * 3;
 
 /** Complete a swap transaction
 
+  When the swap has already been completed
+
   {
+    cache: <Cache Type String>
     invoice: <Bolt 11 Invoice String>
     network: <Network Name String>
     private_key: <Private Key WIF String>
@@ -64,6 +70,10 @@ module.exports = (args, cbk) => {
 
     // Check completion arguments
     validate: cbk => {
+      if (!args.cache) {
+        return cbk([400, 'ExpectedCacheToStoreSwapSuccess']);
+      }
+
       if (!args.invoice) {
         return cbk([400, 'ExpectedInvoice']);
       }
@@ -175,8 +185,9 @@ module.exports = (args, cbk) => {
     }],
 
     // Return the details of the completed swap
-    completedSwap: ['broadcastTransaction', (res, cbk) => {
+    completedSwap: ['broadcastTransaction', 'payInvoice', (res, cbk) => {
       return cbk(null, {
+        invoice_id: res.invoice.id,
         payment_secret: res.payInvoice.payment_secret,
         transaction_id: res.broadcastTransaction.transaction_id,
       });

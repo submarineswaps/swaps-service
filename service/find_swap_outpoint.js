@@ -45,9 +45,7 @@ module.exports = (args, cbk) => {
     // Derive swap details
     swapDetails: ['validate', ({}, cbk) => {
       try {
-        return cbk(null, swapScriptDetails({
-          redeem_script: args.redeem_script,
-        }));
+        return cbk(null, swapScriptDetails({script: args.redeem_script}));
       } catch (e) {
         return cbk([500, 'FailedToDeriveSwapDetails', e]);
       }
@@ -69,6 +67,8 @@ module.exports = (args, cbk) => {
 
     // Find the swap transaction
     findSwapTransaction: ['swapDetails', ({swapDetails}, cbk) => {
+      console.log('SWAP DETAILS', swapDetails);
+
       return findSwapTransaction({
         block_search_depth: blockSearchDepth,
         destination_public_key: swapDetails.destination_public_key,

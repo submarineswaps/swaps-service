@@ -16,7 +16,7 @@ const {fromOutputScript} = address;
 /** Given a pkhash swap script, its details.
 
   {
-    redeem_script: <Redeem Script Hex String>
+    script: <Redeem Script Hex String>
   }
 
   @throws
@@ -24,7 +24,7 @@ const {fromOutputScript} = address;
 
   @returns
   {
-    destination_public_key: <Destination Public Key Hex String>
+    destination_public_key: <Claim Public Key Hex String>
     p2sh_address: <Pay to Script Hash Base58 Address String>
     p2sh_output_script: <Pay to Script Hash Output Hex String>
     p2sh_p2wsh_address: <Nested Pay to Witness Script Address String>
@@ -37,15 +37,15 @@ const {fromOutputScript} = address;
     witness_output_script: <Witness Output Script Hex String>
   }
 */
-module.exports = args => {
-  if (!args.redeem_script) {
+module.exports = (args) => {
+  if (!args.script) {
     throw new Error('ExpectedRedeemScript');
   }
 
   let cltv;
   let destinationPublicKey;
   let paymentHash;
-  const redeemScript = Buffer.from(args.redeem_script, 'hex');
+  const redeemScript = Buffer.from(args.script, 'hex');
   let refundPublicKeyHash;
 
   const scriptAssembly = toASM(script.decompile(redeemScript)).split(' ');

@@ -72,7 +72,7 @@ module.exports = ({cache, index, invoice, network, script}, cbk) => {
     // Derive script details
     scriptDetails: ['validate', ({}, cbk) => {
       try {
-        return cbk(null, swapScriptDetails({redeem_script: script}));
+        return cbk(null, swapScriptDetails({script}));
       } catch (e) {
         return cbk([400, 'ExpectedValidRedeemScript', e]);
       }

@@ -11,7 +11,7 @@ const memoryCache = require('./memory_cache');
 */
 module.exports = ({key}, cbk) => {
   if (!key) {
-    return cbk([400, 'ExpectedKey']);
+    return cbk([400, 'ExpectedKeyForMemoryCacheItem']);
   }
 
   const cache = memoryCache({});
