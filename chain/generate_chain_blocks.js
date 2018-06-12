@@ -2,7 +2,7 @@ const asyncAuto = require('async/auto');
 const asyncMapSeries = require('async/mapSeries');
 const asyncTimesSeries = require('async/timesSeries');
 
-const chainRpc = require('./chain_rpc');
+const chainRpc = require('./call_chain_rpc');
 const getBlockDetails = require('./get_block_details');
 const {returnResult} = require('./../async-util');
 

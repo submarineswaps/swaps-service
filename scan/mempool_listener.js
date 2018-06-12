@@ -6,7 +6,7 @@ const difference = require('lodash/difference');
 
 const {getMempool} = require('./../chain');
 
-const pollingDelayMs = 200;
+const pollingDelayMs = 1000;
 
 /** Poll the mempool for transactions. When we find a transaction in the
     mempool, emit an event.

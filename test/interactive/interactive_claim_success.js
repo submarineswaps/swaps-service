@@ -115,14 +115,19 @@ module.exports = (args, cbk) => {
     }],
 
     // Bring up chain daemon. Alice is paying on chain so she needs the rewards
-    spawnChainDaemon: ['generateAliceKeyPair','network', (res, cbk) => {
+    spawnChainDaemon: [
+      'generateAliceKeyPair',
+      'network',
+      ({generateAliceKeyPair, network}, cbk) =>
+    {
       // Exit early on testnet since a persistent daemon must be used
-      if (res.network === 'testnet') {
+      if (network === 'testnet') {
         return cbk();
       }
 
       return spawnChainDaemon({
-        mining_public_key: res.generateAliceKeyPair.public_key,
+        network,
+        mining_public_key: generateAliceKeyPair.public_key,
       },
       cbk);
     }],

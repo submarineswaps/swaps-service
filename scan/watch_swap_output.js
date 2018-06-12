@@ -119,7 +119,7 @@ module.exports = ({cache, index, invoice, network, script}, cbk) => {
           key: publicKey,
           ms: swapTimeoutMs,
           type: 'swap_key',
-          value: {index},
+          value: {index, invoice},
         },
       ];
 

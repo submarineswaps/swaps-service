@@ -148,6 +148,10 @@ module.exports = (args, cbk) => {
             return cbk(err);
           }
 
+          if (!txId) {
+            return cbk(null, {});
+          }
+
           return cbk(null, {confirmation_count: count, transaction_id: txId});
         }
       );
@@ -169,9 +173,9 @@ module.exports = (args, cbk) => {
     // Final transaction details
     transaction: ['getTransaction', ({getTransaction, scanBlocks}, cbk) => {
       return cbk(null, {
-        confirmation_count: scanBlocks.confirmation_count,
-        transaction: getTransaction.transaction,
-        transaction_id: scanBlocks.transaction_id,
+        confirmation_count: scanBlocks.confirmation_count || null,
+        transaction: getTransaction.transaction || null,
+        transaction_id: scanBlocks.transaction_id || null,
       });
     }],
   },

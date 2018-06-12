@@ -23,6 +23,7 @@ const elementCount = 1; // Number of elements that can be added per call
     cache: <Cache Type String>
     [claim]: {
       id: <Transaction Id String>
+      invoice: <BOLT 11 Invoice String>
       network: <Network Name String>
       outpoint: <Outpoint String>
       preimage: <Preimage Hex String>
@@ -41,6 +42,7 @@ const elementCount = 1; // Number of elements that can be added per call
     id: <Invoice Id String>
     [refund]: {
       id: <Transaction Id String>
+      invoice: <BOLT 11 Invoice String>
       network: <Network Name String>
       outpoint: <Spent Outpoint String>
       script: <Redeem Script Hex String>
@@ -68,6 +70,10 @@ module.exports = ({cache, claim, id, funding, refund}, cbk) => {
         return cbk([400, 'ExpectedSwapElementTransactionId']);
       }
 
+      if (!element.invoice) {
+        return cbk([400, 'ExpectedSwapElementInvoice', element]);
+      }
+
       if (!element.network) {
         return cbk([400, 'ExpectedSwapElementNetwork']);
       }
@@ -92,10 +98,6 @@ module.exports = ({cache, claim, id, funding, refund}, cbk) => {
       case 'funding':
         if (element.index === undefined) {
           return cbk([400, 'ExpectedFundingClaimKeyIndex']);
-        }
-
-        if (!element.invoice) {
-          return cbk([400, 'ExpectedSwapInvoice']);
         }
 
         if (!element.network) {

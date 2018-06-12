@@ -1,4 +1,4 @@
-const chainRpc = require('./chain_rpc');
+const chainRpc = require('./call_chain_rpc');
 const {getBestBlockHash} = require('./conf/rpc_commands');
 
 /** Get the block hash of the current best chain tip

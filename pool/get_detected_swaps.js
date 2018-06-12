@@ -71,6 +71,7 @@ module.exports = ({cache, id}, cbk) => {
     claim: ['elements', ({elements}, cbk) => {
       return asyncMap(elements.claim || [], (claim, cbk) => {
         const {id} = claim;
+        const {invoice} = claim;
         const {network} = claim;
         const {outpoint} = claim;
         const {preimage} = claim;
@@ -96,7 +97,7 @@ module.exports = ({cache, id}, cbk) => {
           return cbk([500, 'ExpectedClaimScript']);
         }
 
-        return cbk(null, {id, network, outpoint, preimage, script});
+        return cbk(null, {id, invoice, network, outpoint, preimage, script});
       },
       cbk);
     }],
@@ -155,12 +156,17 @@ module.exports = ({cache, id}, cbk) => {
     refund: ['elements', ({elements}, cbk) => {
       return asyncMap(elements.refund || [], (refund, cbk) => {
         const {id} = refund;
+        const {invoice} = refund;
         const {network} = refund;
         const {outpoint} = refund;
         const {script} = refund;
 
         if (!id) {
           return cbk([500, 'ExpectedRefundTransactionId']);
+        }
+
+        if (!invoice) {
+          return cbk([500, 'ExpectedRefundInvoice']);
         }
 
         if (!network) {
@@ -175,7 +181,7 @@ module.exports = ({cache, id}, cbk) => {
           return cbk([500, 'ExpectedRefundRedeemScript']);
         }
 
-        return cbk(null, {id, network, outpoint, script});
+        return cbk(null, {id, invoice, network, outpoint, script});
       },
       cbk);
     }],

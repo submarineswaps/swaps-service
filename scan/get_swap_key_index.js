@@ -14,6 +14,7 @@ const {returnResult} = require('./../async-util');
   @returns via cbk
   {
     [index]: <Claim Key Index Number>
+    [invoice]: <BOLT 11 Invoice String>
   }
 */
 module.exports = ({cache, script}, cbk) => {
@@ -52,11 +53,20 @@ module.exports = ({cache, script}, cbk) => {
 
     // Final swap key result
     swapKey: ['getCachedSwapKey', ({getCachedSwapKey}, cbk) => {
-      if (!getCachedSwapKey || !getCachedSwapKey.index) {
+      // Exit early when there is no result
+      if (!getCachedSwapKey) {
         return cbk(null, {});
       }
 
-      return cbk(null, {index: getCachedSwapKey.index});
+      const {index} = getCachedSwapKey;
+      const {invoice} = getCachedSwapKey;
+
+      // Exit early when the result doesn't contain the expected values
+      if (index === undefined || !invoice) {
+        return cbk(null, {});
+      }
+
+      return cbk(null, {index, invoice});
     }],
   },
   returnResult({of: 'swapKey'}, cbk));

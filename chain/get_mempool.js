@@ -1,4 +1,4 @@
-const chainRpc = require('./chain_rpc');
+const chainRpc = require('./call_chain_rpc');
 
 const {getRawMempool} = require('./conf/rpc_commands');
 

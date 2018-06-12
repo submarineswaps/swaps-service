@@ -94,8 +94,6 @@ module.exports = (args, cbk) => {
       'getPending',
       ({destination, getMinRoutes, getPending}, cbk) =>
     {
-      console.log('GOT MIN ROUTES', getMinRoutes);
-
       const hasPendingChan = getPending.pending_channels
         .filter(n => !n.is_opening)
         .map(n => n.partner_public_key)

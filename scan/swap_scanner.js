@@ -31,6 +31,7 @@ const mempoolListener = require('./mempool_listener');
   @event 'claim'
   {
     id: <Transaction Id String>
+    invoice: <BOLT 11 Invoice String>
     network: <Network Name String>
     outpoint: <Outpoint String>
     preimage: <Preimage Hex String>
@@ -60,6 +61,7 @@ const mempoolListener = require('./mempool_listener');
   @event 'refund'
   {
     id: <Transaction Id String>
+    invoice: <BOLT 11 Invoice String>
     network: <Network Name String>
     outpoint: <Spent Outpoint String>
     script: <Redeem Script Hex String>
@@ -101,6 +103,7 @@ module.exports = ({cache, network}) => {
               id,
               network,
               index: swap.index,
+              invoice: swap.invoice,
               outpoint: swap.outpoint,
               preimage: swap.preimage,
               script: swap.script,
@@ -127,6 +130,7 @@ module.exports = ({cache, network}) => {
               id,
               network,
               index: swap.index,
+              invoice: swap.invoice,
               outpoint: swap.outpoint,
               script: swap.script,
               type: swap.type,

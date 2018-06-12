@@ -1,29 +1,11 @@
+const asyncQueue = require('async/queue');
 const chainRpc = require('node-bitcoin-rpc');
 
-const {regtest} = require('./conf/chain_server');
-const errCode = require('./conf/error_codes');
-
-const {SSS_CHAIN_RPC_HOST} = process.env;
-const {SSS_CHAIN_RPC_PASS} = process.env;
-const {SSS_CHAIN_RPC_USER} = process.env;
+const credentialsForNetwork = require('./credentials_for_network');
 
 const chainTimeoutMs = 3000;
-const [regtestRpcHost, regtestRpcPort] = regtest.rpc_host.split(':');
-const regtestRpcPass = regtest.rpc_pass;
-const regtestRpcUser = regtest.rpc_user;
-const stopAfterErrorsMs = 3000;
-const [testnetRpcHost, testnetRpcPort] = (SSS_CHAIN_RPC_HOST || '').split(':');
-const testnetRpcPass = SSS_CHAIN_RPC_PASS;
-const testnetRpcUser = SSS_CHAIN_RPC_USER || 'bitcoinrpc';
-
-const credentials = {
-  host: {regtest: regtestRpcHost, testnet: testnetRpcHost},
-  pass: {regtest: regtestRpcPass, testnet: testnetRpcPass},
-  port: {regtest: regtestRpcPort, testnet: testnetRpcPort},
-  user: {regtest: regtestRpcUser, testnet: testnetRpcUser},
-};
-
 let pauseOnErrorDate;
+const stopAfterErrorsMs = 3000;
 
 /** Execute Chain RPC command
 
@@ -37,20 +19,22 @@ let pauseOnErrorDate;
   <Result Object>
 */
 module.exports = ({cmd, network, params}, cbk) => {
-  if (new Date() < pauseOnErrorDate) {
-    return cbk([503, 'ChainRpcError']);
-  }
-
-  let count = 0;
-
   if (!network) {
-    return cbk([errCode.local_err, 'ExpectedNetwork']);
+    return cbk([400, 'ExpectedNetwork']);
   }
 
-  const host = credentials.host[network];
-  const pass = credentials.pass[network];
-  const port = credentials.port[network];
-  const user = credentials.user[network];
+  let credentials;
+
+  try {
+    credentials = credentialsForNetwork({network});
+  } catch (e) {
+    return cbk([500, 'FailedToGetCredentials']);
+  }
+
+  const {host} = credentials;
+  const {pass} = credentials;
+  const {port} = credentials;
+  const {user} = credentials;
 
   chainRpc.init(host, port, user, pass);
   chainRpc.setTimeout(chainTimeoutMs);
@@ -59,18 +43,8 @@ module.exports = ({cmd, network, params}, cbk) => {
   const niceParams = !Array.isArray(params || []) ? [params] : params || [];
 
   return chainRpc.call(cmd, niceParams, (err, response) => {
-    if (!!count++) {
-      return;
-    }
-
-    if (!!err) {
-      pauseOnErrorDate = new Date(Date.now() + stopAfterErrorsMs);
-
-      return cbk([errCode.service_unavailable, 'ChainDaemonError', err]);
-    }
-
     if (!response) {
-      return cbk([errCode.service_unavailable, 'BadChainResponse']);
+      return cbk([503, 'BadChainResponse']);
     }
 
     return cbk(null, response.result);

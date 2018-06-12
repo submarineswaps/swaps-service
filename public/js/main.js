@@ -923,7 +923,7 @@ App.submitCreateSwapQuote = function(event) {
         redeemInfoJsonSpacing
       );
 
-      anchor.setAttribute('download', `details.swapaddress.redeem_script.txt`);
+      anchor.setAttribute('download', `${swapAddress}.redeem_script.json`);
       anchor.setAttribute('href', `${encoding},${encodeURIComponent(text)}`);
 
       if (!!document.createEvent) {

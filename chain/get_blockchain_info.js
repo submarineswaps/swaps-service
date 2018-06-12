@@ -1,6 +1,6 @@
 const asyncAuto = require('async/auto');
 
-const chainRpc = require('./chain_rpc');
+const chainRpc = require('./call_chain_rpc');
 
 const {getBestBlockHash} = require('./conf/rpc_commands');
 const {getBlockCount} = require('./conf/rpc_commands');

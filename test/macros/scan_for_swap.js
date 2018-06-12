@@ -411,6 +411,7 @@ module.exports = ({cache, network, type}, cbk) => {
       ({generateSwapInvoice, resolutionInMempool}, cbk) =>
     {
       const {id} = resolutionInMempool;
+      const {invoice} = resolutionInMempool;
       const {network} = resolutionInMempool;
       const {outpoint} = resolutionInMempool;
       const {preimage} = resolutionInMempool;
@@ -420,7 +421,7 @@ module.exports = ({cache, network, type}, cbk) => {
       case 'claim':
         return addDetectedSwap({
           cache,
-          claim: {id, network, outpoint, preimage, script, type},
+          claim: {id, invoice, network, outpoint, preimage, script, type},
           id: generateSwapInvoice.payment_hash,
         },
         cbk);
@@ -428,7 +429,7 @@ module.exports = ({cache, network, type}, cbk) => {
       case 'refund':
         return addDetectedSwap({
           cache,
-          refund: {id, network, outpoint, script, type},
+          refund: {id, invoice, network, outpoint, script, type},
           id: generateSwapInvoice.payment_hash,
         },
         cbk);

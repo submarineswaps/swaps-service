@@ -7,7 +7,7 @@ const {getCurrentHash} = require('./../chain');
 const getPastBlocks = require('./get_past_blocks');
 
 const notFound = -1;
-const pollingDelayMs = 200;
+const pollingDelayMs = 1000;
 
 /** Poll the chain for blocks. Transactions in blocks are emitted.
 

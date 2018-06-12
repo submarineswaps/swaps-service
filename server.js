@@ -19,24 +19,12 @@ const {SSS_PORT} = process.env;
 const {PORT} = process.env;
 
 const browserifyPath = `${__dirname}/public/browserify/index.js`;
+const cache = 'memory';
 const isProduction = NODE_ENV === 'production';
 const morganLogLevel = 'dev';
 const port = PORT || SSS_PORT || 9889;
 
 const app = express();
-const scanner = swapScanner({cache: 'memory', network: 'testnet'});
-
-scanner.on('claim', swap => {
-  console.log('SWAP CLAIMED', swap);
-
-  return;
-});
-scanner.on('error', err => log);
-scanner.on('funding', swap => {
-  console.log("SWAP FUNDED", swap);
-
-  return;
-});
 
 app.use(hidePoweredBy())
 app.use(compression());

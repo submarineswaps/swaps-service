@@ -1,12 +1,14 @@
-const {ECPair} = require('bitcoinjs-lib');
-const {networks} = require('bitcoinjs-lib');
 const removeDir = require('rimraf');
 const {spawn} = require('child_process');
 const uuidv4 = require('uuid/v4');
 
 const chainServer = require('./conf/chain_server');
+const credentialsForNetwork = require('./credentials_for_network');
+const {ECPair} = require('./../tokenslib');
 const errCode = require('./conf/error_codes');
+const {networks} = require('./../tokenslib');
 
+const {fromPublicKeyBuffer} = ECPair;
 const rpcServerReady = /RPC.server.listening/;
 const unableToStartServer = /Unable.to.start.server/;
 
@@ -16,7 +18,8 @@ const unableToStartServer = /Unable.to.start.server/;
   before the process dies.
 
   {
-    mining_public_key: <Mining Public Key String>
+    mining_public_key: <Mining Public Key Hex String>
+    network: <Network Name String>
   }
 
   @returns via cbk
@@ -25,24 +28,36 @@ const unableToStartServer = /Unable.to.start.server/;
   }
 */
 module.exports = (args, cbk) => {
+  if (!args.mining_public_key) {
+    return cbk([400, 'ExpectedPublicKeyForMiningRewardsPayout']);
+  }
+
+  if (!args.network) {
+    return cbk([400, 'ExpectedNetworkTypeForChainDaemon']);
+  }
+
+  let credentials;
+
+  try {
+    credentials = credentialsForNetwork({network: args.network});
+  } catch (e) {
+    return cbk([500, 'CredentialsLookupFailure', e]);
+  }
+
   const miningKey = Buffer.from(args.mining_public_key, 'hex');
-  const [rpcHost, rpcPort] = chainServer.regtest.rpc_host.split(':');
-  const rpcPass = chainServer.regtest.rpc_pass;
-  const rpcUser = chainServer.regtest.rpc_user;
+  const network = networks[args.network];
   const tmpDir = `/tmp/${uuidv4()}`;
 
-  const keyPair = ECPair.fromPublicKeyBuffer(miningKey, networks.testnet);
-
-  const daemon = spawn('btcd', [
+  const daemon = spawn(chainServer[args.network].executable, [
     '--datadir', tmpDir,
     '--logdir', tmpDir,
-    '--miningaddr', keyPair.getAddress(),
+    '--miningaddr', fromPublicKeyBuffer(miningKey, network).getAddress(),
     '--notls',
     '--regtest',
     '--relaynonstd',
-    '--rpclisten', `${rpcHost}:${rpcPort}`,
-    '--rpcpass', rpcPass,
-    '--rpcuser', rpcUser,
+    '--rpclisten', `${credentials.host}:${credentials.port}`,
+    '--rpcpass', credentials.pass,
+    '--rpcuser', credentials.user,
     '--txindex',
   ]);
 

@@ -21,6 +21,7 @@ const swapResolutions = require('./../swaps/swap_resolutions');
     swaps: [{
       id: <Transaction Id Hex String>
       index: <Swap Key Index Number>
+      invoice: <BOLT 11 Encoded Invoice Corresponding to Input String>
       outpoint: <Spent Outpoint String>
       [preimage]: <Preimage Hex String>
       script: <Redeem Script Hex String>
@@ -68,13 +69,23 @@ module.exports = ({cache, transaction}, cbk) => {
           if (!!err) {
             return cbk(err);
           }
+
           if (!res || res.index === undefined) {
             return cbk();
           }
 
           const {index} = res;
+          const {invoice} = res;
 
-          return cbk(null, {id, index, outpoint, preimage, script, type});
+          return cbk(null, {
+            id,
+            index,
+            invoice,
+            outpoint,
+            preimage,
+            script,
+            type,
+          });
         });
       },
       cbk);
