@@ -1,5 +1,7 @@
 const asyncAuto = require('async/auto');
+const {parseInvoice} = require('ln-service');
 
+const getDetectedSwaps = require('./../pool/get_detected_swaps');
 const getSwapStatus = require('./get_swap_status');
 const {returnResult} = require('./../async-util');
 
@@ -16,11 +18,11 @@ const {returnResult} = require('./../async-util');
 
   @returns via cbk
   {
-    [conf_wait_count]: <Confirmations to Wait Number>
-    [output_index]: <Output Index Number>
-    [output_tokens]: <Output Tokens Number>
-    [payment_secret]: <Payment Secret Hex String>
-    transaction_id: <Transaction Id Hex String>
+    [conf_wait_count]: <Confirmations to Wait Number> // With funding pending
+    [output_index]: <Output Index Of Funding Output Number>
+    [output_tokens]: <Output Tokens Value For Funding Output Number>
+    [payment_secret]: <Payment Secret Hex String> // With claim present
+    transaction_id: <Funding Transaction Id Hex String>
   }
 */
 module.exports = ({cache, invoice, network, script}, cbk) => {
@@ -46,9 +48,67 @@ module.exports = ({cache, invoice, network, script}, cbk) => {
       return cbk();
     },
 
-    // Go figure out the swap status by pulling blocks and looking for the swap
-    getSwapStatus: ['validate', ({}, cbk) => {
-      return getSwapStatus({cache, invoice, script}, cbk);
+    // Invoice id
+    id: ['validate', ({}, cbk) => {
+      try {
+        return cbk(null, parseInvoice({invoice}).id);
+      } catch (e) {
+        return cbk([400, 'FailedToParseSwapInvoice', e]);
+      }
+    }],
+
+    // See if the swap is in the swap pool
+    getSwapFromPool: ['id', ({id}, cbk) => getDetectedSwaps({cache, id}, cbk)],
+
+    // See if we have a related swap element
+    swapElement: ['getSwapFromPool', ({getSwapFromPool}, cbk) => {
+      const [claim] = getSwapFromPool.claim;
+      const [funding] = getSwapFromPool.funding;
+
+      if (!!claim) {
+        return cbk(null, {
+          payment_secret: claim.preimage,
+          transaction_id: claim.outpoint.split(':')[0],
+        });
+      }
+
+      if (!!funding) {
+        console.log('FUNDING', funding);
+
+        return cbk(null, {
+          block: funding.block,
+          output_index: funding.vout,
+          output_tokens: funding.tokens,
+          transaction_id: funding.id,
+        });
+      }
+
+      return cbk();
+    }],
+
+    getConfirmationCount: ['swapElement', ({swapElement}, cbk) => {
+      if (!swapElement || !swapElement.block) {
+        return cbk();
+      }
+
+      console.log('FIND CONFIRMATION COUNT FOR BLOCK', swapElement.block);
+
+      return cbk();
+    }],
+
+    // Current swap status
+    getSwapStatus: ['swapElement', ({swapElement}, cbk) => {
+      if (!swapElement) {
+        return cbk([402, 'FundingNotFound']);
+      }
+
+      return cbk(null, {
+        conf_wait_count: !!swapElement.payment_secret ? null : 1,
+        output_index: swapElement.output_index,
+        output_tokens: swapElement.output_tokens,
+        payment_secret: swapElement.payment_secret,
+        transaction_id: swapElement.transaction_id,
+      });
     }],
   },
   returnResult({of: 'getSwapStatus'}, cbk));

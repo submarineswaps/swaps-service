@@ -29,7 +29,6 @@ module.exports = ({address}, cbk) => {
       version: details.version,
     });
   } catch (e) {
-    console.log(e);
     return cbk([400, 'ExpectedValidAddress', e]);
   }
 };

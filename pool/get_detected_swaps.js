@@ -16,6 +16,7 @@ const {returnResult} = require('./../async-util');
   @returns via cbk
   {    
     claim: [{
+      [block]: <Block Id Hex String>
       id: <Transaction Id String>
       network: <Network Name String>
       outpoint: <Outpoint String>
@@ -23,6 +24,7 @@ const {returnResult} = require('./../async-util');
       script: <Redeem Script Hex String>
     }],
     funding: [{
+      [block]: <Block Id Hex String>
       id: <Transaction Id String>
       index: <HD Seed Key Index Number>
       invoice: <BOLT 11 Invoice String>
@@ -34,6 +36,7 @@ const {returnResult} = require('./../async-util');
       vout: <Output Index Number>
     }]
     refund: {
+      [block]: <Block Id Hex String>
       id: <Transaction Id String>
       network: <Network Name String>
       outpoint: <Spent Outpoint String>
@@ -70,6 +73,7 @@ module.exports = ({cache, id}, cbk) => {
     // Claims in swap elements
     claim: ['elements', ({elements}, cbk) => {
       return asyncMap(elements.claim || [], (claim, cbk) => {
+        const {block} = claim;
         const {id} = claim;
         const {invoice} = claim;
         const {network} = claim;
@@ -97,7 +101,15 @@ module.exports = ({cache, id}, cbk) => {
           return cbk([500, 'ExpectedClaimScript']);
         }
 
-        return cbk(null, {id, invoice, network, outpoint, preimage, script});
+        return cbk(null, {
+          block,
+          id,
+          invoice,
+          network,
+          outpoint,
+          preimage,
+          script,
+        });
       },
       cbk);
     }],
@@ -138,6 +150,7 @@ module.exports = ({cache, id}, cbk) => {
         }
 
         return cbk(null, {
+          block: funding.block,
           id: funding.id,
           index: funding.index,
           invoice: funding.invoice,
@@ -155,6 +168,7 @@ module.exports = ({cache, id}, cbk) => {
     // Refund inputs for the swap
     refund: ['elements', ({elements}, cbk) => {
       return asyncMap(elements.refund || [], (refund, cbk) => {
+        const {block} = refund;
         const {id} = refund;
         const {invoice} = refund;
         const {network} = refund;
@@ -181,7 +195,7 @@ module.exports = ({cache, id}, cbk) => {
           return cbk([500, 'ExpectedRefundRedeemScript']);
         }
 
-        return cbk(null, {id, invoice, network, outpoint, script});
+        return cbk(null, {block, id, invoice, network, outpoint, script});
       },
       cbk);
     }],

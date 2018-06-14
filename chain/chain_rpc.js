@@ -42,12 +42,16 @@ module.exports = ({cmd, network, params}, cbk) => {
   // Should the params be a single argument instead of array, array-ize it.
   const niceParams = !Array.isArray(params || []) ? [params] : params || [];
 
-  return chainRpc.call(cmd, niceParams, (err, response) => {
-    if (!response) {
-      return cbk([503, 'BadChainResponse']);
-    }
+  try {
+    return chainRpc.call(cmd, niceParams, (err, response) => {
+      if (!response) {
+        return cbk([503, 'BadChainResponse']);
+      }
 
-    return cbk(null, response.result);
-  });
+      return cbk(null, response.result);
+    });
+  } catch (e) {
+    return cbk([500, 'FailedToCallChainRpc', e]);
+  }
 };
 

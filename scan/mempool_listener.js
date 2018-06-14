@@ -44,7 +44,7 @@ module.exports = ({network}) => {
         const freshIds = getMempool.transaction_ids;
 
         difference(freshIds, ids).forEach(id => {
-          return listener.emit('transaction', id);
+          return listener.emit('transaction', {id});
         });
 
         ids = freshIds;

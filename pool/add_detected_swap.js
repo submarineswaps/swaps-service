@@ -22,7 +22,8 @@ const elementCount = 1; // Number of elements that can be added per call
   {
     cache: <Cache Type String>
     [claim]: {
-      id: <Transaction Id String>
+      [block]: <Block Id Hex String>
+      id: <Transaction Id Hex String>
       invoice: <BOLT 11 Invoice String>
       network: <Network Name String>
       outpoint: <Outpoint String>
@@ -30,7 +31,8 @@ const elementCount = 1; // Number of elements that can be added per call
       script: <Redeem Script Hex String>
     },
     [funding]: {
-      id: <Transaction Id String>
+      [block]: <Block Id Hex String>
+      id: <Transaction Id Hex String>
       index: <HD Seed Key Index Number>
       invoice: <BOLT 11 Invoice String>
       network: <Network Name String>
@@ -41,7 +43,8 @@ const elementCount = 1; // Number of elements that can be added per call
     }
     id: <Invoice Id String>
     [refund]: {
-      id: <Transaction Id String>
+      [block]: <Block Id Hex String>
+      id: <Transaction Id Hex String>
       invoice: <BOLT 11 Invoice String>
       network: <Network Name String>
       outpoint: <Spent Outpoint String>
@@ -168,6 +171,7 @@ module.exports = ({cache, claim, id, funding, refund}, cbk) => {
       ({element, sortComponent, swapDetails}, cbk) =>
     {
       const components = [
+        (element.block || ''), // Block swap element was found in
         element.id, // Transaction id swap element is in
         element.network, // Network that swap tx is on
         element.script, // Redeem script of swap element

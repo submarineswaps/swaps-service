@@ -6,9 +6,8 @@ const getInvoiceDetails = require('./get_invoice_details');
 const {returnResult} = require('./../async-util');
 const serverSwapKeyPair = require('./server_swap_key_pair');
 const {swapAddress} = require('./../swaps');
-const {watchSwapOutput} = require('./../scan');
+const watchSwapOutput = require('./../scan/watch_swap_output');
 
-const network = 'testnet';
 const swapRate = 0.015;
 const timeoutBlockCount = 144;
 
@@ -18,7 +17,8 @@ const timeoutBlockCount = 144;
     cache: <Swap Cache Type String>
     currency: <Currency Code String>
     invoice: <Lightning Invoice String>
-    refund_address: <Chain Address String>
+    network: <Network Name String>
+    refund: <Chain Address String>
   }
 
   @returns via cbk
@@ -38,36 +38,36 @@ const timeoutBlockCount = 144;
     timeout_block_height: <Swap Expiration Date Number>
   }
 */
-module.exports = (args, cbk) => {
+module.exports = ({cache, currency, invoice, network, refund}, cbk) => {
   return asyncAuto({
     // Decode the refund address
-    getAddressDetails: cbk => {
-      return getAddressDetails({address: args.refund_address}, cbk);
-    },
+    getAddressDetails: cbk => getAddressDetails({address: refund}, cbk),
 
     // Get info about the state of the chain
     getBlockchainInfo: cbk => getBlockchainInfo({network}, cbk),
 
     // Decode the invoice to pay
-    getInvoiceDetails: cbk => {
-      return getInvoiceDetails({invoice: args.invoice}, cbk);
-    },
+    getInvoiceDetails: cbk => getInvoiceDetails({invoice}, cbk),
 
     // Validate basic arguments
     validate: cbk => {
-      if (!args.cache) {
+      if (!cache) {
         return cbk([400, 'ExpectedCacheToPlaceCreatedSwap']);
       }
 
-      if (args.currency !== 'tBTC') {
+      if (currency !== 'tBTC') {
         return cbk([400, 'ExpectedKnownCurrency']);
       }
 
-      if (!args.invoice) {
+      if (!invoice) {
         return cbk([400, 'ExpectedInvoice']);
       }
 
-      if (!args.refund_address) {
+      if (!network) {
+        return cbk([400, 'ExpectedNetworkForChainSwap']);
+      }
+
+      if (!refund) {
         return cbk([400, 'ExpectedRefundAddress']);
       }
 
@@ -140,14 +140,10 @@ module.exports = (args, cbk) => {
       'swapKeyIndex',
       ({swapAddress, swapKeyIndex}, cbk) =>
     {
-      return watchSwapOutput({
-        network,
-        cache: args.cache,
-        index: swapKeyIndex,
-        invoice: args.invoice,
-        script: swapAddress.redeem_script,
-      },
-      cbk);
+      const index = swapKeyIndex;
+      const script = swapAddress.redeem_script;
+
+      return watchSwapOutput({cache, index, invoice, network, script}, cbk);
     }],
 
     // Swap details
@@ -162,11 +158,11 @@ module.exports = (args, cbk) => {
       (res, cbk) =>
     {
       return cbk(null, {
+        invoice,
         destination_public_key: res.serverDestinationKey.public_key,
-        invoice: args.invoice,
         payment_hash: res.getInvoiceDetails.id,
         redeem_script: res.swapAddress.redeem_script,
-        refund_address: args.refund_address,
+        refund_address: refund,
         refund_public_key_hash: res.refundAddress.public_key_hash,
         swap_amount: res.getInvoiceDetails.tokens + res.fee,
         swap_fee: res.fee,

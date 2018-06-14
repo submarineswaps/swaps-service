@@ -1,5 +1,6 @@
 const scopeKey = require('./scope_key');
 const setInMemoryCache = require('./set_in_memory_cache');
+const setInRedis = require('./set_in_redis');
 
 /** Set JSON value in a cache
 
@@ -36,7 +37,15 @@ module.exports = ({cache, key, ms, type, value}, cbk) => {
 
   switch (cache) {
   case 'memory':
-    return setInMemoryCache({key: scopedKey, ms, type, value}, cbk);
+    return setInMemoryCache({ms, type, value, key: scopedKey}, cbk);
+
+  case 'redis':
+    return setInRedis({
+      ms,
+      value: JSON.stringify(value),
+      key: scopedKey,
+    },
+    cbk);
 
   default:
     return cbk([400, 'UnknownCacheType']);

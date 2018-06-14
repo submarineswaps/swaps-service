@@ -20,6 +20,7 @@ const fetchBlocksCount = 10;
   @returns via cbk
   {
     blocks: [{
+      id: <Block Id String>
       [previous_block_hash]: <Block Hash Hex String>
       transaction_ids: [<Transaction Id Hex String>]
     }]
@@ -54,13 +55,24 @@ module.exports = ({cache, current, network}, cbk) => {
         getBlock: ['getCachedBlock', ({getCachedBlock}, cbk) => {
           if (!!getCachedBlock) {
             return cbk(null, {
+              id: cursor,
               is_cached: true,
               previous_block_hash: getCachedBlock.previous_block_hash,
               transaction_ids: getCachedBlock.transaction_ids,
             });
           }
 
-          return getBlock({network, id: cursor}, cbk);
+          return getBlock({network, id: cursor}, (err, res) => {
+            if (!!err) {
+              return cbk(err);
+            }
+
+            return cbk(null, {
+              id: cursor,
+              previous_block_hash: res.previous_block_hash,
+              transaction_ids: res.transaction_ids,
+            });
+          });
         }],
 
         // Add the block to the cache
@@ -75,6 +87,7 @@ module.exports = ({cache, current, network}, cbk) => {
             ms: blockExpirationMs,
             type: 'block',
             value: {
+              id: getBlock.id,
               previous_block_hash: getBlock.previous_block_hash,
               transaction_ids: getBlock.transaction_ids,
             },

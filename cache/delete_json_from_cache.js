@@ -1,5 +1,6 @@
 const scopeKey = require('./scope_key');
 
+const deleteFromRedis = require('./delete_from_redis');
 const deleteInMemoryCache = require('./delete_from_memory_cache');
 
 /** Delete JSON from the cache
@@ -26,6 +27,9 @@ module.exports = ({cache, key, type}) => {
   switch (cache) {
   case 'memory':
     return deleteInMemoryCache({key: scopeKey({key, type})}, cbk);
+
+  case 'redis':
+    return deleteFromRedis({key: scopeKey({key, type})}, cbk);
 
   default:
     return cbk([400, 'UnexpectedCacheType']);

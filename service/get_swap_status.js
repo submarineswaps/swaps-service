@@ -13,7 +13,6 @@ const {swapScriptDetails} = require('./../swaps');
 
 const blockSearchDepth = 9;
 const minBlocksUntilRefundHeight = 70;
-const network = 'testnet';
 const requiredConfCount = 1;
 const swapRate = 0.015;
 
@@ -24,6 +23,7 @@ const swapRate = 0.015;
   {
     cache: <Cache Name String>
     invoice: <Lightning Invoice String>
+    network: <Network Name String>
     script: <Redeem Script Hex String>
   }
 
@@ -36,7 +36,7 @@ const swapRate = 0.015;
     transaction_id: <Transaction Id Hex String>
   }
 */
-module.exports = ({cache, invoice, script}, cbk) => {
+module.exports = ({cache, invoice, network, script}, cbk) => {
   return asyncAuto({
     // Get the current chain height
     getChainInfo: cbk => {
@@ -64,6 +64,10 @@ module.exports = ({cache, invoice, script}, cbk) => {
 
       if (!!invoiceDetails.is_expired) {
         return cbk([410, 'InvoiceExpired']);
+      }
+
+      if (!network) {
+        return cbk([400, 'ExpectedSwapNetwork']);
       }
 
       if (!script) {
@@ -202,7 +206,7 @@ module.exports = ({cache, invoice, script}, cbk) => {
       ({findSwapTransaction, remainingConfs, serverKeyPair}, cbk) =>
     {
       // Exit early and abort swap when there are remaining confirmations
-      if (!!remainingConfs) {
+      if (remainingConfs > 0) {
         return cbk();
       }
 

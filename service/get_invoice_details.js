@@ -1,3 +1,5 @@
+const {nextTick} = process;
+
 const asyncAuto = require('async/auto');
 const {getPendingChannels} = require('ln-service');
 const {getRoutes} = require('ln-service');
@@ -127,17 +129,19 @@ module.exports = (args, cbk) => {
       'invoice',
       ({getRoutes, invoice}, cbk) =>
     {
-      const maxFee = Math.max(...getRoutes.routes.map(({fee}) => fee));
+      return nextTick(() => {
+        const maxFee = Math.max(...getRoutes.routes.map(({fee}) => fee));
 
-      if (!getRoutes.routes.length) {
-        return cbk([503, 'InsufficientCapacityForSwap']);
-      }
+        if (!getRoutes.routes.length) {
+          return cbk([503, 'InsufficientCapacityForSwap']);
+        }
 
-      if (maxFee / invoice.tokens > args.max_invoice_fee_rate) {
-        return cbk([503, 'RoutingFeesTooHighToSwap']);
-      }
+        if (maxFee / invoice.tokens > args.max_invoice_fee_rate) {
+          return cbk([503, 'RoutingFeesTooHighToSwap']);
+        }
 
-      return cbk();
+        return cbk();
+      });
     }],
 
     // Get the current chain fees

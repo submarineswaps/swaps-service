@@ -11,6 +11,7 @@ const morgan = require('morgan');
 const serveFavicon = require('serve-favicon');
 const walnut = require('walnut');
 
+const {addSwapToPool} = require('./pool');
 const apiRouter = require('./routers/api');
 const {swapScanner} = require('./scan');
 
@@ -19,12 +20,19 @@ const {SSS_PORT} = process.env;
 const {PORT} = process.env;
 
 const browserifyPath = `${__dirname}/public/browserify/index.js`;
-const cache = 'memory';
+const cache = 'redis';
 const isProduction = NODE_ENV === 'production';
 const morganLogLevel = 'dev';
 const port = PORT || SSS_PORT || 9889;
 
 const app = express();
+const logOnErr = err => !!err ? log(err) : null;
+const scanner = swapScanner({cache, network: 'testnet'});
+
+scanner.on('claim', swap => addSwapToPool({cache, swap}, logOnErr));
+scanner.on('error', err => logOnErr);
+scanner.on('funding', swap => addSwapToPool({cache, swap}, logOnErr));
+scanner.on('refund', swap => addSwapToPool({cache, swap}, logOnErr));
 
 app.use(hidePoweredBy())
 app.use(compression());

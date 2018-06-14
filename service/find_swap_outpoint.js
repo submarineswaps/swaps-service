@@ -67,8 +67,6 @@ module.exports = (args, cbk) => {
 
     // Find the swap transaction
     findSwapTransaction: ['swapDetails', ({swapDetails}, cbk) => {
-      console.log('SWAP DETAILS', swapDetails);
-
       return findSwapTransaction({
         block_search_depth: blockSearchDepth,
         destination_public_key: swapDetails.destination_public_key,

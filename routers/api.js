@@ -8,6 +8,7 @@ const {getAddressDetails} = require('./../service');
 const {getInvoiceDetails} = require('./../service');
 const {returnJson} = require('./../async-util');
 
+const cache = 'redis';
 const maxInvoiceFeeRate = 0.005;
 
 /** Make an api router
@@ -54,10 +55,11 @@ module.exports = ({log}) => {
   // POST a new swap
   router.post('/swaps/', ({body}, res) => {
     return createSwap({
-      cache: 'memory',
+      cache,
       currency: body.currency,
       invoice: body.invoice,
-      refund_address: body.refund_address,
+      network: 'testnet',
+      refund: body.refund_address,
     },
     returnJson({log, res}));
   });
@@ -65,7 +67,7 @@ module.exports = ({log}) => {
   // POST a swap check request
   router.post('/swaps/check', ({body, params}, res) => {
     return checkSwapStatus({
-      cache: 'memory',
+      cache,
       invoice: body.invoice,
       network: 'testnet',
       script: body.redeem_script,

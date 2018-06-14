@@ -1,4 +1,5 @@
 const addToMemoryCachedSet = require('./add_to_memory_cached_set');
+const addToRedisCachedSet = require('./add_to_redis_cached_set');
 const scopeKey = require('./scope_key');
 
 /** Add a JSON value to a cached set
@@ -42,6 +43,9 @@ module.exports = ({cache, key, ms, sort, type, value}, cbk) => {
   switch (cache) {
   case 'memory':
     return addToMemoryCachedSet({ms, sort, value, key: scopedKey}, cbk);
+
+  case 'redis':
+    return addToRedisCachedSet({ms, sort, value, key: scopedKey}, cbk);
 
   default:
     return cbk([400, 'UnknownCacheTypeForSetAddition']);

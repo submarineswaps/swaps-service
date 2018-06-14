@@ -30,6 +30,7 @@ const mempoolListener = require('./mempool_listener');
   // Notification that a claim transaction is seen for a swap
   @event 'claim'
   {
+    [block]: <Block Hash String>
     id: <Transaction Id String>
     invoice: <BOLT 11 Invoice String>
     network: <Network Name String>
@@ -46,6 +47,7 @@ const mempoolListener = require('./mempool_listener');
   // Notification that a funding transaction is seen for a swap
   @event 'funding'
   {
+    [block]: <Block Hash String>
     id: <Transaction Id String>
     index: <HD Seed Key Index Number>
     invoice: <BOLT 11 Invoice String>
@@ -60,6 +62,7 @@ const mempoolListener = require('./mempool_listener');
   // Notification that a refund transaction is seen for a swap
   @event 'refund'
   {
+    [block]: <Block Hash String>
     id: <Transaction Id String>
     invoice: <BOLT 11 Invoice String>
     network: <Network Name String>
@@ -89,7 +92,7 @@ module.exports = ({cache, network}) => {
   listeners.forEach(listener => {
     listener.on('error', err => scanner.emit('error', err));
 
-    listener.on('transaction', id => {
+    listener.on('transaction', ({block, id}) => {
       return detectSwaps({cache, id, network}, (err, detected) => {
         if (!!err) {
           return scanner.emit('error', err);
@@ -100,6 +103,7 @@ module.exports = ({cache, network}) => {
           switch (swap.type) {
           case 'claim':
             scanner.emit(swap.type, {
+              block,
               id,
               network,
               index: swap.index,
@@ -113,6 +117,7 @@ module.exports = ({cache, network}) => {
 
           case 'funding':
             scanner.emit(swap.type, {
+              block,
               id,
               network,
               index: swap.index,
@@ -127,6 +132,7 @@ module.exports = ({cache, network}) => {
 
           case 'refund':
             scanner.emit(swap.type, {
+              block,
               id,
               network,
               index: swap.index,

@@ -31,7 +31,10 @@ const pollingDelayMs = 1000;
   <Error Object> - this indicates the block listener is broken
 
   @event 'transaction'
-  <Transaction Id Hex String>
+  {
+    block: <Block Hash String>
+    id: <Transaction Id Hex String>
+  }
 */
 module.exports = ({cache, network}) => {
   if (!cache || ['dynamodb', 'memory', 'redis'].indexOf(cache) === notFound) {
@@ -42,9 +45,9 @@ module.exports = ({cache, network}) => {
     throw new Error('ExpectedNetworkName');
   }
 
-  // if (cache === 'memory' && network !== 'regtest') {
-  //   throw new Error('ExpectedNonMemoryCache');
-  // }
+  if (cache === 'memory' && network !== 'regtest') {
+    throw new Error('ExpectedNonMemoryCache');
+  }
 
   let bestBlockHash;
   const listener = new EventEmitter();
@@ -70,10 +73,11 @@ module.exports = ({cache, network}) => {
       emitTransactions: ['getCurrentHash', 'getPastBlocks', (res, cbk) => {
         const {blocks} = res.getPastBlocks;
 
-        blocks
-          .map(block => block.transaction_ids)
-          .reduce((collection, ids) => collection.concat(ids), [])
-          .forEach(id => listener.emit('transaction', id));
+        blocks.forEach(block => {
+          return block.transaction_ids.forEach(id => {
+            return listener.emit('transaction', {block: id, id});
+          });
+        });
 
         // Set the current hash as fully published
         bestBlockHash = res.getCurrentHash;

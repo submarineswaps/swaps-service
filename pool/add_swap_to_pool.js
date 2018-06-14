@@ -1,7 +1,18 @@
+const asyncAuto = require('async/auto');
+const {parseInvoice} = require('ln-service');
+
+const addDetectedSwap = require('./add_detected_swap');
+const getDetectedSwaps = require('./get_detected_swaps');
+const getSwapStatus = require('./../service/get_swap_status');
+const {returnResult} = require('./../async-util');
+
 /** Add a swap to the pool
+
+  This will also attempt to execute a swap if a funding transaction is detected
 
   cache: <Cache Type String>
   swap: {
+    [block]: <Block Id Hex String>
     id: <Transaction Id String>
     [index]: <HD Seed Key Index Number>
     invoice: <BOLT 11 Invoice String>
@@ -37,6 +48,7 @@ module.exports = ({cache, swap}, cbk) => {
       }
 
       return cbk(null, {
+        block: swap.block,
         id: swap.id,
         invoice: swap.invoice,
         network: swap.network,
@@ -54,6 +66,7 @@ module.exports = ({cache, swap}, cbk) => {
       }
 
       return cbk(null, {
+        block: swap.block,
         id: swap.id,
         index: swap.index,
         invoice: swap.invoice,
@@ -61,8 +74,26 @@ module.exports = ({cache, swap}, cbk) => {
         output: swap.output,
         script: swap.script,
         tokens: swap.tokens,
-        type: swap.funding,
+        type: swap.type,
         vout: swap.vout,
+      });
+    }],
+
+    // Pull out refund element
+    refund: ['validate', ({}, cbk) => {
+      if (swap.type !== 'refund') {
+        return cbk();
+      }
+
+      return cbk(null, {
+        block: swap.block,
+        id: swap.id,
+        index: swap.index,
+        invoice: swap.invoice,
+        network: swap.network,
+        outpoint: swap.outpoint,
+        script: swap.script,
+        type: swap.type,
       });
     }],
 
@@ -79,6 +110,8 @@ module.exports = ({cache, swap}, cbk) => {
         return cbk([400, 'ExpectedSwapElement']);
       }
 
+      const {invoice} = swap;
+
       try {
         return cbk(null, parseInvoice({invoice}));
       } catch (e) {
@@ -89,23 +122,6 @@ module.exports = ({cache, swap}, cbk) => {
     // Invoice id is the id of the swap
     id: ['invoice', ({invoice}, cbk) => cbk(null, invoice.id)],
 
-    // Pull out refund element
-    refund: ['validate', ({}, cbk) => {
-      if (swap.type !== 'refund') {
-        return cbk();
-      }
-
-      return cbk(null, {
-        id: swap.id,
-        index: swap.index,
-        invoice: swap.invoice,
-        network: swap.network,
-        outpoint: swap.outpoint,
-        script: swap.script,
-        type: swap.type,
-      });
-    }],
-
     // Add the swap to the pool
     addSwap: [
       'claim',
@@ -114,10 +130,39 @@ module.exports = ({cache, swap}, cbk) => {
       'refund',
       ({claim, funding, id, refund}, cbk) =>
     {
-      console.log('ADDING SWAP TO POOL', claim, funding, refund);
-
       return addDetectedSwap({cache, claim, funding, id, refund}, cbk);
-    }]
+    }],
+
+    // Get the previously detected swap elements for this invoice
+    getDetectedSwaps: ['addSwap', 'funding', 'id', ({funding, id}, cbk) => {
+      if (!funding) {
+        return cbk()
+      }
+
+      return getDetectedSwaps({cache, id}, cbk);
+    }],
+
+    // Check on funding swap status to see if it needs to be claimed
+    checkForSwapExecution: [
+      'funding',
+      'getDetectedSwaps',
+      ({funding, getDetectedSwaps}, cbk) =>
+    {
+      // Exit early when this is not a new funding update
+      if (!funding) {
+        return cbk();
+      }
+
+      if (!!getDetectedSwaps.claim.length) {
+        return cbk();
+      }
+
+      const {invoice} = funding;
+      const {network} = funding;
+      const {script} = funding;
+
+      return getSwapStatus({cache, invoice, network, script}, cbk);
+    }],
   },
   returnResult({}, cbk));
 };

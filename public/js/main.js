@@ -679,6 +679,7 @@ App.init = args => {
   $('.refund-details-script').on(App.change_events, App.changedRefundScript);
   $('.select-currency').change(App.changedCurrencySelection);
   $('#use-paper-wallet').change(App.changedRefundPreference);
+  $('.pay-to-lightning-invoice').prop('readonly', false);
 
   return;
 };
@@ -1073,7 +1074,7 @@ App.submitSignWithRefundDetails = function(e) {
   const redeemScript = $(this).find('.refund-details-script').val().trim();
 
   if (!redeemScript) {
-    return console.log('ExpectedRedeemScript');
+    return console.log([0, 'ExpectedRedeemScript']);
   }
 
   let swapDetails;
@@ -1081,7 +1082,7 @@ App.submitSignWithRefundDetails = function(e) {
   try {
     swapDetails = blockchain.swapScriptDetails({script: redeemScript});
   } catch (e) {
-    return console.log('FailedToDeriveSwapDetails', e);
+    return console.log([0, 'FailedToDeriveSwapDetails'], e);
   }
 
   const refundFee = parseInt($('.refund-fee').val().trim(), 10);

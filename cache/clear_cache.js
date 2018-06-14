@@ -1,4 +1,5 @@
 const clearMemoryCache = require('./clear_memory_cache');
+const clearRedisCache = require('./clear_redis_cache');
 
 /** Clear a cache
 
@@ -14,6 +15,9 @@ module.exports = ({cache}, cbk) => {
   switch (cache) {
   case 'memory':
     return clearMemoryCache({}, cbk);
+
+  case 'redis':
+    return clearRedisCache({}, cbk);
 
   default:
     return cbk([400, 'UnknownCacheType']);
