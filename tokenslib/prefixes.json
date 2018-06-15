@@ -1,0 +1,31 @@
+{
+  "ltcregtest": {
+    "bech32": "tltc",
+    "bip32_public_key": "019DA462",
+    "bip32_private_key": "019D9CFE",
+    "message": "\\x19Litecoin Signed Message:\n",
+    "pay_to_public_key_hash_address": "6F",
+    "pay_to_script_hash_address": "3A",
+    "wif": "EF"
+  },
+
+  "ltctestnet": {
+    "bech32": "tltc",
+    "bip32_public_key": "019DA462",
+    "bip32_private_key": "019D9CFE",
+    "message": "\\x19Litecoin Signed Message:\n",
+    "pay_to_public_key_hash_address": "6F",
+    "pay_to_script_hash_address": "3A",
+    "wif": "EF"
+  },
+
+  "regtest": {
+    "bech32": "tb",
+    "bip32_public_key": "043587CF",
+    "bip32_private_key": "04358394",
+    "message": "\\x18Bitcoin Signed Message:\n",
+    "pay_to_public_key_hash_address": "6F",
+    "pay_to_script_hash_address": "C4",
+    "wif": "EF"
+  }
+}

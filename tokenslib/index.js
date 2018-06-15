@@ -1,31 +1,26 @@
 const lib = require('bitcoinjs-lib');
 
+const prefixes = require('./prefixes');
+
+const hex = 16;
+
 /** Extensions to bitcoinjs-lib to work with non-standard chains
 */
+Object.keys(prefixes).forEach(chain => {
+  lib.networks[chain] = {
+    bech32: prefixes[chain].bech32,
+    bip32: {
+      public: parseInt(prefixes[chain].bip32_public_key, hex),
+      private: parseInt(prefixes[chain].bip32_private_key, hex),
+    },
+    messagePrefix: prefixes[chain].message,
+    pubKeyHash: parseInt(prefixes[chain].pay_to_public_key_hash_address, hex),
+    scriptHash: parseInt(prefixes[chain].pay_to_script_hash_address, hex),
+    wif: parseInt(prefixes[chain].wif, hex),
+  };
 
-lib.networks.regtest = {
-  bech32: 'tb',
-  bip32: {
-    public: 0x043587cf,
-    private: 0x04358394,
-  },
-  messagePrefix: '\x18Bitcoin Signed Message:\n',
-  pubKeyHash: 0x6f,
-  scriptHash: 0xc4,
-  wif: 0xef,
-};
-
-lib.networks.ltctestnet = {
-  bech32: 'tltc',
-  bip32: {
-    public: 0x019da462,
-    private: 0x019d9cfe,
-  },
-  messagePrefix: '\x19Litecoin Signed Message:\n',
-  pubKeyHash: 0x6f,
-  scriptHash: 0x3a,
-  wif: 0xef,
-};
+  return;
+});
 
 module.exports = lib;
 
