@@ -1,6 +1,8 @@
 const asyncAuto = require('async/auto');
 const {parseInvoice} = require('ln-service');
 
+const confirmWaitTime = require('./confirm_wait_time');
+const {getConfirmationCount} = require('./../chain');
 const getDetectedSwaps = require('./../pool/get_detected_swaps');
 const getSwapStatus = require('./get_swap_status');
 const {returnResult} = require('./../async-util');
@@ -18,11 +20,11 @@ const {returnResult} = require('./../async-util');
 
   @returns via cbk
   {
-    [conf_wait_count]: <Confirmations to Wait Number> // With funding pending
     [output_index]: <Output Index Of Funding Output Number>
     [output_tokens]: <Output Tokens Value For Funding Output Number>
     [payment_secret]: <Payment Secret Hex String> // With claim present
     transaction_id: <Funding Transaction Id Hex String>
+    [wait_time_ms]: <Time To Wait Number> // With funding pending
   }
 */
 module.exports = ({cache, invoice, network, script}, cbk) => {
@@ -73,8 +75,6 @@ module.exports = ({cache, invoice, network, script}, cbk) => {
       }
 
       if (!!funding) {
-        console.log('FUNDING', funding);
-
         return cbk(null, {
           block: funding.block,
           output_index: funding.vout,
@@ -86,24 +86,35 @@ module.exports = ({cache, invoice, network, script}, cbk) => {
       return cbk();
     }],
 
-    getConfirmationCount: ['swapElement', ({swapElement}, cbk) => {
+    // Determine confirmation count
+    getBlockInfo: ['swapElement', ({swapElement}, cbk) => {
+      // Exit early when there is no need to look up block details
       if (!swapElement || !swapElement.block) {
         return cbk();
       }
 
-      console.log('FIND CONFIRMATION COUNT FOR BLOCK', swapElement.block);
+      return getBlockHeader({network, block: swapElement.block}, cbk);
+    }],
 
-      return cbk();
+    // Determine wait time still necessary to confirm the swap
+    waitTime: ['getBlockInfo', ({getBlockInfo}, cbk) => {
+      const conf = !getBlockInfo ? 0 : getBlockInfo.current_confirmation_count;
+
+      return cbk(null, confirmWaitTime({current_confirmations: conf}));
     }],
 
     // Current swap status
-    getSwapStatus: ['swapElement', ({swapElement}, cbk) => {
+    getSwapStatus: [
+      'swapElement',
+      'waitTime',
+      ({swapElement, waitTime}, cbk) =>
+    {
       if (!swapElement) {
         return cbk([402, 'FundingNotFound']);
       }
 
       return cbk(null, {
-        conf_wait_count: !!swapElement.payment_secret ? null : 1,
+        conf_wait_count: !!waitTime ? waitTime.remaining_confirmations : null,
         output_index: swapElement.output_index,
         output_tokens: swapElement.output_tokens,
         payment_secret: swapElement.payment_secret,

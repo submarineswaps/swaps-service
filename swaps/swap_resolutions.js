@@ -1,8 +1,7 @@
-const {Transaction} = require('bitcoinjs-lib');
-
 const isPublicKeyHashSpend = require('./is_pkhash_spend');
 const isSwapSpend = require('./is_swap_spend');
 const scriptElements = require('./script_elements');
+const {Transaction} = require('./../tokenslib');
 
 const preimageByteLength = 32;
 
@@ -27,7 +26,7 @@ const preimageByteLength = 32;
     }]
   }
 */
-module.exports = ({transaction}) => {
+module.exports = ({network, transaction}) => {
   let inputs;
 
   try {
@@ -40,7 +39,7 @@ module.exports = ({transaction}) => {
   // Find inputs that appear to be swap spends.
   const resolutions = inputs
     .filter(({script, witness}) => !isPublicKeyHashSpend({script, witness}))
-    .filter(({script, witness}) => isSwapSpend({script, witness}))
+    .filter(({script, witness}) => isSwapSpend({network, script, witness}))
     .map(({hash, index, script, witness}) => {
       const [redeemScript, secret] = scriptElements({script, witness});
 

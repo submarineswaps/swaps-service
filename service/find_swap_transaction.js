@@ -37,11 +37,7 @@ module.exports = (args, cbk) => {
   return asyncAuto({
     // Get the current block tip hash
     getChainInfo: cbk => {
-      return getBlockchainInfo({
-        is_cache_ok: args.network !== 'regtest',
-        network: args.network,
-      },
-      cbk);
+      return getBlockchainInfo({network: args.network}, cbk);
     },
 
     // Check the arguments
@@ -56,6 +52,10 @@ module.exports = (args, cbk) => {
 
       if (!args.destination_public_key) {
         return cbk([400, 'ExpectedDestinationPublicKey']);
+      }
+
+      if (!args.network) {
+        return cbk([400, 'ExpectedNetworkToFindSwapTransactionIn']);
       }
 
       if (!args.payment_hash) {
@@ -81,6 +81,7 @@ module.exports = (args, cbk) => {
     swap: ['validate', ({}, cbk) => {
       return cbk(null, swapAddress({
         destination_public_key: args.destination_public_key,
+        network: args.network,
         payment_hash: args.payment_hash,
         refund_public_key: args.refund_public_key,
         refund_public_key_hash: args.refund_public_key_hash,

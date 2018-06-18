@@ -1,12 +1,11 @@
-const {address} = require('bitcoinjs-lib');
-const {crypto} = require('bitcoinjs-lib');
-const {networks} = require('bitcoinjs-lib');
-const {script} = require('bitcoinjs-lib');
+const {address} = require('./../tokenslib');
+const {crypto} = require('./../tokenslib');
+const {networks} = require('./../tokenslib');
+const {script} = require('./../tokenslib');
 
 const {hash160} = crypto;
 const {scriptHash} = script;
 const {sha256} = crypto;
-const {testnet} = networks;
 const {toASM} = script;
 const {witnessScriptHash} = script;
 
@@ -16,6 +15,7 @@ const {fromOutputScript} = address;
 /** Given a pkhash swap script, its details.
 
   {
+    network: <Network Name String>
     script: <Redeem Script Hex String>
   }
 
@@ -38,12 +38,17 @@ const {fromOutputScript} = address;
   }
 */
 module.exports = (args) => {
+  if (!args.network) {
+    throw new Error('ExpectedNetworkNameForScriptDetails');
+  }
+
   if (!args.script) {
     throw new Error('ExpectedRedeemScript');
   }
 
   let cltv;
   let destinationPublicKey;
+  const network = networks[args.network];
   let paymentHash;
   const redeemScript = Buffer.from(args.script, 'hex');
   let refundPublicKeyHash;
@@ -228,22 +233,22 @@ module.exports = (args) => {
 
   const p2shWrappedWitnessProg = encodeScriptHash(hash160(witnessProgram));
 
-  const p2shNestedAddr = fromOutputScript(p2shWrappedWitnessProg, testnet);
+  const p2shNestedAddr = fromOutputScript(p2shWrappedWitnessProg, network);
 
   const refundHash = Buffer.from(refundPublicKeyHash, 'hex');
 
   const scriptPub = script.witnessPubKeyHash.output.encode(refundHash);
-  const refundP2wpkhAddress = address.fromOutputScript(scriptPub, testnet);
+  const refundP2wpkhAddress = address.fromOutputScript(scriptPub, network);
 
   const lockHeight = Buffer.from(cltv, 'hex').readUIntLE(0, cltv.length / 2);
 
   return {
     destination_public_key: destinationPublicKey,
-    p2sh_address: fromOutputScript(p2shLegacyOutput, testnet),
+    p2sh_address: fromOutputScript(p2shLegacyOutput, network),
     p2sh_output_script: p2shLegacyOutput.toString('hex'),
     p2sh_p2wsh_address: p2shNestedAddr,
     p2sh_p2wsh_output_script: p2shWrappedWitnessProg.toString('hex'),
-    p2wsh_address: address.fromOutputScript(witnessProgram, testnet),
+    p2wsh_address: address.fromOutputScript(witnessProgram, network),
     payment_hash: paymentHash,
     refund_p2wpkh_address: refundP2wpkhAddress,
     refund_public_key_hash: refundPublicKeyHash,

@@ -45,10 +45,6 @@ module.exports = ({cache, network}) => {
     throw new Error('ExpectedNetworkName');
   }
 
-  if (cache === 'memory' && network !== 'regtest') {
-    throw new Error('ExpectedNonMemoryCache');
-  }
-
   let bestBlockHash;
   const listener = new EventEmitter();
 

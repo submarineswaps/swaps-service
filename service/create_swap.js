@@ -41,7 +41,9 @@ const timeoutBlockCount = 144;
 module.exports = ({cache, currency, invoice, network, refund}, cbk) => {
   return asyncAuto({
     // Decode the refund address
-    getAddressDetails: cbk => getAddressDetails({address: refund}, cbk),
+    getAddressDetails: cbk => {
+      return getAddressDetails({network, address: refund}, cbk);
+    },
 
     // Get info about the state of the chain
     getBlockchainInfo: cbk => getBlockchainInfo({network}, cbk),
@@ -96,10 +98,6 @@ module.exports = ({cache, currency, invoice, network, refund}, cbk) => {
         return cbk([400, 'ExpectedPayToPublicKeyHashAddress']);
       }
 
-      if (!details.is_testnet) {
-        return cbk([400, 'ExpectedTestnetAddress']);
-      }
-
       return cbk(null, {public_key_hash: details.hash || details.data});
     }],
 
@@ -119,6 +117,7 @@ module.exports = ({cache, currency, invoice, network, refund}, cbk) => {
     {
       try {
         return cbk(null, swapAddress({
+          network,
           destination_public_key: res.serverDestinationKey.public_key,
           payment_hash: res.getInvoiceDetails.id,
           refund_public_key_hash: res.refundAddress.public_key_hash,

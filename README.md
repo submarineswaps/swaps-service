@@ -14,5 +14,10 @@ a simple HTLC to help with atomicity.
 A [btcd installation](https://github.com/btcsuite/btcd#installation) is
 required to run regtest tests.
 
-    npm run btcd_regtest // Regtest tests
+    npm run btcd_regtest // regtest tests
+
+A [ltcd installation](https://github.com/ltcsuite/ltcd#installation) is
+required to run ltcregtest tests.
+
+    npm run ltcd_regtest // ltcregtest tests
 

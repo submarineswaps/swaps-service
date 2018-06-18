@@ -4,27 +4,26 @@ const {addressDetails} = require('./../chain');
 
   {
     address: <Address String>
+    network: <Network Name String>
   }
 
   @returns via cbk
   {
     [data]: <Witness Address Data Hex String>
     [hash]: <Address Hash Data Hex String>
-    is_testnet: <Is Testnet Address Bool>
     [prefix]: <Witness Prefix String>
     type: <Address Type String>
     version: <Address Version Number>
   }
 */
-module.exports = ({address}, cbk) => {
+module.exports = ({address, network}, cbk) => {
   try {
-    const details = addressDetails({address});
+    const details = addressDetails({address, network});
 
     return cbk(null, {
       type: details.type,
       data: details.data,
       hash: details.hash,
-      is_testnet: details.is_testnet,
       prefix: details.prefix,
       version: details.version,
     });

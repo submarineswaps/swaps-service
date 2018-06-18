@@ -4,8 +4,8 @@ const {OP_DUP, OP_ELSE, OP_ENDIF, OP_EQUAL} = require('bitcoin-ops');
 const {OP_EQUALVERIFY, OP_HASH160, OP_IF, OP_SHA256} = require('bitcoin-ops');
 const pushdataEncode = require('pushdata-bitcoin').encode;
 const pushdataEncodingLen = require('pushdata-bitcoin').encodingLength;
-const {script} = require('bitcoinjs-lib');
 
+const {script} = require('./../tokenslib');
 const scriptBuffersAsScript = require('./script_buffers_as_script');
 
 /** Generate a chain swap redeem script with a pkhash refund path

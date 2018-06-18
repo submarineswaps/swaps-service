@@ -1,24 +1,23 @@
-const {address} = require('bitcoinjs-lib');
 const bip65Encode = require('bip65').encode;
-const {crypto} = require('bitcoinjs-lib');
-const {ECPair} = require('bitcoinjs-lib');
-const {ECSignature} = require('bitcoinjs-lib');
-const {networks} = require('bitcoinjs-lib');
 const numberAsBuffer = require('varuint-bitcoin').encode;
 const {OP_0} = require('bitcoin-ops');
 const {OP_PUSHDATA1} = require('bitcoin-ops');
-const {script} = require('bitcoinjs-lib');
-const {Transaction} = require('bitcoinjs-lib');
 
+const {address} = require('./../tokenslib');
 const chainConstants = require('./../chain').constants;
+const {crypto} = require('./../tokenslib');
+const {ECPair} = require('./../tokenslib');
+const {ECSignature} = require('./../tokenslib');
+const {networks} = require('./../tokenslib');
+const {script} = require('./../tokenslib');
 const scriptBuffersAsScript = require('./script_buffers_as_script');
 const swapScriptDetails = require('./swap_script_details');
+const {Transaction} = require('./../tokenslib');
 
 const encodeScriptHash = script.scriptHash.output.encode;
 const {hash160} = crypto;
 const hashAll = Transaction.SIGHASH_ALL;
 const {sha256} = crypto;
-const {testnet} = networks;
 const {toOutputScript} = address;
 const {witnessScriptHash} = script;
 
@@ -37,6 +36,7 @@ const vRatio = chainConstants.witness_byte_discount_denominator;
     current_block_height: <Current Block Height Number>
     destination: <Send Tokens to Address String>
     fee_tokens_per_vbyte: <Fee Per Virtual Byte Token Rate Number>
+    network: <Network Name String>
     preimage: <Payment Preimage Hex String>
     private_key: <Claim Private Key WIF String>
     utxos: [{
@@ -69,6 +69,10 @@ module.exports = args => {
     throw new Error('ExpectedFeeTokensPerVbyte');
   }
 
+  if (!args.network) {
+    throw new Error('ExpectedNetworkForClaimTransaction');
+  }
+
   if (!args.preimage) {
     throw new Error('ExpectedPreimage');
   }
@@ -81,8 +85,10 @@ module.exports = args => {
     throw new Error('ExpectedFundingUtxos');
   }
 
+  const network = networks[args.network];
+
   const preimage = Buffer.from(args.preimage, 'hex');
-  const signingKey = ECPair.fromWIF(args.private_key, testnet);
+  const signingKey = ECPair.fromWIF(args.private_key, network);
   const tokens = args.utxos.reduce((sum, n) => n.tokens + sum, 0);
   const tokensPerVirtualByte = args.fee_tokens_per_vbyte;
   const tx = new Transaction();
@@ -92,7 +98,7 @@ module.exports = args => {
     .map(n => ({txId: Buffer.from(n.transaction_id, 'hex'), vout: n.vout}))
     .forEach(n => tx.addInput(n.txId.reverse(), n.vout));
 
-  tx.addOutput(toOutputScript(args.destination, testnet), tokens);
+  tx.addOutput(toOutputScript(args.destination, network), tokens);
   tx.ins.forEach(n => n.sequence = minSequenceValue);
   tx.locktime = bip65Encode({blocks: args.current_block_height});
 
@@ -102,7 +108,7 @@ module.exports = args => {
       return;
     }
 
-    const scriptDetails = swapScriptDetails({script: redeem});
+    const scriptDetails = swapScriptDetails({network, script: redeem});
 
     if (script === scriptDetails.p2sh_output_script) {
       return;
@@ -130,7 +136,10 @@ module.exports = args => {
       return;
     }
 
-    const scriptDetails = swapScriptDetails({script: redeem});
+    const scriptDetails = swapScriptDetails({
+      network: args.network,
+      script: redeem,
+    });
 
     if (script === scriptDetails.p2sh_p2wsh_output_script) {
       return;
@@ -162,7 +171,10 @@ module.exports = args => {
 
   // Anticipate the final weight of the transaction
   const anticipatedWeight = args.utxos.reduce((sum, utxo) => {
-    const scriptDetails = swapScriptDetails({script: utxo.redeem});
+    const scriptDetails = swapScriptDetails({
+      network: args.network,
+      script: utxo.redeem,
+    });
 
     if (utxo.script === scriptDetails.p2sh_output_script) {
       return sum;
@@ -198,7 +210,10 @@ module.exports = args => {
       return;
     }
 
-    const scriptDetails = swapScriptDetails({script: redeem});
+    const scriptDetails = swapScriptDetails({
+      network: args.network,
+      script: redeem,
+    });
 
     if (script === scriptDetails.p2sh_p2wsh_output_script) {
       return;
@@ -225,7 +240,10 @@ module.exports = args => {
 
   // Sign each input and include the normal redeem script for nested p2sh
   args.utxos.forEach(({redeem, script, tokens}, i) => {
-    const scriptDetails = swapScriptDetails({script: redeem});
+    const scriptDetails = swapScriptDetails({
+      network: args.network,
+      script: redeem,
+    });
 
     if (script === scriptDetails.p2sh_output_script) {
       return;

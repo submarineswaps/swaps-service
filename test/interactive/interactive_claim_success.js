@@ -1,17 +1,18 @@
 const asyncAuto = require('async/auto');
 const {parseInvoice} = require('ln-service');
-const {Transaction} = require('bitcoinjs-lib');
 
 const macros = './../macros/';
 
 const addressForPublicKey = require(`${macros}address_for_public_key`);
 const {broadcastTransaction} = require('./../../chain');
+const chain = require('./../../chain').constants;
 const {claimTransaction} = require('./../../swaps');
 const {generateChainBlocks} = require('./../../chain');
 const generateInvoice = require(`${macros}generate_invoice`);
 const {generateKeyPair} = require('./../../chain');
 const {getBlockchainInfo} = require('./../../chain');
 const {getTransaction} = require('./../../chain');
+const math = require('./../conf/math');
 const mineTransaction = require(`${macros}mine_transaction`);
 const promptForInput = require(`${macros}prompt`);
 const {returnResult} = require('./../../async-util');
@@ -20,11 +21,10 @@ const {spawnChainDaemon} = require('./../../chain');
 const {stopChainDaemon} = require('./../../chain');
 const {swapAddress} = require('./../../swaps');
 const {swapScriptInTransaction} = require('./../../swaps');
-
-const math = require('./../conf/math');
-const chain = require('./../../chain').constants;
+const {Transaction} = require('./../../tokenslib');
 
 const coinbaseIndex = chain.coinbase_tx_index;
+const defaultNetwork = 'regtest';
 const intBase = math.dec_base;
 const maturityBlockCount = chain.maturity_block_count;
 const timeoutBlockCount = 100;
@@ -48,16 +48,21 @@ module.exports = (args, cbk) => {
   return asyncAuto({
     // Determine which network to run the test against
     promptForNetwork: cbk => promptForInput({
-      default_value: 'regtest',
-      explain: 'Type "testnet" to run test on testnet instead of regtest',
+      default_value: defaultNetwork,
+      explain: `Type "testnet" to run on testnet instead of ${defaultNetwork}`,
       role: 'TEST',
     },
     cbk),
 
     // In a default case we can assume Alice made the invoice herself
-    defaultLightningInvoice: ['generateAliceKeyPair', (res, cbk) => {
+    defaultLightningInvoice: [
+      'generateAliceKeyPair',
+      'network',
+      ({generateAliceKeyPair, network}, cbk) =>
+    {
       return generateInvoice({
-        private_key: res.generateAliceKeyPair.private_key,
+        network,
+        private_key: generateAliceKeyPair.private_key,
       },
       cbk);
     }],
@@ -66,7 +71,7 @@ module.exports = (args, cbk) => {
     network: ['promptForNetwork', (res, cbk) => {
       const network = res.promptForNetwork.value;
 
-      if (network !== 'regtest' && network !== 'testnet') {
+      if (network !== defaultNetwork && network !== 'testnet') {
         return cbk([0, 'ExpectedKnownNetwork']);
       }
 
@@ -189,12 +194,14 @@ module.exports = (args, cbk) => {
     createChainSwapAddress: [
       'generateAliceKeyPair',
       'generateBobKeyPair',
+      'network',
       'parseLightningInvoice',
       'swapRefundHeight',
       (res, cbk) =>
     {
       return cbk(null, swapAddress({
         destination_public_key: res.generateBobKeyPair.public_key,
+        network: res.network,
         payment_hash: res.parseLightningInvoice.id,
         refund_public_key: res.generateAliceKeyPair.public_key,
         timeout_block_height: res.swapRefundHeight,
@@ -215,6 +222,7 @@ module.exports = (args, cbk) => {
 
       return sendChainTokensTransaction({
         destination: res.createChainSwapAddress.p2wsh_address,
+        network: res.network,
         private_key: res.generateAliceKeyPair.private_key,
         spend_transaction_id: res.aliceUtxo.transaction_id,
         spend_vout: res.aliceUtxo.vout,
@@ -347,6 +355,7 @@ module.exports = (args, cbk) => {
       'createChainSwapAddress',
       'generateBobKeyPair',
       'getHeightForSweepTransaction',
+      'network',
       'promptForClaimSuccessAddress',
       'promptForPaymentPreimage',
       'tokensPerVirtualByte',
@@ -357,6 +366,7 @@ module.exports = (args, cbk) => {
           current_block_height: res.getHeightForSweepTransaction.current_height,
           destination: res.promptForClaimSuccessAddress.value,
           fee_tokens_per_vbyte: res.tokensPerVirtualByte,
+          network: res.network,
           preimage: res.promptForPaymentPreimage.value,
           private_key: res.generateBobKeyPair.private_key,
           redeem_script: res.createChainSwapAddress.redeem_script,

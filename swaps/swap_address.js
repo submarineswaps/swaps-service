@@ -1,23 +1,22 @@
-const {address} = require('bitcoinjs-lib');
-const {crypto} = require('bitcoinjs-lib');
-const {networks} = require('bitcoinjs-lib');
-const {script} = require('bitcoinjs-lib');
+const {address} = require('./../tokenslib');
+const {crypto} = require('./../tokenslib');
+const {networks} = require('./../tokenslib');
+const pkSwapScript = require('./pk_swap_script');
+const pkHashSwapScript = require('./pkhash_swap_script');
+const {script} = require('./../tokenslib');
 
 const {fromOutputScript} = address;
 const encodeScriptHash = script.scriptHash.output.encode;
 const {hash160} = crypto;
 const {sha256} = crypto;
-const {testnet} = networks;
 const {witnessScriptHash} = script;
-
-const pkSwapScript = require('./pk_swap_script');
-const pkHashSwapScript = require('./pkhash_swap_script');
 
 /** Derive a chain swap address for a swap
 
   @param
   {
     destination_public_key: <Destination Public Key Serialized String>
+    network: <Network Name String>
     payment_hash: <Payment Hash String>
     [refund_public_key]: <Refund Public Key Serialized String>
     [refund_public_key_hash]: <Refund Public Key Hash Hex String>
@@ -39,6 +38,11 @@ const pkHashSwapScript = require('./pkhash_swap_script');
   }
 */
 module.exports = args => {
+  if (!args.network || !networks[args.network]) {
+    throw new Error('ExpectedKnownNetworkForSwapAddress');
+  }
+
+  const network = networks[args.network];
   let redeemScriptHex;
 
   if (!!args.refund_public_key) {
@@ -70,14 +74,14 @@ module.exports = args => {
   // When wrapping for legacy p2sh, the program is hashed more and with RIPE160
   const p2shWrappedWitnessProgram = encodeScriptHash(hash160(witnessProgram));
 
-  const p2shNestedAddr = fromOutputScript(p2shWrappedWitnessProgram, testnet);
+  const p2shNestedAddr = fromOutputScript(p2shWrappedWitnessProgram, network);
 
   return {
-    p2sh_address: fromOutputScript(p2shLegacyOutput, testnet),
+    p2sh_address: fromOutputScript(p2shLegacyOutput, network),
     p2sh_output_script: p2shLegacyOutput.toString('hex'),
     p2sh_p2wsh_output_script: p2shWrappedWitnessProgram.toString('hex'),
     p2sh_p2wsh_address: p2shNestedAddr,
-    p2wsh_address: fromOutputScript(witnessProgram, testnet),
+    p2wsh_address: fromOutputScript(witnessProgram, network),
     redeem_script: redeemScriptHex.toString('hex'),
     witness_output_script: witnessProgram.toString('hex'),
   };

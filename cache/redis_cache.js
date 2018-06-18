@@ -11,11 +11,15 @@ const {REDIS_URL} = process.env;
   <Error> when the REDIS_URL isn't set
 */
 module.exports = ({}) => {
+  if (!!client) {
+    return client;
+  }
+
   if (!REDIS_URL) {
     throw new Error('ExpectedRedisUrl');
   }
 
-  client = client || createClient(REDIS_URL);
+  client = createClient(REDIS_URL);
 
   // Listen for errors
   client.on('error', err => {});

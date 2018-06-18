@@ -1,10 +1,10 @@
 const asyncAuto = require('async/auto');
 const asyncMap = require('async/map');
-const {Transaction} = require('bitcoinjs-lib');
 
 const getSwapKeyIndex = require('./get_swap_key_index');
 const {returnResult} = require('./../async-util');
 const swapResolutions = require('./../swaps/swap_resolutions');
+const {Transaction} = require('./../tokenslib');
 
 /** Return swap transactions detected in inputs for a transaction.
 
@@ -29,7 +29,7 @@ const swapResolutions = require('./../swaps/swap_resolutions');
     }]
   }
 */
-module.exports = ({cache, transaction}, cbk) => {
+module.exports = ({cache, network, transaction}, cbk) => {
   return asyncAuto({
     // Transaction id for swap
     id: cbk => {
@@ -46,6 +46,10 @@ module.exports = ({cache, transaction}, cbk) => {
         return cbk([400, 'ExpectedCacheTypeForCheckCaching']);
       }
 
+      if (!network) {
+        return cbk([400, 'ExpectedNetworkForInputSwaps']);
+      }
+
       if (!transaction) {
         return cbk([400, 'ExpectedTransactionHex']);
       }
@@ -56,7 +60,7 @@ module.exports = ({cache, transaction}, cbk) => {
     // Derive swap resolutions related to the transaction
     swaps: ['validate', ({}, cbk) => {
       try {
-        return cbk(null, swapResolutions({transaction}).resolutions);
+        return cbk(null, swapResolutions({network, transaction}).resolutions);
       } catch (e) {
         return cbk([500, 'FailedToDeriveSwapResolutions', e]);
       }
@@ -65,7 +69,7 @@ module.exports = ({cache, transaction}, cbk) => {
     // Find key ids for swaps
     foundSwaps: ['id', 'swaps', ({id, swaps}, cbk) => {
       return asyncMap(swaps, ({outpoint, preimage, script, type}, cbk) => {
-        return getSwapKeyIndex({cache, script}, (err, res) => {
+        return getSwapKeyIndex({cache, network, script}, (err, res) => {
           if (!!err) {
             return cbk(err);
           }

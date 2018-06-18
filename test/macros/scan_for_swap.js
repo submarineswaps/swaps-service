@@ -1,7 +1,6 @@
 const asyncAuto = require('async/auto');
 const asyncConstant = require('async/constant');
 const {ints} = require('random-lib');
-const {Transaction} = require('bitcoinjs-lib');
 
 const {addDetectedSwap} = require('./../../pool');
 const {broadcastTransaction} = require('./../../chain');
@@ -21,6 +20,7 @@ const {spawnChainDaemon} = require('./../../chain');
 const {swapAddress} = require('./../../swaps');
 const {swapScanner} = require('./../../scan');
 const {stopChainDaemon} = require('./../../chain');
+const {Transaction} = require('./../../tokenslib');
 const {watchSwapOutput} = require('./../../scan');
 
 const coinbaseIndex = constants.coinbase_tx_index;
@@ -73,7 +73,11 @@ module.exports = ({cache, network, type}, cbk) => {
 
     // Generate a swap invoice
     generateSwapInvoice: ['generateKeyPair', ({generateKeyPair}, cbk) => {
-      return generateInvoice({private_key: generateKeyPair.private_key}, cbk);
+      return generateInvoice({
+        network,
+        private_key: generateKeyPair.private_key,
+      },
+      cbk);
     }],
 
     // Spin up a chain daemon to generate blocks
@@ -119,6 +123,7 @@ module.exports = ({cache, network, type}, cbk) => {
     {
       try {
         return cbk(null, swapAddress({
+          network,
           destination_public_key: generateKeyPair.public_key,
           payment_hash: generateSwapInvoice.payment_hash,
           refund_public_key_hash: generateKeyPair.pk_hash,
@@ -170,6 +175,7 @@ module.exports = ({cache, network, type}, cbk) => {
       ({createSwapAddress, generateKeyPair, utxo}, cbk) =>
     {
       return sendChainTokensTransaction({
+        network,
         destination: createSwapAddress.p2sh_p2wsh_address,
         private_key: generateKeyPair.private_key,
         spend_transaction_id: utxo.transaction_id,
@@ -232,7 +238,7 @@ module.exports = ({cache, network, type}, cbk) => {
     }],
 
     // Push the funding transaction into the mempool
-    broadcastFunding: ['fundingTransaction', ({fundingTransaction}, cbk) => {
+    broadcastFunding: ['fundingTransaction', 'generateToMaturity', ({fundingTransaction}, cbk) => {
       return broadcastTransaction({
         network,
         transaction: fundingTransaction.transaction,
@@ -315,6 +321,7 @@ module.exports = ({cache, network, type}, cbk) => {
     {
       try {
         return cbk(null, claimTransaction({
+          network,
           current_block_height: resolutionChainDetails.current_block_height,
           destination: resolutionChainDetails.destination,
           fee_tokens_per_vbyte: resolutionChainDetails.fee_tokens_per_vbyte,
@@ -342,6 +349,7 @@ module.exports = ({cache, network, type}, cbk) => {
     {
       try {
         return cbk(null, refundTransaction({
+          network,
           destination: resolutionChainDetails.destination,
           fee_tokens_per_vbyte: resolutionChainDetails.fee_tokens_per_vbyte,
           is_public_key_hash_refund: true,

@@ -1,11 +1,10 @@
 const asyncAuto = require('async/auto');
 const asyncMapSeries = require('async/mapSeries');
-const {Transaction} = require('bitcoinjs-lib');
 
 const getBlock = require('./get_block');
 const getTransaction = require('./get_transaction');
-
 const {returnResult} = require('./../async-util');
+const {Transaction} = require('./../tokenslib');
 
 /** Get details for a block
 

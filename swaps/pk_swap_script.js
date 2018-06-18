@@ -3,8 +3,8 @@ const {OP_CHECKLOCKTIMEVERIFY, OP_CHECKSIG, OP_DROP} = require('bitcoin-ops');
 const {OP_ELSE, OP_ENDIF, OP_EQUAL, OP_IF, OP_SHA256} = require('bitcoin-ops');
 const pushdataEncode = require('pushdata-bitcoin').encode;
 const pushdataEncodingLen = require('pushdata-bitcoin').encodingLength;
-const {script} = require('bitcoinjs-lib');
 
+const {script} = require('./../tokenslib');
 const scriptBuffersAsScript = require('./script_buffers_as_script');
 
 /** Generate a chain swap redeem script for a public key

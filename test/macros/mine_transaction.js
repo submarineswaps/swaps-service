@@ -1,10 +1,10 @@
 const asyncAuto = require('async/auto');
-const {Transaction} = require('bitcoinjs-lib');
 
 const {broadcastTransaction} = require('./../../chain');
 const {generateChainBlocks} = require('./../../chain');
 const {getTransaction} = require('./../../chain');
 const {returnResult} = require('./../../async-util');
+const {Transaction} = require('./../../tokenslib');
 
 const txConfirmationCount = 6;
 

@@ -1,4 +1,4 @@
-const {decompile} = require('bitcoinjs-lib').script;
+const {decompile} = require('./../tokenslib').script;
 
 /** Relevant script elements from script signature and witness to normalize the
   scriptsig against a witness model.

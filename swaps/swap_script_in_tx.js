@@ -1,8 +1,7 @@
-const {crypto} = require('bitcoinjs-lib');
-const {script} = require('bitcoinjs-lib');
-const {Transaction} = require('bitcoinjs-lib');
-
+const {crypto} = require('./../tokenslib');
+const {script} = require('./../tokenslib');
 const swapScriptDetails = require('./swap_script_details');
+const {Transaction} = require('./../tokenslib');
 
 const encodeScriptHash = script.scriptHash.output.encode;
 const {hash160} = crypto;

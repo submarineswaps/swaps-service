@@ -77,7 +77,7 @@ module.exports = ({cache, id, network}, cbk) => {
 
       const {transaction} = getTransaction;
 
-      return swapsFromInputs({cache, transaction}, cbk);
+      return swapsFromInputs({cache, network, transaction}, cbk);
     }],
 
     // Determine if the outputs have swap output scripts (funding type)

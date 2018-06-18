@@ -1,5 +1,5 @@
-const {address} = require('bitcoinjs-lib');
-const {networks} = require('bitcoinjs-lib');
+const {address} = require('./../tokenslib');
+const {networks} = require('./../tokenslib');
 
 const publicKeyHashLength = 20;
 
@@ -7,6 +7,7 @@ const publicKeyHashLength = 20;
 
   {
     address: <Address String>
+    network: <Network Name String>
   }
 
   @throws
@@ -16,7 +17,6 @@ const publicKeyHashLength = 20;
   {
     [data]: <Witness Address Data Hex String>
     [hash]: <Address Hash Data Hex String>
-    is_testnet: <Is Testnet Address Bool>
     [prefix]: <Witness Prefix String>
     type: <Address Type String>
     version: <Address Version Number>
@@ -25,6 +25,10 @@ const publicKeyHashLength = 20;
 module.exports = (args) => {
   if (!args.address) {
     throw new Error('ExpectedAddress');
+  }
+
+  if (!args.network || !networks[args.network]) {
+    throw new Error('ExpectedNetworkForAddress');
   }
 
   let base58Address;
@@ -45,14 +49,11 @@ module.exports = (args) => {
     throw new Error('ExpectedValidAddress');
   }
 
-  let isTestnet;
   const isWitness = !!details.prefix;
   let type;
 
   switch (details.version) {
-  case 0: // P2PKH Mainnet
-    isTestnet = details.prefix === 'tb';
-
+  case (networks[args.network].pubKeyHash): // P2PKH Mainnet
     if (isWitness && details.data.length === publicKeyHashLength) {
       type = 'p2wpkh';
     } else if (isWitness && details.data.length === witnessScriptHashLength) {
@@ -62,18 +63,7 @@ module.exports = (args) => {
     }
     break;
 
-  case 5: // P2SH Mainnet
-    isTestnet = false;
-    type = 'p2sh';
-    break;
-
-  case 111: // P2PKH Testnet
-    isTestnet = true;
-    type = 'p2pkh';
-    break;
-
-  case 196: // P2SH Testnet
-    isTestnet = true;
+  case (networks[args.network].scriptHash): // P2SH Mainnet
     type = 'p2sh';
     break;
 
@@ -85,7 +75,6 @@ module.exports = (args) => {
     type,
     data: !details.data ? null : details.data.toString('hex'),
     hash: !details.hash ? null : details.hash.toString('hex'),
-    is_testnet: isTestnet,
     prefix: details.prefix,
     version: details.version,
   };

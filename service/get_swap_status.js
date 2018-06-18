@@ -1,8 +1,8 @@
 const asyncAuto = require('async/auto');
 const {parseInvoice} = require('ln-service');
-const {Transaction} = require('bitcoinjs-lib');
 
 const completeSwapTransaction = require('./complete_swap_transaction');
+const confirmWaitTime = require('./confirm_wait_time');
 const findSwapTransaction = require('./find_swap_transaction');
 const {getBlockchainInfo} = require('./../chain');
 const {getSwapKeyIndex} = require('./../scan');
@@ -10,10 +10,10 @@ const {returnResult} = require('./../async-util');
 const serverSwapKeyPair = require('./server_swap_key_pair');
 const {swapOutput} = require('./../swaps');
 const {swapScriptDetails} = require('./../swaps');
+const {Transaction} = require('./../tokenslib');
 
 const blockSearchDepth = 9;
 const minBlocksUntilRefundHeight = 70;
-const requiredConfCount = 1;
 const swapRate = 0.015;
 
 /** Get the status of a pkhash swap
@@ -79,7 +79,7 @@ module.exports = ({cache, invoice, network, script}, cbk) => {
 
     // Figure out what swap key index corresponds to this redeem script
     getSwapKeyIndex: ['validate', ({}, cbk) => {
-      return getSwapKeyIndex({cache, script}, cbk);
+      return getSwapKeyIndex({cache, network, script}, cbk);
     }],
 
     // Pull out the swap keypair from the HD seed
@@ -100,7 +100,7 @@ module.exports = ({cache, invoice, network, script}, cbk) => {
     // Derive the swap info from the redeem script
     swapDetails: ['validate', ({}, cbk) => {
       try {
-        return cbk(null, swapScriptDetails({script}));
+        return cbk(null, swapScriptDetails({network, script}));
       } catch (e) {
         return cbk([400, 'FailedToDeriveSwapDetails', e]);
       }
@@ -168,7 +168,9 @@ module.exports = ({cache, invoice, network, script}, cbk) => {
     remainingConfs: ['checkTransactionDetected', (res, cbk) => {
       const confCount = res.findSwapTransaction.confirmation_count || 0;
 
-      return cbk(null, Math.max(requiredConfCount - confCount, 0));
+      const waitTime = confirmWaitTime({current_confirmations: confCount});
+
+      return cbk(null, waitTime.remaining_confirmations);
     }],
 
     // Pending swap details

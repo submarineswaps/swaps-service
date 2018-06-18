@@ -110,6 +110,7 @@ App.changedInvoice = function({}) {
         break;
 
       default:
+        console.log('ERR', err);
         text = 'Unexpected error :( try again or with a different invoice?';
         break;
       }
@@ -213,7 +214,10 @@ App.changedRefundScript = function({}) {
     return $('.redeem-refund-address, .timeout-block-height').val('');
   }
 
-  const details = blockchain.swapScriptDetails({script: redeemScript});
+  const details = blockchain.swapScriptDetails({
+    network: 'testnet',
+    script: redeemScript
+  });
 
   $('.dump-refund-address').text(details.refund_p2wpkh_address);
   $('.timeout-block-height').val(details.timelock_block_height);
@@ -270,11 +274,14 @@ App.checkSwap = ({button, id, quote}) => {
     if (!res.payment_secret) {
       const txUrl = `https://testnet.smartbit.com.au/tx/${res.transaction_id}`;
 
-      const isPluralConfs = res.conf_wait_count !== 1;
+      // Display min 1 block waiting, since 0 blocks means swap is happening
+      const confCount = res.conf_wait_count || 1;
+
+      const isPluralConfs = confCount !== 1;
 
       quote.find('.found-waiting').collapse('show');
       quote.find('.deposit-transaction-id').prop('href', txUrl);
-      quote.find('.needed-confirmations-count').text(res.conf_wait_count);
+      quote.find('.needed-confirmations-count').text(confCount);
       quote.find('.plural-confirmation').prop('hidden', !isPluralConfs);
       quote.find('.tx-found').collapse('show');
       quote.find('.waiting-label').collapse('hide');
@@ -514,17 +521,12 @@ App.format = ({tokens}) => {
 
   @returns via cbk
   {
-    is_testnet: <Is Testnet Address Bool>
     type: <Address Type String>
   }
 */
 App.getAddressDetails = ({address}, cbk) => {
   App.makeRequest({api: `address_details/${address}`})
     .then(details => {
-      if (details.is_testnet !== true) {
-        throw new Error('ExpectedTestnetAddress');
-      }
-
       if (details.type !== 'p2pkh' && details.type !== 'p2wpkh') {
         throw new Error('ExpectedPublicKeyHash');
       }
@@ -553,7 +555,6 @@ App.getAddressDetails = ({address}, cbk) => {
     [fiat_currency_code]: <Fiat Currency Code String>
     [fiat_value]: <Fiat Value in Cents Number>
     id: <Invoice Id String>
-    is_testnet: <Is Testnet Bool>
     network: <Network Name String>
     tokens: <Tokens to Send Number>
   }
@@ -1036,7 +1037,10 @@ App.submitOnlineRefundRecovery = function(event) {
       $('.refund-tx-vout').val(details.utxo.output_index);
       $('.timeout-block-height').val(details.timelock_block_height);
 
-      const swap = blockchain.swapScriptDetails({script: redeemScript});
+      const swap = blockchain.swapScriptDetails({
+        network: 'testnet',
+        script: redeemScript,
+      });
 
       $('.refund-p2sh-p2wsh-swap-address').text(swap.p2sh_p2wsh_address);
       $('.refund-p2sh-swap-address').text(swap.p2sh_address);
@@ -1080,7 +1084,10 @@ App.submitSignWithRefundDetails = function(e) {
   let swapDetails;
 
   try {
-    swapDetails = blockchain.swapScriptDetails({script: redeemScript});
+    swapDetails = blockchain.swapScriptDetails({
+      network: 'testnet',
+      script: redeemScript,
+    });
   } catch (e) {
     return console.log([0, 'FailedToDeriveSwapDetails'], e);
   }
@@ -1110,6 +1117,7 @@ App.submitSignWithRefundDetails = function(e) {
       destination: swapDetails.refund_p2wpkh_address,
       fee_tokens_per_vbyte: refundFee,
       is_public_key_hash_refund: true,
+      network: 'testnet',
       private_key: refundKey,
       timelock_block_height: swapDetails.timelock_block_height,
       utxos: [{

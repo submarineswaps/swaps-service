@@ -3,10 +3,9 @@ const asyncMapSeries = require('async/mapSeries');
 const asyncTimesSeries = require('async/timesSeries');
 
 const chainRpc = require('./call_chain_rpc');
+const {generate} = require('./conf/rpc_commands');
 const getBlockDetails = require('./get_block_details');
 const {returnResult} = require('./../async-util');
-
-const {generate} = require('./conf/rpc_commands');
 
 const noDelay = 0;
 

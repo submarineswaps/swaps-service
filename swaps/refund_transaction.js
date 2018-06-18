@@ -1,24 +1,18 @@
 const bip65Encode = require('bip65').encode;
-const {address} = require('bitcoinjs-lib');
-const {crypto} = require('bitcoinjs-lib');
-const {ECPair} = require('bitcoinjs-lib');
-const {networks} = require('bitcoinjs-lib');
+const numberAsBuffer = require('varuint-bitcoin').encode;
 const {OP_0} = require('bitcoin-ops');
 const {OP_FALSE} = require('bitcoin-ops');
 const {OP_PUSHDATA1} = require('bitcoin-ops');
-const {script} = require('bitcoinjs-lib');
-const {Transaction} = require('bitcoinjs-lib');
 
-const chain = require('./../chain').constants;
-const numberAsBuffer = require('varuint-bitcoin').encode;
+const {address} = require('./../tokenslib');
+const chain = require('./../chain/conf/constants');
+const {crypto} = require('./../tokenslib');
+const {ECPair} = require('./../tokenslib');
+const {networks} = require('./../tokenslib');
+const {script} = require('./../tokenslib');
 const scriptBuffersAsScript = require('./script_buffers_as_script');
 const swapScriptDetails = require('./swap_script_details');
-
-const {SIGHASH_ALL} = Transaction;
-const {sha256} = crypto;
-const {testnet} = networks;
-const {toOutputScript} = address;
-const {witnessScriptHash} = script;
+const {Transaction} = require('./../tokenslib');
 
 const compressedPubKeySize = chain.compressed_public_key_size;
 const dustRatio = 1 / 3;
@@ -28,8 +22,12 @@ const hexCharCountPerByte = 2;
 const minSequence = chain.min_sequence_value;
 const nestedScriptPubHexLength = 46;
 const sequenceLength = chain.sequence_byte_length;
+const {sha256} = crypto;
 const shortPushdataLength = chain.short_push_data_length;
+const {SIGHASH_ALL} = Transaction;
+const {toOutputScript} = address;
 const vRatio = chain.witness_byte_discount_denominator;
+const {witnessScriptHash} = script;
 
 /** Build a refund transaction to claim funds back from a swap
 
@@ -37,6 +35,7 @@ const vRatio = chain.witness_byte_discount_denominator;
     destination: <Send Tokens to Address String>
     fee_tokens_per_vbyte: <Fee Per Virtual Byte Token Rate Number>
     [is_public_key_hash_refund]: <Is Public Key Hash Refund Bool> = false
+    network: <Network Name String>
     [private_key]: <Refund Private Key WIF String>
     timelock_block_height: <Timelock Block Height Number>
     utxos: [{
@@ -65,6 +64,10 @@ module.exports = args => {
     throw new Error('ExpectedFee');
   }
 
+  if (!args.network || !networks[args.network]) {
+    throw new Error('ExpectedNetworkForRefundTransaction');
+  }
+
   if (!args.timelock_block_height) {
     throw new Error('ExpectedLocktimeHeight');
   }
@@ -75,12 +78,13 @@ module.exports = args => {
 
   const dummy = Buffer.from(OP_FALSE.toString(hexBase), 'hex');
   const isPkHashRefund = !!args.is_public_key_hash_refund;
+  const network = networks[args.network];
   let pubKey;
   const tokens = args.utxos.reduce((sum, n) => n.tokens + sum, 0);
   const tokensPerVirtualByte = args.fee_tokens_per_vbyte;
   const tx = new Transaction();
 
-  tx.addOutput(toOutputScript(args.destination, testnet), tokens);
+  tx.addOutput(toOutputScript(args.destination, network), tokens);
 
   // Plug all the utxos into the transaction as inputs
   args.utxos
@@ -98,7 +102,10 @@ module.exports = args => {
       return;
     }
 
-    const scriptDetails = swapScriptDetails({script: redeem});
+    const scriptDetails = swapScriptDetails({
+      network: args.network,
+      script: redeem,
+    });
 
     if (script === scriptDetails.p2sh_output_script) {
       return;
@@ -122,7 +129,7 @@ module.exports = args => {
 
   // The public key buffer is stubbed all zeros when there is no private key
   if (!!args.private_key) {
-    pubKey = ECPair.fromWIF(args.private_key, testnet).getPublicKeyBuffer();
+    pubKey = ECPair.fromWIF(args.private_key, network).getPublicKeyBuffer();
   } else {
     pubKey = Buffer.alloc(compressedPubKeySize);
   }
@@ -136,7 +143,10 @@ module.exports = args => {
       return;
     }
 
-    const scriptDetails = swapScriptDetails({script: redeem});
+    const scriptDetails = swapScriptDetails({
+      network: args.network,
+      script: redeem,
+    });
 
     if (script === scriptDetails.p2sh_p2wsh_output_script) {
       return;
@@ -170,7 +180,10 @@ module.exports = args => {
 
   // Anticipate the final weight of the transaction
   const anticipatedWeight = args.utxos.reduce((sum, utxo) => {
-    const scriptDetails = swapScriptDetails({script: utxo.redeem});
+    const scriptDetails = swapScriptDetails({
+      network: args.network,
+      script: utxo.redeem,
+    });
 
     if (utxo.script === scriptDetails.p2sh_output_script) {
       return sum;
@@ -205,7 +218,7 @@ module.exports = args => {
     return {transaction: tx.toHex()};
   }
 
-  const signingKey = ECPair.fromWIF(args.private_key, testnet);
+  const signingKey = ECPair.fromWIF(args.private_key, network);
 
   // Set legacy p2sh signatures
   args.utxos.forEach(({redeem, script}, i) => {
@@ -213,7 +226,10 @@ module.exports = args => {
       return;
     }
 
-    const scriptDetails = swapScriptDetails({script: redeem});
+    const scriptDetails = swapScriptDetails({
+      network: args.network,
+      script: redeem,
+    });
 
     if (script === scriptDetails.p2sh_p2wsh_output_script) {
       return;
@@ -243,7 +259,11 @@ module.exports = args => {
   // Sign each input. We need the dummy to fail the preimage test
   args.utxos.forEach(({redeem, script, tokens}, i) => {
     const redeemScript = Buffer.from(redeem, 'hex');
-    const scriptDetails = swapScriptDetails({script: redeem});
+
+    const scriptDetails = swapScriptDetails({
+      network: args.network,
+      script: redeem,
+    });
 
     if (script === scriptDetails.p2sh_output_script) {
       return;

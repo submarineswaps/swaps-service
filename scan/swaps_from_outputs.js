@@ -1,12 +1,12 @@
-const {address} = require('bitcoinjs-lib');
 const asyncAuto = require('async/auto');
 const asyncMap = require('async/map');
-const {networks} = require('bitcoinjs-lib');
-const {Transaction} = require('bitcoinjs-lib');
 
+const {address} = require('./../tokenslib');
 const {addressDetails} = require('./../chain');
 const getWatchedOutput = require('./get_watched_output');
+const {networks} = require('./../tokenslib');
 const {returnResult} = require('./../async-util');
+const {Transaction} = require('./../tokenslib');
 
 const {fromOutputScript} = address;
 
@@ -53,6 +53,7 @@ module.exports = ({cache, network, transaction}, cbk) => {
       return cbk();
     },
 
+    // Transaction id
     id: ['validate', ({}, cbk) => {
       try {
         return cbk(null, Transaction.fromHex(transaction).getId());
@@ -72,22 +73,20 @@ module.exports = ({cache, network, transaction}, cbk) => {
 
     // Addresses associated with outputs, if any
     addresses: ['outputs', ({outputs}, cbk) => {
-      const net = network === 'regtest' ? 'testnet' : network;
-
-      if (!networks[net]) {
+      if (!networks[network]) {
         return cbk([400, 'InvalidNetworkForSwapOutput']);
       }
 
       const outputAddresses = outputs.map(({script, value}, i) => {
         try {
-          const address = fromOutputScript(script, networks[net]);
+          const address = fromOutputScript(script, networks[network]);
 
           return {
             address,
             index: i,
             output: script.toString('hex'),
             tokens: value,
-            type: addressDetails({address}).type,
+            type: addressDetails({address, network}).type,
           };
         } catch (e) {
           return null;
@@ -104,7 +103,7 @@ module.exports = ({cache, network, transaction}, cbk) => {
     // Addresses watched by the scanner
     watchedAddresses: ['addresses', 'id', ({addresses, id}, cbk) => {
       return asyncMap(addresses, ({address, index, output, tokens}, cbk) => {
-        return getWatchedOutput({address, cache}, (err, res) => {
+        return getWatchedOutput({address, network, cache}, (err, res) => {
           if (!!err) {
             return cbk(err);
           }

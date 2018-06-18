@@ -1,10 +1,10 @@
 const asyncAuto = require('async/auto');
-const {Transaction} = require('bitcoinjs-lib');
 
 const {getJsonFromCache} = require('./../cache');
 const {getTransaction} = require('./../chain');
 const {returnResult} = require('./../async-util');
 const {setJsonInCache} = require('./../cache');
+const {Transaction} = require('./../tokenslib');
 
 const cacheTxMs = 60 * 60 * 1000;
 const notFoundIndex = -1;

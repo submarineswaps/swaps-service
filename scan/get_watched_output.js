@@ -9,6 +9,7 @@ const {swapScriptDetails} = require('./../swaps');
   {
     cache: <Cache Type String>
     address: <Address String>
+    network: <Network Name String>
   }
 
   @returns via cbk
@@ -21,7 +22,7 @@ const {swapScriptDetails} = require('./../swaps');
     }
   }
 */
-module.exports = ({address, cache}, cbk) => {
+module.exports = ({address, cache, network}, cbk) => {
   return asyncAuto({
     // Check arguments
     validate: cbk => {
@@ -31,6 +32,10 @@ module.exports = ({address, cache}, cbk) => {
 
       if (!cache) {
         return cbk([400, 'ExpectedCacheTypeForWatchedOutput']);
+      }
+
+      if (!network) {
+        return cbk([400, 'ExpectedNetworkForWatchedOutput']);
       }
 
       return cbk();
@@ -65,7 +70,7 @@ module.exports = ({address, cache}, cbk) => {
       const {script} = getCachedAddress;
 
       try {
-        const scriptDetails = swapScriptDetails({script});
+        const scriptDetails = swapScriptDetails({network, script});
 
         return cbk(null, scriptDetails.destination_public_key);
       } catch (e) {

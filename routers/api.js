@@ -10,6 +10,7 @@ const {returnJson} = require('./../async-util');
 
 const cache = 'redis';
 const maxInvoiceFeeRate = 0.005;
+const network = 'testnet';
 
 /** Make an api router
 
@@ -29,7 +30,7 @@ module.exports = ({log}) => {
   router.get('/address_details/:address', ({params}, res) => {
     const {address} = params;
 
-    return getAddressDetails({address}, returnJson({log, res}));
+    return getAddressDetails({address, network}, returnJson({log, res}));
   });
 
   // GET details about an invoice
@@ -46,7 +47,7 @@ module.exports = ({log}) => {
   // POST a swap output find details request
   router.post('/swap_outputs/', ({body}, res) => {
     return findSwapOutpoint({
-      network: 'testnet',
+      network,
       redeem_script: body.redeem_script,
     },
     returnJson({log, res}));
@@ -58,7 +59,7 @@ module.exports = ({log}) => {
       cache,
       currency: body.currency,
       invoice: body.invoice,
-      network: 'testnet',
+      network,
       refund: body.refund_address,
     },
     returnJson({log, res}));
@@ -68,8 +69,8 @@ module.exports = ({log}) => {
   router.post('/swaps/check', ({body, params}, res) => {
     return checkSwapStatus({
       cache,
+      network,
       invoice: body.invoice,
-      network: 'testnet',
       script: body.redeem_script,
     },
     returnJson({log, res}));

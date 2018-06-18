@@ -59,6 +59,7 @@ module.exports = (args, cbk) => {
     // Bob will make a Lightning invoice to pay
     generatePaymentPreimage: ['generateBobKeyPair', (res, cbk) => {
       return generateInvoice({
+        network: args.network,
         private_key: res.generateBobKeyPair.private_key,
       },
       cbk);
@@ -97,6 +98,7 @@ module.exports = (args, cbk) => {
       try {
         return cbk(null, swapAddress({
           destination_public_key: res.generateAliceKeyPair.public_key,
+          network: args.network,
           payment_hash: res.generatePaymentPreimage.payment_hash,
           refund_public_key: refundPk,
           refund_public_key_hash: refundPkHash,
@@ -126,6 +128,7 @@ module.exports = (args, cbk) => {
     fundSwapAddress: ['bobUtxo', 'createChainSwapAddress', (res, cbk) => {
       return sendChainTokensTransaction({
         destination: res.createChainSwapAddress[`${args.swap_type}_address`],
+        network: args.network,
         private_key: res.generateBobKeyPair.private_key,
         spend_transaction_id: res.bobUtxo.transaction_id,
         spend_vout: res.bobUtxo.vout,
@@ -221,6 +224,7 @@ module.exports = (args, cbk) => {
           current_block_height: readyToClaim.current_block_height,
           destination: readyToClaim.destination,
           fee_tokens_per_vbyte: readyToClaim.fee_tokens_per_vbyte,
+          network: args.network,
           preimage: readyToClaim.preimage.replace(/\d/g, '0'),
           private_key: readyToClaim.private_key,
           utxos: readyToClaim.utxos,
@@ -252,6 +256,7 @@ module.exports = (args, cbk) => {
           current_block_height: res.readyToClaim.current_block_height,
           destination: res.readyToClaim.destination,
           fee_tokens_per_vbyte: res.readyToClaim.fee_tokens_per_vbyte,
+          network: args.network,
           preimage: res.readyToClaim.preimage,
           private_key: res.generateBobKeyPair.private_key, // Wrong key
           utxos: res.readyToClaim.utxos,
@@ -293,6 +298,7 @@ module.exports = (args, cbk) => {
           current_block_height: readyToClaim.current_block_height,
           destination: readyToClaim.destination,
           fee_tokens_per_vbyte: readyToClaim.fee_tokens_per_vbyte,
+          network: args.network,
           preimage: readyToClaim.preimage,
           private_key: readyToClaim.private_key,
           utxos: readyToClaim.utxos,

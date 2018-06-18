@@ -1,4 +1,4 @@
-const {decompile} = require('bitcoinjs-lib').script;
+const {decompile} = require('./../tokenslib').script;
 
 const payToPublicKeyLength = 2;
 const pubKeyLength = 33;

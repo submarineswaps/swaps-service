@@ -1,9 +1,10 @@
 const {createHash} = require('crypto');
-const {ECPair} = require('bitcoinjs-lib');
 const {encode} = require('bolt11');
 const {sign} = require('bolt11');
-const {testnet} = require('bitcoinjs-lib').networks;
 const uuidv4 = require('uuid/v4');
+
+const {ECPair} = require('./../../tokenslib');
+const {networks} = require('./../../tokenslib');
 
 const preimageByteCount = 32;
 const privKeySize = 32;
@@ -12,6 +13,7 @@ const uuidv4ByteCount = 16;
 /** Generate a fake invoice payment preimage and payment hash pair
 
   {
+    network: <Network Name String>
     private_key: <WIF Encoded Private Key String>
   }
 
@@ -23,11 +25,15 @@ const uuidv4ByteCount = 16;
   }
 */
 module.exports = (args, cbk) => {
-  if (!args.private_key) {
-    return cbk([0, 'Expected private key']);
+  if (!args.network) {
+    return cbk([0, 'ExpectedNetworkForInvoice']);
   }
 
-  const keyPair = ECPair.fromWIF(args.private_key, testnet);
+  if (!args.private_key) {
+    return cbk([0, 'ExpectedPrivateKeyForInvoiceSigning']);
+  }
+
+  const keyPair = ECPair.fromWIF(args.private_key, networks[args.network]);
   const preimage = new Buffer(preimageByteCount);
 
   // Populate preimage bytes with a couple uuidv4s

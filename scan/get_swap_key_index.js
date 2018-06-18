@@ -8,6 +8,7 @@ const {returnResult} = require('./../async-util');
 
   {
     cache: <Cache Type String>
+    network: <Network Name String>
     script: <Redeem Script Hex String>
   }
 
@@ -17,7 +18,7 @@ const {returnResult} = require('./../async-util');
     [invoice]: <BOLT 11 Invoice String>
   }
 */
-module.exports = ({cache, script}, cbk) => {
+module.exports = ({cache, network, script}, cbk) => {
   return asyncAuto({
     // Check arguments
     validate: cbk => {
@@ -35,7 +36,7 @@ module.exports = ({cache, script}, cbk) => {
     // Pull out swap details from the redeem script
     swapDetails: ['validate', ({}, cbk) => {
       try {
-        return cbk(null, swapScriptDetails({script}));
+        return cbk(null, swapScriptDetails({network, script}));
       } catch (e) {
         return cbk([500, 'FailedToDeriveSwapDetails', e]);
       }

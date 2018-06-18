@@ -141,8 +141,11 @@ module.exports = ({cache, claim, id, funding, refund}, cbk) => {
 
     // Get timeout height of the swap
     swapDetails: ['element', 'validate', ({element}, cbk) => {
+      const {network} = element;
+      const {script} = element;
+
       try {
-        return cbk(null, swapScriptDetails({script: element.script}));
+        return cbk(null, swapScriptDetails({network, script}));
       } catch (e) {
         return cbk([500, 'FailedToDecodeSwapScript']);
       }

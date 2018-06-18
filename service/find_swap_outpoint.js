@@ -45,7 +45,10 @@ module.exports = (args, cbk) => {
     // Derive swap details
     swapDetails: ['validate', ({}, cbk) => {
       try {
-        return cbk(null, swapScriptDetails({script: args.redeem_script}));
+        return cbk(null, swapScriptDetails({
+          network: args.network,
+          script: args.redeem_script,
+        }));
       } catch (e) {
         return cbk([500, 'FailedToDeriveSwapDetails', e]);
       }
@@ -56,6 +59,7 @@ module.exports = (args, cbk) => {
       try {
         return cbk(null, swapAddress({
           destination_public_key: swapDetails.destination_public_key,
+          network: args.network,
           payment_hash: swapDetails.payment_hash,
           refund_public_key_hash: swapDetails.refund_public_key_hash,
           timeout_block_height: swapDetails.timelock_block_height,

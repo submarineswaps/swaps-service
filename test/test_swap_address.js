@@ -5,6 +5,7 @@ const {swapAddress} = require('./../swaps');
 
 const fixtures = {
   destination_public_key: '03f8109578aae1e5cfc497e466cf6ae6625497cd31886e87b2f4f54f3f0f46b539',
+  network: 'testnet',
   payment_hash: '53ada8e6de01c26ff43040887ba7b22bddce19f8658fd1ba00716ed79d15cd5e',
   refund_public_key: '03ec0c1e45b709d708cd376a6f2daf19ac27be229647780d592e27d7fb7efb207a',
   refund_public_key_hash: '10fd1a974109be99bdf95334f8b7625bda0e90be',
@@ -15,6 +16,7 @@ const fixtures = {
 {
   const details = swapAddress({
     destination_public_key: fixtures.destination_public_key,
+    network: fixtures.network,
     payment_hash: fixtures.payment_hash,
     refund_public_key: fixtures.refund_public_key,
     timeout_block_height: fixtures.timeout_block_height,
@@ -33,6 +35,7 @@ const fixtures = {
 {
   const details = swapAddress({
     destination_public_key: fixtures.destination_public_key,
+    network: fixtures.network,
     payment_hash: fixtures.payment_hash,
     refund_public_key_hash: fixtures.refund_public_key_hash,
     timeout_block_height: fixtures.timeout_block_height,
@@ -52,6 +55,7 @@ const fixtures = {
   throws(() => {
     return swapAddress({
       destination_public_key: fixtures.destination_public_key,
+      network: fixtures.network,
       payment_hash: fixtures.payment_hash,
       timeout_block_height: fixtures.timeout_block_height,
     });

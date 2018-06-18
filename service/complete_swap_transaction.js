@@ -168,6 +168,7 @@ module.exports = (args, cbk) => {
           current_block_height: res.getBlockchainInfo.current_height,
           destination: res.getSweepAddress.address,
           fee_tokens_per_vbyte: res.getFee.fee_tokens_per_vbyte,
+          network: args.network,
           preimage: res.payInvoice.payment_secret,
           private_key: args.private_key,
           utxos: res.fundingUtxos.matching_outputs,

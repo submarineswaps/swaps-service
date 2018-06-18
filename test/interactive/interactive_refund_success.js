@@ -2,18 +2,19 @@ const asyncAuto = require('async/auto');
 const asyncDuring = require('async/during');
 const ora = require('ora');
 const {parseInvoice} = require('ln-service');
-const {Transaction} = require('bitcoinjs-lib');
 
 const macros = './../macros/';
 
 const addressForPublicKey = require(`${macros}address_for_public_key`);
 const {broadcastTransaction} = require('./../../chain');
+const chain = require('./../../chain').constants;
 const {generateChainBlocks} = require('./../../chain');
 const generateInvoice = require(`${macros}generate_invoice`);
 const {generateKeyPair} = require('./../../chain');
 const {getBlockchainInfo} = require('./../../chain');
 const {getTransaction} = require('./../../chain');
 const isChainBelowHeight = require(`${macros}is_chain_below_height`);
+const math = require('./../conf/math');
 const mineTransaction = require(`${macros}mine_transaction`);
 const promptForInput = require(`${macros}prompt`);
 const {refundTransaction} = require('./../../swaps');
@@ -23,9 +24,7 @@ const {spawnChainDaemon} = require('./../../chain');
 const {stopChainDaemon} = require('./../../chain');
 const {swapAddress} = require('./../../swaps');
 const {swapScriptInTransaction} = require('./../../swaps');
-
-const math = require('./../conf/math');
-const chain = require('./../../chain').constants;
+const {Transaction} = require('./../../tokenslib');
 
 const chainCheckFrequencyMs = 200;
 const coinbaseIndex = chain.coinbase_tx_index;
@@ -80,9 +79,14 @@ module.exports = (args, cbk) => {
     }],
 
     // In a default case we can assume Alice made the invoice herself
-    defaultLightningInvoice: ['generateAliceKeyPair', (res, cbk) => {
+    defaultLightningInvoice: [
+      'generateAliceKeyPair',
+      'network',
+      ({generateAliceKeyPair, network}, cbk) =>
+    {
       return generateInvoice({
-        private_key: res.generateAliceKeyPair.private_key,
+        network,
+        private_key: generateAliceKeyPair.private_key,
       },
       cbk);
     }],
@@ -198,12 +202,14 @@ module.exports = (args, cbk) => {
     createChainSwapAddress: [
       'generateAliceKeyPair',
       'generateBobKeyPair',
+      'network',
       'parseLightningInvoice',
       'timeoutBlockHeight',
       (res, cbk) =>
     {
       return cbk(null, swapAddress({
         destination_public_key: res.generateBobKeyPair.public_key,
+        network: res.network,
         payment_hash: res.parseLightningInvoice.id,
         refund_public_key: res.generateAliceKeyPair.public_key,
         timeout_block_height: res.timeoutBlockHeight,
@@ -224,6 +230,7 @@ module.exports = (args, cbk) => {
 
       return sendChainTokensTransaction({
         destination: res.createChainSwapAddress.p2wsh_address,
+        network: res.network,
         private_key: res.generateAliceKeyPair.private_key,
         spend_transaction_id: res.aliceUtxo.transaction_id,
         spend_vout: res.aliceUtxo.vout,
@@ -380,6 +387,7 @@ module.exports = (args, cbk) => {
       'fundingTransactionUtxos',
       'generateAliceKeyPair',
       'getHeightForRefundTransaction',
+      'network',
       'promptForRefundAddress',
       'tokensPerVirtualByte',
       (res, cbk) =>
@@ -387,6 +395,7 @@ module.exports = (args, cbk) => {
       return refundTransaction({
         destination: res.promptForRefundAddress.value,
         fee_tokens_per_vbyte: res.tokensPerVirtualByte,
+        network: res.network,
         private_key: res.generateAliceKeyPair.private_key,
         redeem_script: res.createChainSwapAddress.redeem_script,
         timelock_block_height: res.getHeightForRefundTransaction.current_height,

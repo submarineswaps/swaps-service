@@ -1,4 +1,4 @@
-const {Transaction} = require('bitcoinjs-lib');
+const {Transaction} = require('./../tokenslib');
 
 const notFoundIndex = -1;
 

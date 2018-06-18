@@ -14,10 +14,11 @@ const {swapScriptDetails}= require('./../swaps');
     cache: <Cache Type String>
     index: <Key Index Number>
     invoice: <BOLT 11 Invoice String>
+    network: <Network Name String>
     script: <Redeem Script Hex String>
   }
 */
-module.exports = ({cache, index, invoice, script}, cbk) => {
+module.exports = ({cache, index, invoice, network, script}, cbk) => {
   return asyncAuto({
     // Check the arguments
     validate: cbk => {
@@ -31,6 +32,10 @@ module.exports = ({cache, index, invoice, script}, cbk) => {
 
       if (!invoice) {
         return cbk([400, 'ExpectedInvoice']);
+      }
+
+      if (!network) {
+        return cbk([400, 'ExpectedNetworkToForgetSwap']);
       }
 
       if (!script) {
@@ -61,7 +66,7 @@ module.exports = ({cache, index, invoice, script}, cbk) => {
     // Derive script details
     scriptDetails: ['validate', ({}, cbk) => {
       try {
-        return cbk(null, swapScriptDetails({script}));
+        return cbk(null, swapScriptDetails({network, script}));
       } catch (e) {
         return cbk([400, 'ExpectedValidRedeemScript', e]);
       }

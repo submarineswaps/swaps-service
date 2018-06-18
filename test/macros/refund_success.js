@@ -64,6 +64,7 @@ module.exports = (args, cbk) => {
     // Alice generates a Lightning invoice which gives a preimage/hash
     generatePaymentPreimage: ['generateAliceKeyPair', (res, cbk) => {
       return generateInvoice({
+        network: args.network,
         private_key: res.generateAliceKeyPair.private_key,
       },
       cbk);
@@ -105,6 +106,7 @@ module.exports = (args, cbk) => {
       try {
         return cbk(null, swapAddress({
           destination_public_key: res.generateBobKeyPair.public_key,
+          network: args.network,
           payment_hash: res.generatePaymentPreimage.payment_hash,
           refund_public_key: refundPk,
           refund_public_key_hash: refundPkHash,
@@ -139,6 +141,7 @@ module.exports = (args, cbk) => {
     {
       return sendChainTokensTransaction({
         destination: res.createChainSwapAddress[`${args.swap_type}_address`],
+        network: args.network,
         private_key: res.generateAliceKeyPair.private_key,
         spend_transaction_id: res.aliceUtxo.transaction_id,
         spend_vout: res.aliceUtxo.vout,
@@ -189,6 +192,7 @@ module.exports = (args, cbk) => {
           destination: res.generateAliceKeyPair.p2wpkh_address,
           fee_tokens_per_vbyte: staticFeePerVirtualByte,
           is_public_key_hash_refund: args.is_refund_to_public_key_hash,
+          network: args.network,
           private_key: res.generateAliceKeyPair.private_key,
           timelock_block_height: res.getHeightAfterFunding.current_height,
           utxos: res.fundingTransactionUtxos.matching_outputs,
@@ -251,6 +255,7 @@ module.exports = (args, cbk) => {
           destination: res.generateAliceKeyPair.p2wpkh_address,
           fee_tokens_per_vbyte: staticFeePerVirtualByte,
           is_public_key_hash_refund: args.is_refund_to_public_key_hash,
+          network: args.network,
           private_key: res.generateAliceKeyPair.private_key,
           timelock_block_height: res.getHeightForRefund.current_height,
           utxos: res.fundingTransactionUtxos.matching_outputs,
