@@ -3,8 +3,8 @@ const {parseInvoice} = require('ln-service');
 const {shuffle} = require('lodash');
 
 const confirmWaitTime = require('./confirm_wait_time');
-const {getBlockHeader} = require('./../chain');
 const {getConfirmationCount} = require('./../chain');
+const {getBlockPlacement} = require('./../blocks');
 const getDetectedSwaps = require('./../pool/get_detected_swaps');
 const getSwapStatus = require('./get_swap_status');
 const {returnResult} = require('./../async-util');
@@ -95,7 +95,7 @@ module.exports = ({cache, invoice, network, script}, cbk) => {
         return cbk();
       }
 
-      return getBlockHeader({network, block: swapElement.block}, cbk);
+      return getBlockPlacement({network, block: swapElement.block}, cbk);
     }],
 
     // Determine wait time still necessary to confirm the swap

@@ -1,5 +1,4 @@
 const chainRpc = require('./call_chain_rpc');
-
 const {getRawTransaction} = require('./conf/rpc_commands');
 
 /** Get a raw transaction

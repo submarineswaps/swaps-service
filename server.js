@@ -13,7 +13,7 @@ const walnut = require('walnut');
 
 const {addSwapToPool} = require('./pool');
 const apiRouter = require('./routers/api');
-const {confirmChainBackend} = require('./chain');
+const {confirmChainBackend} = require('./blocks');
 const {swapScanner} = require('./scan');
 
 const {NODE_ENV} = process.env;

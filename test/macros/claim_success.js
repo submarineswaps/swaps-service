@@ -3,13 +3,13 @@ const asyncAuto = require('async/auto');
 const addressForPublicKey = require('./address_for_public_key');
 const {broadcastTransaction} = require('./../../chain');
 const {claimTransaction} = require('./../../swaps');
+const {chainConstants} = require('./../../chain');
 const {clearCache} = require('./../../cache');
-const {constants} = require('./../../chain');
 const {findSwapTransaction} = require('./../../service');
 const {generateChainBlocks} = require('./../../chain');
 const generateInvoice = require('./generate_invoice');
 const {generateKeyPair} = require('./../../chain');
-const {getBlockchainInfo} = require('./../../chain'); 
+const {getCurrentHeight} = require('./../../chain'); 
 const mineTransaction = require('./mine_transaction');
 const sendChainTokensTransaction = require('./send_chain_tokens_tx');
 const {spawnChainDaemon} = require('./../../chain');
@@ -18,8 +18,8 @@ const {swapAddress} = require('./../../swaps');
 const {swapScriptInTransaction} = require('./../../swaps');
 
 const blockSearchDepth = 9;
-const coinbaseIndex = constants.coinbase_tx_index;
-const maturityBlockCount = constants.maturity_block_count;
+const coinbaseIndex = chainConstants.coinbase_tx_index;
+const maturityBlockCount = chainConstants.maturity_block_count;
 const staticFeePerVirtualByte = 100;
 const swapTimeoutBlockCount = 200;
 
@@ -176,7 +176,7 @@ module.exports = (args, cbk) => {
 
     // Alice gets the height of the chain for her claim tx
     getHeightForSweepTransaction: ['mineFundingTx', ({}, cbk) => {
-      return getBlockchainInfo({network: args.network}, cbk);
+      return getCurrentHeight({network: args.network}, cbk);
     }],
 
     // Alice grabs the utxo she can spend to herself from the funded swap utxo
@@ -208,7 +208,7 @@ module.exports = (args, cbk) => {
       (res, cbk) =>
     {
       return cbk(null, {
-        current_block_height: res.getHeightForSweepTransaction.current_height,
+        current_block_height: res.getHeightForSweepTransaction.height,
         destination: res.generateAliceKeyPair.p2wpkh_address,
         fee_tokens_per_vbyte: staticFeePerVirtualByte,
         preimage: res.generatePaymentPreimage.payment_preimage,

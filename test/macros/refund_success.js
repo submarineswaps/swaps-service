@@ -3,11 +3,11 @@ const asyncAuto = require('async/auto');
 const addressForPublicKey = require('./address_for_public_key');
 const {broadcastTransaction} = require('./../../chain');
 const {clearCache} = require('./../../cache');
-const {constants} = require('./../../chain');
+const {chainConstants} = require('./../../chain');
 const {generateChainBlocks} = require('./../../chain');
 const generateInvoice = require('./generate_invoice');
 const {generateKeyPair} = require('./../../chain');
-const {getBlockchainInfo} = require('./../../chain');
+const {getCurrentHeight} = require('./../../chain');
 const mineTransaction = require('./mine_transaction');
 const {refundTransaction} = require('./../../swaps');
 const sendChainTokensTransaction = require('./send_chain_tokens_tx');
@@ -73,7 +73,7 @@ module.exports = (args, cbk) => {
     // A bunch of blocks are made so Alice's rewards are mature
     generateToMaturity: ['spawnChainDaemon', ({}, cbk) => {
       return generateChainBlocks({
-        count: constants.maturity_block_count,
+        count: chainConstants.maturity_block_count,
         delay: generateDelayMs,
         network: args.network,
       },
@@ -82,12 +82,12 @@ module.exports = (args, cbk) => {
 
     // Get the state of the chain at maturity when Alice is ready to spend
     getMatureChainInfo: ['generateToMaturity', ({}, cbk) => {
-      return getBlockchainInfo({network: args.network}, cbk);
+      return getCurrentHeight({network: args.network}, cbk);
     }],
 
     // Determine the height at which a refund is possible
     swapRefundHeight: ['getMatureChainInfo', ({getMatureChainInfo}, cbk) => {
-      return cbk(null, getMatureChainInfo.current_height + swapTimeoutBlocks);
+      return cbk(null, getMatureChainInfo.height + swapTimeoutBlocks);
     }],
 
     // A chain swap address is created. Claim: Bob. Refund: Alice.
@@ -128,7 +128,7 @@ module.exports = (args, cbk) => {
       return cbk(null, {
         tokens: firstCoinbaseOutput.tokens,
         transaction_id: coinbaseTransaction.id,
-        vout: constants.coinbase_tx_index,
+        vout: chainConstants.coinbase_tx_index,
       });
     }],
 
@@ -161,7 +161,7 @@ module.exports = (args, cbk) => {
 
     // Alice checks the height after funding
     getHeightAfterFunding: ['mineFundingTx', ({}, cbk) => {
-      return getBlockchainInfo({network: args.network}, cbk);
+      return getCurrentHeight({network: args.network}, cbk);
     }],
 
     // Alice picks up her funding utxos
@@ -194,7 +194,7 @@ module.exports = (args, cbk) => {
           is_public_key_hash_refund: args.is_refund_to_public_key_hash,
           network: args.network,
           private_key: res.generateAliceKeyPair.private_key,
-          timelock_block_height: res.getHeightAfterFunding.current_height,
+          timelock_block_height: res.getHeightAfterFunding.height,
           utxos: res.fundingTransactionUtxos.matching_outputs,
         }));
       } catch (e) {
@@ -238,7 +238,7 @@ module.exports = (args, cbk) => {
 
     // Grab the current height to use in the sweep tx
     getHeightForRefund: ['generateTimeoutBlocks', ({}, cbk) => {
-      return getBlockchainInfo({network: args.network}, cbk);
+      return getCurrentHeight({network: args.network}, cbk);
     }],
 
     // Alice will claim her refunded tokens after the timeout
@@ -257,7 +257,7 @@ module.exports = (args, cbk) => {
           is_public_key_hash_refund: args.is_refund_to_public_key_hash,
           network: args.network,
           private_key: res.generateAliceKeyPair.private_key,
-          timelock_block_height: res.getHeightForRefund.current_height,
+          timelock_block_height: res.getHeightForRefund.height,
           utxos: res.fundingTransactionUtxos.matching_outputs,
         }));
       } catch (e) {

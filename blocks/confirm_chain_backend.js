@@ -1,7 +1,7 @@
 const asyncAuto = require('async/auto');
 
-const getBlockHeader = require('./get_block_header');
-const getCurrentHash = require('./get_current_hash');
+const getBlockPlacement = require('./get_block_placement');
+const {getCurrentHash} = require('./../chain');
 const {returnResult} = require('./../async-util');
 
 const staleBlockMs = 1000 * 60 * 60 * 6;
@@ -31,13 +31,13 @@ module.exports = ({network}, cbk) => {
 
     // Get header info
     getHeaderInfo: ['getChainTipHash', ({getChainTipHash}, cbk) => {
-      const block = getChainTipHash.current_hash;
+      const block = getChainTipHash.hash;
 
       if (!block) {
         return cbk([503, 'ExpectedCurrentChainTipBlockHash']);
       }
 
-      return getBlockHeader({block, network}, cbk);
+      return getBlockPlacement({block, network}, cbk);
     }],
 
     // Check header info

@@ -4,7 +4,7 @@ const {OP_0} = require('bitcoin-ops');
 const {OP_PUSHDATA1} = require('bitcoin-ops');
 
 const {address} = require('./../tokenslib');
-const chainConstants = require('./../chain').constants;
+const {chainConstants} = require('./../chain');
 const {crypto} = require('./../tokenslib');
 const {ECPair} = require('./../tokenslib');
 const {ECSignature} = require('./../tokenslib');

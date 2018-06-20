@@ -1,8 +1,8 @@
 const asyncAuto = require('async/auto');
 
 const getAddressDetails = require('./get_address_details');
-const {getBlockchainInfo} = require('./../chain');
 const getInvoiceDetails = require('./get_invoice_details');
+const {getRecentChainTip} = require('./../blocks');
 const {returnResult} = require('./../async-util');
 const serverSwapKeyPair = require('./server_swap_key_pair');
 const {swapAddress} = require('./../swaps');
@@ -38,8 +38,6 @@ const timeoutBlockCount = 144;
   }
 */
 module.exports = ({cache, invoice, network, refund}, cbk) => {
-  console.log('CREATE SWAP QUOTE', invoice, network, refund);
-
   return asyncAuto({
     // Decode the refund address
     getAddressDetails: cbk => {
@@ -47,7 +45,7 @@ module.exports = ({cache, invoice, network, refund}, cbk) => {
     },
 
     // Get info about the state of the chain
-    getBlockchainInfo: cbk => getBlockchainInfo({network}, cbk),
+    getChainTip: cbk => getRecentChainTip({cache, network}, cbk),
 
     // Decode the invoice to pay
     getInvoiceDetails: cbk => getInvoiceDetails({invoice}, cbk),
@@ -74,8 +72,8 @@ module.exports = ({cache, invoice, network, refund}, cbk) => {
     },
 
     // Determine the HD key index for the swap key
-    swapKeyIndex: ['getBlockchainInfo', ({getBlockchainInfo}, cbk) => {
-      return cbk(null, getBlockchainInfo.current_height);
+    swapKeyIndex: ['getChainTip', ({getChainTip}, cbk) => {
+      return cbk(null, getChainTip.height);
     }],
 
     // Make a temporary server public key to send the swap to
@@ -99,8 +97,8 @@ module.exports = ({cache, invoice, network, refund}, cbk) => {
     }],
 
     // Swap timeout block height
-    timeoutBlockHeight: ['getBlockchainInfo', ({getBlockchainInfo}, cbk) => {
-      return cbk(null, getBlockchainInfo.current_height + timeoutBlockCount);
+    timeoutBlockHeight: ['getChainTip', ({getChainTip}, cbk) => {
+      return cbk(null, getChainTip.height + timeoutBlockCount);
     }],
 
     // Create the swap address

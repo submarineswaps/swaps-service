@@ -2,19 +2,15 @@ const asyncAuto = require('async/auto');
 
 const chainRpc = require('./call_chain_rpc');
 const {getBlockHeader} = require('./conf/rpc_commands');
-const {getJsonFromCache} = require('./../cache');
 const {returnResult} = require('./../async-util');
-const {setJsonInCache} = require('./../cache');
 
 const msPerSec = 1e3;
 const notFoundIndex = -1;
-const previousBlockCacheMs = 1000 * 60 * 60 * 24;
 
 /** Get block header details for a given block
 
   {
     block: <Block Hash Id String>
-    [cache]: <Cache Name String> // When set, current conf count is omitted
     network: <Network Name String>
   }
 
@@ -40,27 +36,11 @@ module.exports = ({block, cache, network}, cbk) => {
       return cbk();
     },
 
-    // See if the previous block hash value is cached
-    getCached: ['validate', ({}, cbk) => {
-      if (!cache) {
-        return cbk();
-      }
-
-      const key = block;
-      const type = 'previous_block';
-
-      return getJsonFromCache({cache, key, type}, cbk);
-    }],
-
     // Pull the fresh block header details
-    getFresh: ['getCached', ({getCached}, cbk) => {
-      if (!!getCached && !!getCached.previous_block) {
-        return cbk();
-      }
-
+    getHeader: ['validate', ({}, cbk) => {
       return chainRpc({
+        network,
         cmd: getBlockHeader,
-        network: network,
         params: [block],
       },
       (err, details) => {
@@ -68,6 +48,7 @@ module.exports = ({block, cache, network}, cbk) => {
           return cbk(err);
         }
 
+        // Exit early with no details when the block details are absent
         if (!details) {
           return cbk(null, {});
         }
@@ -90,37 +71,7 @@ module.exports = ({block, cache, network}, cbk) => {
         });
       });
     }],
-
-    // Set cache
-    setCache: ['getFresh', ({getFresh}, cbk) => {
-      if (!cache || !getFresh) {
-        return cbk();
-      }
-
-      return setJsonInCache({
-        cache,
-        key: block,
-        ms: previousBlockCacheMs,
-        type: 'previous_block',
-        value: {
-          median_created_at: getFresh.median_created_at,
-          previous_block: getFresh.previous_block,
-        },
-      },
-      cbk);
-    }],
-
-    // Previous hash
-    blockHeader: ['getCached', 'getFresh', ({getCached, getFresh}, cbk) => {
-      const block = getFresh || getCached;
-
-      return cbk(null, {
-        current_confirmation_count: block.current_confirmation_count || null,
-        median_created_at: block.median_created_at,
-        previous_block: block.previous_block,
-      });
-    }],
   },
-  returnResult({of: 'blockHeader'}, cbk));
+  returnResult({of: 'getHeader'}, cbk));
 };
 

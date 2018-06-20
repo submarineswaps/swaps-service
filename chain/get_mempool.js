@@ -1,5 +1,4 @@
 const chainRpc = require('./call_chain_rpc');
-
 const {getRawMempool} = require('./conf/rpc_commands');
 
 /** Get the current mempool

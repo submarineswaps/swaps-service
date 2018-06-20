@@ -57,7 +57,7 @@ module.exports = ({cache, network}) => {
 
       // When we discover a new current hash, pull transaction ids from blocks
       getPastBlocks: ['getCurrentHash', ({getCurrentHash}, cbk) => {
-        const current = getCurrentHash.current_hash;
+        const current = getCurrentHash.hash;
 
         // Exit early with nothing when the best block has not changed
         if (current === bestBlockHash) {

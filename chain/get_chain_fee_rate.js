@@ -1,13 +1,9 @@
-const asyncAuto = require('async/auto');
-
 const chainRpc = require('./call_chain_rpc');
-const getBlockchainInfo = require('./get_blockchain_info');
+const {estimateSmartFee} = require('./conf/rpc_commands');
 const parseTokenValue = require('./parse_token_value');
-const returnResult = require('./../async-util');
-
-const cmd = require('./conf/rpc_commands').estimateSmartFee;
 
 const bytesPerKb = 1e3;
+const cmd = estimateSmartFee;
 const defaultBlockCount = 6;
 
 /** Get blockchain fee rate

@@ -1,4 +1,4 @@
-const {getBlockchainInfo} = require('./../../chain');
+const {getCurrentHeight} = require('./../../chain');
 
 /** Determine if the chain is below a certain height
 
@@ -8,12 +8,12 @@ const {getBlockchainInfo} = require('./../../chain');
   }
 */
 module.exports = ({height, network}, cbk) => {
-  return getBlockchainInfo({network}, (err, chain) => {
+  return getCurrentHeight({network}, (err, chain) => {
     if (!!err) {
       return cbk(err);
     }
 
-    return cbk(null, chain.current_height < height)
+    return cbk(null, chain.height < height);
   });
 };
 

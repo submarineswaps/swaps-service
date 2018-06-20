@@ -53,7 +53,7 @@ module.exports = ({cache, current, network}, cbk) => {
 
         // Get the block
         getBlock: ['getCachedBlock', ({getCachedBlock}, cbk) => {
-          if (!!getCachedBlock) {
+          if (!!getCachedBlock && !!getCachedBlock.previous_block_hash) {
             return cbk(null, {
               id: cursor,
               is_cached: true,

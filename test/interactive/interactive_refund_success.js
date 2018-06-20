@@ -11,7 +11,7 @@ const chain = require('./../../chain').constants;
 const {generateChainBlocks} = require('./../../chain');
 const generateInvoice = require(`${macros}generate_invoice`);
 const {generateKeyPair} = require('./../../chain');
-const {getBlockchainInfo} = require('./../../chain');
+const {getCurrentHeight} = require('./../../chain');
 const {getTransaction} = require('./../../chain');
 const isChainBelowHeight = require(`${macros}is_chain_below_height`);
 const math = require('./../conf/math');
@@ -180,8 +180,8 @@ module.exports = (args, cbk) => {
     }],
 
     // Bob needs the current block height to determine a swap timeout
-    getChainInfo: ['generateToMaturity', 'network', (res, cbk) => {
-      return getBlockchainInfo({network: res.network}, cbk);
+    getChainInfo: ['generateToMaturity', 'network', ({network}, cbk) => {
+      return getCurrentHeight({network}, cbk);
     }],
 
     // Bob needs to parse the invoice to find the hash to lock the swap to
@@ -195,7 +195,7 @@ module.exports = (args, cbk) => {
 
     // Determine the timeout block height
     timeoutBlockHeight: ['getChainInfo', ({getChainInfo}, cbk) => {
-      return cbk(null, getChainInfo.current_height + timeoutBlockCount);
+      return cbk(null, getChainInfo.height + timeoutBlockCount);
     }],
 
     // Bob creates a chain swap address. Refund pays to Alice.
@@ -354,10 +354,11 @@ module.exports = (args, cbk) => {
     // Alice will need the height to lock the refund transaction to
     getHeightForRefundTransaction: [
       'mineFundingTx',
+      'network',
       'promptForFees',
-      (res, cbk) =>
+      ({network}, cbk) =>
     {
-      return getBlockchainInfo({network: res.network}, cbk);
+      return getCurrentHeight({network}, cbk);
     }],
 
     // Alice needs to grab the utxo to get her refund
@@ -398,7 +399,7 @@ module.exports = (args, cbk) => {
         network: res.network,
         private_key: res.generateAliceKeyPair.private_key,
         redeem_script: res.createChainSwapAddress.redeem_script,
-        timelock_block_height: res.getHeightForRefundTransaction.current_height,
+        timelock_block_height: res.getHeightForRefundTransaction.height,
         utxos: res.fundingTransactionUtxos.matching_outputs,
       },
       cbk);

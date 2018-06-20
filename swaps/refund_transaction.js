@@ -5,7 +5,7 @@ const {OP_FALSE} = require('bitcoin-ops');
 const {OP_PUSHDATA1} = require('bitcoin-ops');
 
 const {address} = require('./../tokenslib');
-const chain = require('./../chain/conf/constants');
+const {chainConstants} = require('./../chain');
 const {crypto} = require('./../tokenslib');
 const {ECPair} = require('./../tokenslib');
 const {networks} = require('./../tokenslib');
@@ -14,19 +14,19 @@ const scriptBuffersAsScript = require('./script_buffers_as_script');
 const swapScriptDetails = require('./swap_script_details');
 const {Transaction} = require('./../tokenslib');
 
-const compressedPubKeySize = chain.compressed_public_key_size;
+const compressedPubKeySize = chainConstants.compressed_public_key_size;
 const dustRatio = 1 / 3;
-const ecdsaSignatureLength = chain.ecdsa_sig_max_byte_length;
+const ecdsaSignatureLength = chainConstants.ecdsa_sig_max_byte_length;
 const hexBase = 16;
 const hexCharCountPerByte = 2;
-const minSequence = chain.min_sequence_value;
+const minSequence = chainConstants.min_sequence_value;
 const nestedScriptPubHexLength = 46;
-const sequenceLength = chain.sequence_byte_length;
+const sequenceLength = chainConstants.sequence_byte_length;
 const {sha256} = crypto;
-const shortPushdataLength = chain.short_push_data_length;
+const shortPushdataLength = chainConstants.short_push_data_length;
 const {SIGHASH_ALL} = Transaction;
 const {toOutputScript} = address;
-const vRatio = chain.witness_byte_discount_denominator;
+const vRatio = chainConstants.witness_byte_discount_denominator;
 const {witnessScriptHash} = script;
 
 /** Build a refund transaction to claim funds back from a swap

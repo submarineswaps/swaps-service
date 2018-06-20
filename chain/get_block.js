@@ -1,10 +1,9 @@
 const chainRpc = require('./call_chain_rpc');
-
 const {getBlock} = require('./conf/rpc_commands');
 
 const nullHash = '0000000000000000000000000000000000000000000000000000000000000000';
 
-/** Get block
+/** Get block transaction ids and previous block pointer
 
   {
     id: <Block Hash Hex String>
@@ -18,12 +17,7 @@ const nullHash = '00000000000000000000000000000000000000000000000000000000000000
   }
 */
 module.exports = ({id, network}, cbk) => {
-  return chainRpc({
-    cmd: getBlock,
-    network: network,
-    params: [id],
-  },
-  (err, block) => {
+  return chainRpc({network, cmd: getBlock, params: [id]}, (err, block) => {
     if (!!err) {
       return cbk(err);
     }

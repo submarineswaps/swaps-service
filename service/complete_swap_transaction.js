@@ -7,9 +7,9 @@ const {payInvoice} = require('ln-service');
 
 const {broadcastTransaction} = require('./../chain');
 const {claimTransaction} = require('./../swaps');
-const {getBlockchainInfo} = require('./../chain');
 const {getChainFeeRate} = require('./../chain');
 const {getFee} = require('./../chain');
+const {getRecentChainTip} = require('./../blocks');
 const {lightningDaemon} = require('./../lightning');
 const {returnResult} = require('./../async-util');
 const {setJsonInCache} = require('./../cache');
@@ -41,10 +41,10 @@ const swapSuccessCacheMs = 1000 * 60 * 60 * 3;
 module.exports = (args, cbk) => {
   return asyncAuto({
     // Check the current state of the blockchain to get a good locktime
-    getBlockchainInfo: cbk => {
-      return getBlockchainInfo({
-        is_cache_ok: true,
-        network: args.network,
+    getChainTip: cbk => {
+      return getRecentChainTip({
+        cache: args.cache,
+        network: args.network
       },
       cbk);
     },
@@ -130,7 +130,7 @@ module.exports = (args, cbk) => {
     // Hack around the locking failure of paying invoices twice
     createLockingInvoice: [
       'fundingUtxos',
-      'getBlockchainInfo',
+      'getChainTip',
       'getFee',
       'invoice',
       'lnd',
@@ -172,7 +172,7 @@ module.exports = (args, cbk) => {
     // Create a claim transaction to sweep the swap to the destination address
     claimTransaction: [
       'fundingUtxos',
-      'getBlockchainInfo',
+      'getChainTip',
       'getFee',
       'getSweepAddress',
       'payInvoice',
@@ -180,7 +180,7 @@ module.exports = (args, cbk) => {
     {
       try {
         return cbk(null, claimTransaction({
-          current_block_height: res.getBlockchainInfo.current_height,
+          current_block_height: res.getChainTip.height,
           destination: res.getSweepAddress.address,
           fee_tokens_per_vbyte: res.getFee.fee_tokens_per_vbyte,
           network: args.network,

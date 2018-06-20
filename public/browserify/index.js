@@ -1,4 +1,4 @@
-const generateKeyPair = require('./../../chain/generate_key_pair');
+const {generateKeyPair} = require('./../../chain');
 const refundTransaction = require('./../../swaps/refund_transaction');
 const swapScriptDetails = require('./../../swaps/swap_script_details');
 

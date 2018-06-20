@@ -1,6 +1,6 @@
 const {equal} = require('tap');
 
-const addressDetails = require('./../chain/address_details');
+const {addressDetails} = require('./../chain');
 
 const fixtures = {
   testnet_p2sh: {

@@ -5,12 +5,12 @@ const {ints} = require('random-lib');
 const {addDetectedSwap} = require('./../../pool');
 const {broadcastTransaction} = require('./../../chain');
 const {claimTransaction} = require('./../../swaps');
+const {chainConstants} = require('./../../chain');
 const {clearCache} = require('./../../cache');
-const {constants} = require('./../../chain');
 const {generateChainBlocks} = require('./../../chain');
 const generateInvoice = require('./generate_invoice');
 const {generateKeyPair} = require('./../../chain');
-const {getBlockchainInfo} = require('./../../chain');
+const {getCurrentHeight} = require('./../../chain');
 const {getDetectedSwaps} = require('./../../pool');
 const mineTransaction = require('./mine_transaction');
 const {refundTransaction} = require('./../../swaps');
@@ -23,8 +23,8 @@ const {stopChainDaemon} = require('./../../chain');
 const {Transaction} = require('./../../tokenslib');
 const {watchSwapOutput} = require('./../../scan');
 
-const coinbaseIndex = constants.coinbase_tx_index;
-const maturityBlockCount = constants.maturity_block_count;
+const coinbaseIndex = chainConstants.coinbase_tx_index;
+const maturityBlockCount = chainConstants.maturity_block_count;
 const maxKeyIndex = 4e8;
 const minKeyIndex = 0;
 const relayFeeTokensPerVirtualByte = 1;
@@ -275,7 +275,7 @@ module.exports = ({cache, network, type}, cbk) => {
 
     // Get the current blockchain height for the claim transaction
     getCurrentHeight: ['confirmFunding', ({}, cbk) => {
-      return getBlockchainInfo({network}, cbk);
+      return getCurrentHeight({network}, cbk);
     }],
 
     /**
@@ -290,7 +290,7 @@ module.exports = ({cache, network, type}, cbk) => {
       ({feeRate, generateKeyPair, getCurrentHeight}, cbk) =>
     {
       return cbk(null, {
-        current_block_height: getCurrentHeight.current_height,
+        current_block_height: getCurrentHeight.height,
         destination: generateKeyPair.p2wpkh_address,
         fee_tokens_per_vbyte: feeRate,
       });

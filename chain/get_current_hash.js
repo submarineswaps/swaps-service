@@ -9,16 +9,16 @@ const {getBestBlockHash} = require('./conf/rpc_commands');
 
   @returns via cbk
   {
-    current_hash: <Block Hash Hex String>
+    hash: <Block Hash Hex String>
   }
 */
 module.exports = ({network}, cbk) => {
-  return chainRpc({network, cmd: getBestBlockHash}, (err, currentHash) => {
+  return chainRpc({network, cmd: getBestBlockHash}, (err, hash) => {
     if (!!err) {
       return cbk(err);
     }
 
-    return cbk(null, {current_hash: currentHash});
+    return cbk(null, {hash});
   });
 };
 

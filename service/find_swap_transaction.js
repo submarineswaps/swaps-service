@@ -4,7 +4,7 @@ const asyncUntil = require('async/until');
 
 const findScriptPubInBlock = require('./find_scriptpub_in_block');
 const findScriptPubInMempool = require('./find_scriptpub_in_mempool');
-const {getBlockchainInfo} = require('./../chain');
+const {getCurrentHash} = require('./../chain');
 const {getTransaction} = require('./../chain');
 const {returnResult} = require('./../async-util');
 const {swapAddress} = require('./../swaps');
@@ -36,9 +36,7 @@ const blockSearchRateLimit = 300;
 module.exports = (args, cbk) => {
   return asyncAuto({
     // Get the current block tip hash
-    getChainInfo: cbk => {
-      return getBlockchainInfo({network: args.network}, cbk);
-    },
+    getTip: cbk => getCurrentHash({network: args.network}, cbk),
 
     // Check the arguments
     validate: cbk => {
@@ -113,12 +111,12 @@ module.exports = (args, cbk) => {
     // Scan blocks for the transaction
     scanBlocks: [
       'findTransactionInMempool',
-      'getChainInfo',
+      'getTip',
       'outputScripts',
-      ({findTransactionInMempool, getChainInfo, outputScripts}, cbk) =>
+      ({findTransactionInMempool, getTip, outputScripts}, cbk) =>
     {
       let count = 0;
-      let cursor = getChainInfo.current_hash;
+      let cursor = getTip.hash;
       let txId = findTransactionInMempool.transaction_id || null;
 
       return asyncUntil(

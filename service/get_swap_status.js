@@ -4,7 +4,7 @@ const {parseInvoice} = require('ln-service');
 const completeSwapTransaction = require('./complete_swap_transaction');
 const confirmWaitTime = require('./confirm_wait_time');
 const findSwapTransaction = require('./find_swap_transaction');
-const {getBlockchainInfo} = require('./../chain');
+const {getRecentChainTip} = require('./../blocks');
 const {getSwapKeyIndex} = require('./../scan');
 const {returnResult} = require('./../async-util');
 const serverSwapKeyPair = require('./server_swap_key_pair');
@@ -39,9 +39,7 @@ const swapRate = 0.015;
 module.exports = ({cache, invoice, network, script}, cbk) => {
   return asyncAuto({
     // Get the current chain height
-    getChainInfo: cbk => {
-      return getBlockchainInfo({network, is_cache_ok: true}, cbk);
-    },
+    getChainInfo: cbk => getRecentChainTip({cache, network}, cbk),
 
     // Parse the encoded invoice
     invoiceDetails: cbk => {
@@ -120,7 +118,7 @@ module.exports = ({cache, invoice, network, script}, cbk) => {
 
     // Check that there is enough time left to swap
     checkTimelockHeight: ['swapDetails', 'getChainInfo', (res, cbk) => {
-      const currentHeight = res.getChainInfo.current_height;
+      const currentHeight = res.getChainInfo.height;
       const refundHeight = res.swapDetails.timelock_block_height;
 
       const blocksUntilRefundHeight = refundHeight - currentHeight;

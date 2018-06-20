@@ -10,7 +10,7 @@ const {claimTransaction} = require('./../../swaps');
 const {generateChainBlocks} = require('./../../chain');
 const generateInvoice = require(`${macros}generate_invoice`);
 const {generateKeyPair} = require('./../../chain');
-const {getBlockchainInfo} = require('./../../chain');
+const {getCurrentHeight} = require('./../../chain');
 const {getTransaction} = require('./../../chain');
 const math = require('./../conf/math');
 const mineTransaction = require(`${macros}mine_transaction`);
@@ -172,8 +172,8 @@ module.exports = (args, cbk) => {
     }],
 
     // Bob needs the current block height to determine a swap timeout
-    getChainInfo: ['generateToMaturity', 'network', (res, cbk) => {
-      return getBlockchainInfo({network: res.network}, cbk);
+    getChainInfo: ['generateToMaturity', 'network', ({network}, cbk) => {
+      return getCurrentHeight({network}, cbk);
     }],
 
     // Bob needs to parse the invoice to find the hash to lock the swap to
@@ -187,7 +187,7 @@ module.exports = (args, cbk) => {
 
     // Determine the height at which this swap expires
     swapRefundHeight: ['getChainInfo', ({getChainInfo}, cbk) => {
-      return cbk(null, getChainInfo.current_height + timeoutBlockCount);
+      return cbk(null, getChainInfo.height + timeoutBlockCount);
     }],
 
     // Bob creates a chain swap address
@@ -281,10 +281,11 @@ module.exports = (args, cbk) => {
     // Bob will need the height to lock the sweep transaction to
     getHeightForSweepTransaction: [
       'mineFundingTx',
+      'network',
       'promptForFundingTxId',
-      (res, cbk) =>
+      ({network}, cbk) =>
     {
-      return getBlockchainInfo({network: res.network}, cbk);
+      return getCurrentHeight({network}, cbk);
     }],
 
     // Bob needs to specify a success address where he will sweep his coins
@@ -363,7 +364,7 @@ module.exports = (args, cbk) => {
     {
       try {
         return cbk(null, claimTransaction({
-          current_block_height: res.getHeightForSweepTransaction.current_height,
+          current_block_height: res.getHeightForSweepTransaction.height,
           destination: res.promptForClaimSuccessAddress.value,
           fee_tokens_per_vbyte: res.tokensPerVirtualByte,
           network: res.network,

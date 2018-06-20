@@ -40,9 +40,9 @@ module.exports = ({id, network}, cbk) => {
     transactions: ['getTransactions', ({getTransactions}, cbk) => {
       // Convert raw tx hexes into ids and output tokens
       const transactions = getTransactions
-        .map(n => n.transaction)
-        .map(txHex => Transaction.fromHex(txHex))
-        .map(tx => ({id: tx.getId(), o: tx.outs}))
+        .map(({transaction}) => transaction) // Pluck out transaction
+        .map(txHex => Transaction.fromHex(txHex)) // Convert to a Transaction
+        .map(tx => ({id: tx.getId(), o: tx.outs})) // Pluck id and outputs
         .map(t => ({id: t.id, outputs: t.o.map(o => ({tokens: o.value}))}));
 
       return cbk(null, {transactions});
