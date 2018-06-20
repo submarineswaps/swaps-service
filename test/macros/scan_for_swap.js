@@ -110,7 +110,7 @@ module.exports = ({cache, network, type}, cbk) => {
     {
       return generateChainBlocks({
         network,
-        blocks_count: maturityBlockCount,
+        count: maturityBlockCount,
       },
       cbk);
     }],

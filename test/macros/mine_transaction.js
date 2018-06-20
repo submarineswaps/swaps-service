@@ -40,7 +40,7 @@ module.exports = ({network, transaction}, cbk) => {
     generateBlock: ['broadcastTransaction', ({}, cbk) => {
       return generateChainBlocks({
         network,
-        blocks_count: txConfirmationCount,
+        count: txConfirmationCount,
       },
       cbk);
     }],

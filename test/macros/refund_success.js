@@ -73,7 +73,7 @@ module.exports = (args, cbk) => {
     // A bunch of blocks are made so Alice's rewards are mature
     generateToMaturity: ['spawnChainDaemon', ({}, cbk) => {
       return generateChainBlocks({
-        blocks_count: constants.maturity_block_count,
+        count: constants.maturity_block_count,
         delay: generateDelayMs,
         network: args.network,
       },
@@ -230,7 +230,7 @@ module.exports = (args, cbk) => {
     // Bob never gets the preimage and claims his funds. Many blocks go by
     generateTimeoutBlocks: ['mineFundingTx', ({}, cbk) => {
       return generateChainBlocks({
-        blocks_count: swapTimeoutBlocks,
+        count: swapTimeoutBlocks,
         network: args.network,
       },
       cbk);

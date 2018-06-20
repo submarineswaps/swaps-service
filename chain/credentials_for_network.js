@@ -1,6 +1,7 @@
 const {URL} = require('url');
 
-const chainServer = require('./conf/chain_server');
+const chains = require('./conf/chains');
+const chainServer = require('./conf/chain_server_defaults');
 
 const decBase = 10;
 const {SSS_CHAIN_LTCTESTNET_RPC_API} = process.env;
@@ -13,7 +14,7 @@ const {SSS_CHAIN_TESTNET_RPC_API} = process.env;
   }
 
   @throws
-  <Error>
+  <Error> when arguments are invalid
 
   @returns
   {
@@ -37,12 +38,12 @@ module.exports = ({network}) => {
   let api;
 
   switch (network) {
-  case 'ltctestnet':
-    api = SSS_CHAIN_LTCTESTNET_RPC_API || service.rpc_api;
+  case (chains.bitcoin_testnet):
+    api = SSS_CHAIN_TESTNET_RPC_API || service.rpc_api;
     break;
 
-  case 'testnet':
-    api = SSS_CHAIN_TESTNET_RPC_API || service.rpc_api;
+  case (chains.litecoin_testnet):
+    api = SSS_CHAIN_LTCTESTNET_RPC_API || service.rpc_api;
     break;
 
   default:
@@ -50,6 +51,7 @@ module.exports = ({network}) => {
     break;
   }
 
+  // For parsing purposes, construct a dummy URL from the API value
   const url = new URL(`http://${api}`);
 
   if (!url.port) {

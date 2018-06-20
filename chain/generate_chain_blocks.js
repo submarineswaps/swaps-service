@@ -12,8 +12,8 @@ const noDelay = 0;
 /** Generate blocks on the chain
 
   {
-    [blocks_count]: <Number of Blocks to Generate Number>
-    [delay]: <Delay Between Blocks Ms> = 0
+    [count]: <Count of Generated Blocks Number>
+    [delay]: <Delay Between Blocks Ms Number> = 0
     network: <Network Name String>
   }
 
@@ -29,15 +29,19 @@ const noDelay = 0;
     }]
   }
 */
-module.exports = (args, cbk) => {
+module.exports = ({count, delay, network}, cbk) => {
   return asyncAuto({
     // Make blocks to maturity
     generateBlocks: cbk => {
-      return asyncTimesSeries(args.blocks_count, ({}, cbk) => {
+      if (!network) {
+        return cbk([400, 'ExpectedNetworkForGeneration']);
+      }
+
+      return asyncTimesSeries(count, ({}, cbk) => {
         return chainRpc({
+          network,
           cmd: generate,
-          network: args.network,
-          params: [[args.delay].length],
+          params: [[delay].length],
         },
         (err, blockHashes) => {
           if (!!err) {
@@ -46,7 +50,7 @@ module.exports = (args, cbk) => {
 
           const [blockHash] = blockHashes;
 
-          return setTimeout(() => cbk(null, blockHash), args.delay || noDelay);
+          return setTimeout(() => cbk(null, blockHash), delay || noDelay);
         });
       },
       cbk);
@@ -55,7 +59,7 @@ module.exports = (args, cbk) => {
     // Grab the full details of each blocks, including transaction info
     blocks: ['generateBlocks', ({generateBlocks}, cbk) => {
       return asyncMapSeries(generateBlocks, (blockHash, cbk) => {
-        return getBlockDetails({id: blockHash, network: args.network}, cbk);
+        return getBlockDetails({network, id: blockHash}, cbk);
       },
       cbk);
     }],

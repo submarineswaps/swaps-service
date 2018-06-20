@@ -13,6 +13,7 @@ let queue;
   <Queue Object>
 */
 module.exports = ({}) => {
+  // Exit early when there is already a queue
   if (!!queue) {
     return queue;
   }

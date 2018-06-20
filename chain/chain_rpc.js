@@ -42,6 +42,7 @@ module.exports = ({cmd, network, params}, cbk) => {
   // Should the params be a single argument instead of array, array-ize it.
   const niceParams = !Array.isArray(params || []) ? [params] : params || [];
 
+  // On errors the queue issues a second callback, called avoids multiple cbks.
   let called = false;
 
   try {
@@ -53,7 +54,7 @@ module.exports = ({cmd, network, params}, cbk) => {
       called = true;
 
       if (!response) {
-        return cbk([503, 'BadChainResponse']);
+        return cbk([503, 'ExpectedNonEmptyChainResponse']);
       }
 
       return cbk(null, response.result);

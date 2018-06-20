@@ -1,8 +1,8 @@
 const chainRpc = require('./call_chain_rpc');
 
-const cmd = require('./conf/rpc_commands').createAddress;
+const {createAddress} = require('./conf/rpc_commands');
 
-/** Create a new address
+/** Create a new chain address
 
   {
     network: <Network Name String>
@@ -10,16 +10,20 @@ const cmd = require('./conf/rpc_commands').createAddress;
 
   @returns via cbk
   {
-    chain_address: <Chain Address String>
+    address: <Chain Address String>
   }
 */
 module.exports = ({network}, cbk) => {
-  return chainRpc({cmd, network}, (err, chainAddress) => {
+  return chainRpc({network, cmd: createAddress}, (err, address) => {
     if (!!err) {
       return cbk(err);
     }
 
-    return cbk(null, {chain_address: chainAddress});
+    if (!address) {
+      return cbk([503, 'ExpectedCreatedAddress']);
+    }
+
+    return cbk(null, {address});
   });
 };
 

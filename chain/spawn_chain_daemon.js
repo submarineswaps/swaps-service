@@ -2,7 +2,7 @@ const removeDir = require('rimraf');
 const {spawn} = require('child_process');
 const uuidv4 = require('uuid/v4');
 
-const chainServer = require('./conf/chain_server');
+const chainServer = require('./conf/chain_server_defaults');
 const credentialsForNetwork = require('./credentials_for_network');
 const {ECPair} = require('./../tokenslib');
 const errCode = require('./conf/error_codes');

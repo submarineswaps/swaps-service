@@ -78,7 +78,7 @@ module.exports = (args, cbk) => {
     generateToMaturity: ['spawnChainDaemon', ({}, cbk) => {
       return generateChainBlocks({
         network: args.network,
-        blocks_count: maturityBlockCount,
+        count: maturityBlockCount,
       },
       cbk);
     }],

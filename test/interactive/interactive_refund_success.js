@@ -153,7 +153,7 @@ module.exports = (args, cbk) => {
       }
 
       return generateChainBlocks({
-        blocks_count: maturityBlockCount,
+        count: maturityBlockCount,
         network: res.network,
       },
       cbk);
@@ -305,7 +305,7 @@ module.exports = (args, cbk) => {
 
       return generateChainBlocks({
         network,
-        blocks_count: timeoutBlockCount,
+        count: timeoutBlockCount,
         delay: simulatedBlockDelayMs,
       },
       cbk);
