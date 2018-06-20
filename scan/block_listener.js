@@ -2,6 +2,7 @@ const EventEmitter = require('events');
 
 const asyncAuto = require('async/auto');
 const asyncForever = require('async/forever');
+const difference = require('lodash/difference');
 
 const {getCurrentHash} = require('./../chain');
 const getPastBlocks = require('./get_past_blocks');
@@ -46,6 +47,7 @@ module.exports = ({cache, network}) => {
   }
 
   let bestBlockHash;
+  let ids = [];
   const listener = new EventEmitter();
 
   asyncForever(cbk => {
@@ -67,13 +69,25 @@ module.exports = ({cache, network}) => {
 
       // Tell subscribers about the recent transaction ids
       emitTransactions: ['getCurrentHash', 'getPastBlocks', (res, cbk) => {
+        const blockForTransaction = {};
         const {blocks} = res.getPastBlocks;
+        const freshIds = [];
 
         blocks.forEach(block => {
           return block.transaction_ids.forEach(id => {
-            return listener.emit('transaction', {block: id, id});
+            blockForTransaction[id] = block;
+
+            return freshIds.push(id);
           });
         });
+
+        difference(freshIds, ids).forEach(id => {
+          const block = blockForTransaction[id];
+
+          return listener.emit('transaction', {block, id});
+        });
+
+        ids = freshIds;
 
         // Set the current hash as fully published
         bestBlockHash = res.getCurrentHash;

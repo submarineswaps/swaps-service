@@ -6,7 +6,7 @@ form.collapse.create-swap-quote.mb-4.show
       .input-group.input-group-lg.mb-3
         .input-group-prepend
           label.input-group-text
-            span.coin-icon.icon-tltc(hidden)
+            span.coin-icon.icon-ltctestnet(hidden)
               svg.svg-litecoin(
                 aria-hidden="true",
                 role="img",
@@ -25,14 +25,14 @@ form.collapse.create-swap-quote.mb-4.show
                   d="M155.854 209.482l10.693-40.264 25.316-9.249 6.297-23.663-.215-.587-24.92 9.104 17.955-67.608h-50.921l-23.481 88.23-19.605 7.162-6.478 24.395 19.59-7.156-13.839 51.998h135.521l8.688-32.362h-84.601",
                   fill="#e4e7eb",
                 )
-            i.coin-icon.fab.fa-bitcoin.fa-fw.icon-tbtc
-            i.coin-icon.fas.fa-stop-circle.fa-fw.icon-tbch(hidden)
+            i.coin-icon.fab.fa-bitcoin.fa-fw.icon-testnet
+            i.coin-icon.fas.fa-stop-circle.fa-fw.icon-bchtestnet(hidden)
         select.custom-select.form-control.select-currency
-          option(selected, value="tBTC")
+          option(selected, value="testnet")
             | Testnet Bitcoin
-          option(disabled, value="tLTC")
+          option(value="ltctestnet")
             | Testnet Litecoin
-          option(disabled, value="tBCH")
+          option(disabled, value="bchtestnet")
             | Testnet Bcash (coming soon)
         .input-group-append
           label.input-group-text

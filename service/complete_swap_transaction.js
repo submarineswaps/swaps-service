@@ -15,6 +15,8 @@ const {returnResult} = require('./../async-util');
 const {setJsonInCache} = require('./../cache');
 const {swapScriptInTransaction} = require('./../swaps');
 
+const {SSS_CLAIM_LTCTESTNET_ADDRESS} = process.env;
+const {SSS_CLAIM_TESTNET_ADDRESS} = process.env;
 const swapSuccessCacheMs = 1000 * 60 * 60 * 3;
 
 /** Complete a swap transaction
@@ -146,7 +148,20 @@ module.exports = (args, cbk) => {
       'lnd',
       ({lnd}, cbk) =>
     {
-      return createAddress({lnd}, cbk);
+      switch (args.network) {
+      case 'ltctestnet':
+        return cbk(null, {address: SSS_CLAIM_LTCTESTNET_ADDRESS});
+
+      case 'testnet':
+        if (!!SSS_CLAIM_TESTNET_ADDRESS) {
+          return cbk(null, {address: SSS_CLAIM_TESTNET_ADDRESS});
+        }
+
+        return createAddress({lnd}, cbk);
+
+      default:
+        return cbk([500, 'UnexpectedNetworkToSweepOutTo', args.network]);
+      }
     }],
 
     // Pay the invoice

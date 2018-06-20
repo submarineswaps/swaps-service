@@ -28,7 +28,7 @@ module.exports = ({cmd, network, params}, cbk) => {
   try {
     credentials = credentialsForNetwork({network});
   } catch (e) {
-    return cbk([500, 'FailedToGetCredentials']);
+    return cbk([500, 'FailedToGetCredentials', e]);
   }
 
   const {host} = credentials;
@@ -42,8 +42,16 @@ module.exports = ({cmd, network, params}, cbk) => {
   // Should the params be a single argument instead of array, array-ize it.
   const niceParams = !Array.isArray(params || []) ? [params] : params || [];
 
+  let called = false;
+
   try {
     return chainRpc.call(cmd, niceParams, (err, response) => {
+      if (!!called) {
+        return;
+      }
+
+      called = true;
+
       if (!response) {
         return cbk([503, 'BadChainResponse']);
       }

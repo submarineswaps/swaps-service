@@ -1,7 +1,9 @@
 const asyncAuto = require('async/auto');
 const {parseInvoice} = require('ln-service');
+const {shuffle} = require('lodash');
 
 const confirmWaitTime = require('./confirm_wait_time');
+const {getBlockHeader} = require('./../chain');
 const {getConfirmationCount} = require('./../chain');
 const getDetectedSwaps = require('./../pool/get_detected_swaps');
 const getSwapStatus = require('./get_swap_status');
@@ -65,7 +67,7 @@ module.exports = ({cache, invoice, network, script}, cbk) => {
     // See if we have a related swap element
     swapElement: ['getSwapFromPool', ({getSwapFromPool}, cbk) => {
       const [claim] = getSwapFromPool.claim;
-      const [funding] = getSwapFromPool.funding;
+      const [funding] = shuffle(getSwapFromPool.funding);
 
       if (!!claim) {
         return cbk(null, {

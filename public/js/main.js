@@ -13,15 +13,22 @@ const App = {
 */
 App.changedCurrencySelection = function({}) {
   const createSwapQuote = $(this).closest('.create-swap-quote');
-  const currencyCode = $(this).val();
 
-  const iconToShow = `.icon-${currencyCode.toLowerCase()}`;
+  if (!createSwapQuote) {
+    return;
+  }
+
+  const network = $(this).val();
+
+  const iconToShow = `.icon-${network}`;
 
   createSwapQuote.find('.coin-icon').prop('hidden', true);
 
   createSwapQuote.find(iconToShow).removeAttr('hidden');
 
-  createSwapQuote.find('.address-currency-label').text(currencyCode);
+  createSwapQuote.find('.address-currency-label').text(network);
+
+  App.updatedSwapDetails({swap: createSwapQuote});
 
   return;
 };
@@ -122,10 +129,6 @@ App.changedInvoice = function({}) {
 
     App.invoice_details[invoice] = details;
 
-    const keyPair = blockchain.generateKeyPair({network: 'testnet'});
-
-    App.invoice_refund_keypairs[invoice] = keyPair;
-
     App.showInvoice({invoice, swap});
 
     App.updatedSwapDetails({swap});
@@ -156,7 +159,9 @@ App.changedRefundAddress = function({}) {
     return input.removeClass('is-invalid').removeClass('is-valid');
   }
 
-  return App.getAddressDetails({address}, (err, details) => {
+  const network = swap.find('.select-currency').val();
+
+  return App.getAddressDetails({address, network}, (err, details) => {
     if (input.val().trim() !== address) {
       return;
     }
@@ -205,19 +210,20 @@ App.changedRefundPreference = function({}) {
 /** Changed the refund script
 */
 App.changedRefundScript = function({}) {
-  const redeemScript = $(this).val().trim();
+  const script = $(this).val().trim();
+
+  const swap = $(this).closest('.create-swap-quote');
+
+  const network = swap.find('.select-currency').val();
 
   // Exit early when the refund address is blanked
-  if (!redeemScript) {
+  if (!script) {
     $('.dump-refund-address').text('');
 
     return $('.redeem-refund-address, .timeout-block-height').val('');
   }
 
-  const details = blockchain.swapScriptDetails({
-    network: 'testnet',
-    script: redeemScript
-  });
+  const details = blockchain.swapScriptDetails({network, script});
 
   $('.dump-refund-address').text(details.refund_p2wpkh_address);
   $('.timeout-block-height').val(details.timelock_block_height);
@@ -241,7 +247,10 @@ App.changedRefundScript = function({}) {
   }
 */
 App.checkSwap = ({button, id, quote}) => {
+  const {network} = App.swaps[id];
+
   return App.getSwap({
+    network,
     invoice: App.swaps[id].invoice,
     redeem_script: App.swaps[id].redeem_script,
     swap_key_index: App.swaps[id].swap_key_index,
@@ -264,16 +273,29 @@ App.checkSwap = ({button, id, quote}) => {
 
     const invoice = App.swaps[id].invoice;
     const sentAmount = (res.output_tokens / 1e8).toFixed(8);
+    let txUrl = '#';
 
     quote.find('.delete-swap').prop('disabled', true).addClass('disabled');
     quote.find('.refund-output-index').val(res.output_index);
     quote.find('.refund-tokens-total').val(sentAmount);
     quote.find('.swap-transaction-id').val(res.transaction_id);
 
+    switch (network) {
+    case 'testnet':
+      txUrl = `https://testnet.smartbit.com.au/tx/${res.transaction_id}`;
+      break;
+
+    case 'ltctestnet':
+      txUrl = `https://chain.so/tx/LTCTEST/${res.transaction_id}`;
+      break;
+
+    default:
+      console.log([0, 'ExpectedTxUrl']);
+      break;
+    }
+
     // Exit early when the deposit is found but more confs are needed
     if (!res.payment_secret) {
-      const txUrl = `https://testnet.smartbit.com.au/tx/${res.transaction_id}`;
-
       // Display min 1 block waiting, since 0 blocks means swap is happening
       const confCount = res.conf_wait_count || 1;
 
@@ -300,6 +322,7 @@ App.checkSwap = ({button, id, quote}) => {
 
     return App.presentCompletedSwap({
       invoice,
+      network: App.swaps[id].network,
       payment_secret: res.payment_secret,
       presented_quote: quote,
       swap_amount: App.swaps[id].swap_amount,
@@ -393,9 +416,9 @@ App.clickedShowSwap = function(event) {
 /** Create swap
 
   {
-    currency: <Currency Code String>
     invoice: <Bolt 11 Invoice String>
-    refund_address: <Refund Address String>
+    network: <Network Name String>
+    refund: <Refund Address String>
   }
 
   @returns via cbk
@@ -415,28 +438,22 @@ App.clickedShowSwap = function(event) {
     timeout_block_height: <Swap Expiration Date Number>
   }
 */
-App.createSwap = (args, cbk) => {
-  if (!args.currency) {
-    return cbk([0, 'ExpectedCurrency']);
-  }
-
-  if (!args.invoice) {
+App.createSwap = ({invoice, network, refund}, cbk) => {
+  if (!invoice) {
     return cbk([0, 'ExpectedInvoice']);
   }
 
-  if (!args.refund_address) {
+  if (!network) {
+    return cbk([0, 'ExpectedNetwork']);
+  }
+
+  if (!refund) {
     return cbk([0, 'ExpectedRefundAddress']);
   }
 
-  const post = {
-    currency: args.currency,
-    invoice: args.invoice,
-    refund_address: args.refund_address,
-  };
-
-  App.makeRequest({post, api: 'swaps/'})
+  App.makeRequest({post: {invoice, network, refund}, api: 'swaps/'})
     .then(details => {
-      if (!App.invoice_details[args.invoice]) {
+      if (!App.invoice_details[invoice]) {
         throw new Error('ExpectedInvoiceDetails');
       }
 
@@ -524,8 +541,8 @@ App.format = ({tokens}) => {
     type: <Address Type String>
   }
 */
-App.getAddressDetails = ({address}, cbk) => {
-  App.makeRequest({api: `address_details/${address}`})
+App.getAddressDetails = ({address, network}, cbk) => {
+  App.makeRequest({api: `address_details/${network}/${address}`})
     .then(details => {
       if (details.type !== 'p2pkh' && details.type !== 'p2wpkh') {
         throw new Error('ExpectedPublicKeyHash');
@@ -626,6 +643,7 @@ App.getInvoiceDetails = ({invoice}, cbk) => {
 
   {
     invoice: <Invoice BOLT 11 String>
+    network: <Network Name String>
     redeem_script: <Redeem Script String>
   }
 
@@ -647,6 +665,7 @@ App.getSwap = (args, cbk) => {
 
   const post = {
     invoice: args.invoice,
+    network: args.network,
     redeem_script: args.redeem_script,
   };
 
@@ -678,7 +697,7 @@ App.init = args => {
   $('.refund-address').on(App.change_events, App.changedRefundAddress);
   $('.sign-with-refund-details').submit(App.submitSignWithRefundDetails);
   $('.refund-details-script').on(App.change_events, App.changedRefundScript);
-  $('.select-currency').change(App.changedCurrencySelection);
+  $('.create-swap-quote .select-currency').change(App.changedCurrencySelection);
   $('#use-paper-wallet').change(App.changedRefundPreference);
   $('.pay-to-lightning-invoice').prop('readonly', false);
 
@@ -717,6 +736,7 @@ App.makeRequest = ({api, post}) => {
 
   {
     invoice: <Bolt 11 Invoice String>
+    network: <Chain Network Name String>
     payment_secret: <Payment Secret String>
     presented_quote: <Presented Quote DOM Object>
     swap_amount: <On-Chain Swap Amount Tokens Number>
@@ -731,15 +751,31 @@ App.presentCompletedSwap = args => {
 
   args.presented_quote.remove();
 
+  let href = '#';
+  let onChainCurrency = '';
   const swap = $('.swap-success').clone();
 
-  const href = `https://testnet.smartbit.com.au/tx/${args.transaction_id}`;
-
-  App.showInvoice({swap, invoice: args.invoice});
-
   swap.addClass('presented').removeClass('template');
+
+  switch (args.network) {
+  case 'testnet':
+    href = `https://testnet.smartbit.com.au/tx/${args.transaction_id}`;
+    onChainCurrency = 'tBTC';
+    break;
+
+  case 'ltctestnet':
+    href = `https://chain.so/tx/LTCTEST/${args.transaction_id}`;
+    onChainCurrency = 'tLTC';
+    break;
+
+  default:
+    console.log([0, 'UnexpectedNetworkForHref']);
+    break;
+  }
+
   swap.find('.chain-amount').text(App.format({tokens: args.swap_amount}));
   swap.find('.payment-secret').text(args.payment_secret);
+  swap.find('.send-network-code').text(onChainCurrency);
   swap.find('.swap-date').text(new Intl.DateTimeFormat().format(new Date()));
   swap.find('.swap-fee').text(App.format({tokens: args.swap_fee}));
   swap.find('.transaction-id').text(args.transaction_id);
@@ -748,6 +784,8 @@ App.presentCompletedSwap = args => {
   $('.quotes').prepend(swap);
 
   swap.collapse('show');
+
+  App.showInvoice({swap, invoice: args.invoice});
 
   $('.new-swap').removeClass('disabled');
 
@@ -759,13 +797,14 @@ App.presentCompletedSwap = args => {
   {
     address: <Address String>
     amount: <Amount String>
+    scheme: <Scheme String>
   }
 
   @returns
   <QR Code Img Object>
 */
-App.qrCode = ({address, amount}) => {
-  const addressLink = `bitcoin:${address}?amount=${amount}`;
+App.qrCode = ({address, amount, scheme}) => {
+  const addressLink = `${scheme}:${address}?amount=${amount}`;
   const back = 'rgb(250, 250, 250)';
   const rounded = 100;
   const size = 300;
@@ -801,14 +840,18 @@ App.showInvoice = args => {
   let symbolForNetwork;
 
   switch (invoice.network) {
+  case 'ltctestnet':
+    symbolForFiat = 'tUSD';
+    symbolForNetwork = 'Lightning tLTC';
+
   case 'testnet':
     symbolForFiat = 'tUSD';
-    symbolForNetwork = 'tBTC';
+    symbolForNetwork = 'Lightning tBTC';
     break;
 
   case 'bitcoin':
     symbolForFiat = 'USD';
-    symbolForNetwork = 'BTC';
+    symbolForNetwork = 'Lightning BTC';
     break;
 
   default:
@@ -847,6 +890,7 @@ App.submitCreateSwapQuote = function(event) {
 
   const address = addressInput.val().trim();
   const invoice = invoiceInput.val().trim();
+  const network = swap.find('.select-currency').val();
 
   if (!App.invoice_details[invoice]) {
     return;
@@ -871,14 +915,9 @@ App.submitCreateSwapQuote = function(event) {
 
   const refundKey = App.invoice_refund_keypairs[invoice];
 
-  const refundAddress = !isPaperWallet ? address : refundKey.p2pkh_address;
+  const refund = !isPaperWallet ? address : refundKey.p2pkh_address;
 
-  return App.createSwap({
-    invoice,
-    currency: 'tBTC',
-    refund_address: refundAddress,
-  },
-  (err, details) => {
+  return App.createSwap({invoice, network, refund}, (err, details) => {
     if (!!err) {
       return console.log('CREATE SWAP FAILURE', err);
     }
@@ -888,7 +927,22 @@ App.submitCreateSwapQuote = function(event) {
     addressInput.removeClass('is-valid').val('');
     invoiceInput.removeClass('is-valid').val('');
 
-    App.swaps[details.payment_hash] = details;
+    App.swaps[details.payment_hash] = {
+      network,
+      destination_public_key: details.destination_public_key,
+      invoice: details.invoice,
+      payment_hash: details.payment_hash,
+      redeem_script: details.redeem_script,
+      refund_address: details.refund_address,
+      refund_public_key_hash: details.refund_public_key_hash,
+      swap_amount: details.swap_amount,
+      swap_fee: details.swap_fee,
+      swap_key_index: details.swap_key_index,
+      swap_p2sh_address: details.swap_p2sh_address,
+      swap_p2sh_p2wsh_address: details.swap_p2sh_p2wsh_address,
+      swap_p2wsh_address: details.swap_p2wsh_address,
+      timeout_block_height: details.timeout_block_height,
+    };
 
     const redeemInfoJsonSpacing = 2;
     const swapAddress = details.swap_p2sh_p2wsh_address;
@@ -896,8 +950,28 @@ App.submitCreateSwapQuote = function(event) {
 
     const qs = $.param({amount: swapAmount, message: details.redeem_script});
 
-    const addr = `bitcoin:${swapAddress}?${qs}`;
-    const qrCode = App.qrCode({address: swapAddress, amount: swapAmount});
+    let scheme;
+
+    switch (network) {
+    case 'ltctestnet':
+      scheme = 'litecoin';
+      break;
+
+    case 'testnet':
+      scheme = 'bitcoin';
+      break;
+
+    default:
+      console.log([0, 'UnexpectedNetworkForScheme']);
+    }
+
+    const addr = `${scheme}:${swapAddress}?${qs}`;
+
+    const qrCode = App.qrCode({
+      scheme,
+      address: swapAddress,
+      amount: swapAmount,
+    });
 
     quote.data({payment_hash: details.payment_hash});
     quote.find('.chain-link').prop('href', addr);
@@ -972,13 +1046,14 @@ App.submitOnlineRefundRecovery = function(event) {
   $('.sign-with-refund-details textarea').val('');
   $('.signed-refund-transaction').val('');
 
+  const network = $('.select-currency').val();
   const redeemScript = $('.online-refund-redeem-script').val().trim();
 
   if (!redeemScript) {
     return;
   }
 
-  const body = JSON.stringify({redeem_script: redeemScript});
+  const body = JSON.stringify({network, redeem_script: redeemScript});
   const headers = {'content-type': 'application/json'};
   const method = 'POST';
 
@@ -1161,9 +1236,11 @@ App.submitSignWithRefundDetails = function(e) {
 App.updatedSwapDetails = ({swap}) => {
   const address = swap.find('.refund-address').val().trim();
   const invoice = swap.find('.pay-to-lightning-invoice').val().trim();
+  const network = swap.find('.select-currency').val();
 
   const hasAddress = !!App.address_details[address];
   const hasInvoiceDetails = !!App.invoice_details[invoice];
+  const keyPair = blockchain.generateKeyPair({network});
 
   if (!!hasInvoiceDetails && !!swap.find('.refund-address-entry.hide')) {
     swap.find('.refund-address-entry').collapse('show');
@@ -1184,6 +1261,8 @@ App.updatedSwapDetails = ({swap}) => {
   const isReady = (!!hasAddress || !!isPaperRefund) && !!hasInvoiceDetails;
 
   swap.find('.make').toggleClass('disabled', !isReady);
+
+  App.invoice_refund_keypairs[invoice] = keyPair;
 
   return;
 };

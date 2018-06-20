@@ -1,5 +1,6 @@
 const addressDetails = require('./address_details');
 const broadcastTransaction = require('./broadcast_transaction');
+const confirmChainBackend = require('./confirm_chain_backend');
 const constants = require('./conf/constants');
 const createAddress = require('./create_address');
 const generateChainBlocks = require('./generate_chain_blocks');
@@ -18,6 +19,7 @@ const stopChainDaemon = require('./stop_chain_daemon');
 module.exports = {
   addressDetails,
   broadcastTransaction,
+  confirmChainBackend,
   constants,
   createAddress,
   generateChainBlocks,

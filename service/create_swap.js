@@ -15,7 +15,6 @@ const timeoutBlockCount = 144;
 
   {
     cache: <Swap Cache Type String>
-    currency: <Currency Code String>
     invoice: <Lightning Invoice String>
     network: <Network Name String>
     refund: <Chain Address String>
@@ -38,7 +37,9 @@ const timeoutBlockCount = 144;
     timeout_block_height: <Swap Expiration Date Number>
   }
 */
-module.exports = ({cache, currency, invoice, network, refund}, cbk) => {
+module.exports = ({cache, invoice, network, refund}, cbk) => {
+  console.log('CREATE SWAP QUOTE', invoice, network, refund);
+
   return asyncAuto({
     // Decode the refund address
     getAddressDetails: cbk => {
@@ -55,10 +56,6 @@ module.exports = ({cache, currency, invoice, network, refund}, cbk) => {
     validate: cbk => {
       if (!cache) {
         return cbk([400, 'ExpectedCacheToPlaceCreatedSwap']);
-      }
-
-      if (currency !== 'tBTC') {
-        return cbk([400, 'ExpectedKnownCurrency']);
       }
 
       if (!invoice) {

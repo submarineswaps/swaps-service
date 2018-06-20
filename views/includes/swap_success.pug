@@ -1,6 +1,7 @@
 .collapse.hide.swap-success.template
   .border-success.card.mb-3
-    .card-header Swap tBTC for tBTC
+    .card-header
+      span Swap
     .card-body
       h5.card-title.text-success Swap Complete!
       .card-text.collapse.invoice-details.show
@@ -9,7 +10,7 @@
           dd
             span.chain-amount
             span #{' '}
-            span.send-currency-code
+            span.send-network-code
           dt Transaction Id
           dd
             a(target="blank").text-muted.transaction-id
@@ -22,7 +23,7 @@
           dd
             span.swap-fee
             span #{' '}
-            span.send-currency-code
+            span.send-network-code
             span #{' '}
             span (1.5%)
           .description

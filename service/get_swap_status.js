@@ -220,7 +220,19 @@ module.exports = ({cache, invoice, network, script}, cbk) => {
         redeem_script: script,
         transaction: findSwapTransaction.transaction,
       },
-      cbk);
+      err => {
+        if (!err) {
+          return cbk();
+        }
+
+        const [,error] = err;
+
+        if (error === 'AddInvoiceError') {
+          return cbk();
+        }
+
+        return cbk(err);
+      });
     }],
 
     // Current swap status
