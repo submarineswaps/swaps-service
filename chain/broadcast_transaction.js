@@ -1,7 +1,6 @@
 const chainRpc = require('./call_chain_rpc');
 
-const cmd = require('./conf/rpc_commands').sendRawTransaction;
-const remoteServiceErr = require('./conf/error_codes').service_unavailable;
+const {sendRawTransaction} = require('./conf/rpc_commands');
 
 /** Broadcast a transaction
 
@@ -12,27 +11,24 @@ const remoteServiceErr = require('./conf/error_codes').service_unavailable;
 
   @returns via cbk
   {
-    transaction_id: <Transaction Id Hex String>
+    id: <Transaction Id Hex String>
   }
 */
 module.exports = ({network, transaction}, cbk) => {
+  const cmd = sendRawTransaction;
   const params = transaction;
 
-  return chainRpc({cmd, network, params}, (err, transactionId) => {
+  return chainRpc({cmd, network, params}, (err, id) => {
     if (!!err) {
       return cbk(err);
     }
 
     // Exit early when a transaction id was not returned, indicating failure.
-    if (!transactionId) {
-      return cbk([
-        remoteServiceErr,
-        'TransactionBroadcastFailed',
-        transaction,
-      ]);
+    if (!id) {
+      return cbk([503, 'TransactionBroadcastFailed', transaction]);
     }
 
-    return cbk(null, {transaction_id: transactionId});
+    return cbk(null, {id});
   });
 };
 

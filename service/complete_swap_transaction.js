@@ -205,7 +205,7 @@ module.exports = (args, cbk) => {
       return cbk(null, {
         invoice_id: res.invoice.id,
         payment_secret: res.payInvoice.payment_secret,
-        transaction_id: res.broadcastTransaction.transaction_id,
+        transaction_id: res.broadcastTransaction.id,
       });
     }],
   },
