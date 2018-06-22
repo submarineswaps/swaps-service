@@ -212,9 +212,7 @@ App.changedRefundPreference = function({}) {
 App.changedRefundScript = function({}) {
   const script = $(this).val().trim();
 
-  const swap = $(this).closest('.create-swap-quote');
-
-  const network = swap.find('.select-currency').val();
+  const network = $('.select-currency').val();
 
   // Exit early when the refund address is blanked
   if (!script) {
@@ -1113,7 +1111,7 @@ App.submitOnlineRefundRecovery = function(event) {
       $('.timeout-block-height').val(details.timelock_block_height);
 
       const swap = blockchain.swapScriptDetails({
-        network: 'testnet',
+        network: $('.select-currency').val(),
         script: redeemScript,
       });
 
@@ -1160,13 +1158,14 @@ App.submitSignWithRefundDetails = function(e) {
 
   try {
     swapDetails = blockchain.swapScriptDetails({
-      network: 'testnet',
+      network: $('.select-currency').val(),
       script: redeemScript,
     });
   } catch (e) {
     return console.log([0, 'FailedToDeriveSwapDetails'], e);
   }
 
+  const refundAddress = $('.refund-address').val().trim();
   const refundFee = parseInt($('.refund-fee').val().trim(), 10);
   const refundKey = $('.refund-key').val().trim();
   const refundAmount = $('.tokens-total').val().trim();
@@ -1189,10 +1188,10 @@ App.submitSignWithRefundDetails = function(e) {
 
   try {
     refund = blockchain.refundTransaction({
-      destination: swapDetails.refund_p2wpkh_address,
+      destination: refundAddress,
       fee_tokens_per_vbyte: refundFee,
       is_public_key_hash_refund: true,
-      network: 'testnet',
+      network: $('.select-currency').val(),
       private_key: refundKey,
       timelock_block_height: swapDetails.timelock_block_height,
       utxos: [{

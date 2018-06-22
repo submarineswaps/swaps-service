@@ -199,6 +199,16 @@ block content
                         | comfortable paying.
                   .form-group.row
                     label.col-form-label.col-sm-2
+                      | Refund address
+                    .col-sm-10
+                      input.form-control.refund-address(
+                        placeholder="Enter address to pay refund back to",
+                        type="text",
+                      )
+                      small.form-text.mb-2.text-muted
+                        | Pay your refund back to this address
+                  .form-group.row
+                    label.col-form-label.col-sm-2
                       | Refund Private Key:
                     .col-sm-10
                       input.form-control.refund-key(

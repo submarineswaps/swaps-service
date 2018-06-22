@@ -238,6 +238,7 @@ module.exports = (args) => {
   const refundHash = Buffer.from(refundPublicKeyHash, 'hex');
 
   const scriptPub = script.witnessPubKeyHash.output.encode(refundHash);
+
   const refundP2wpkhAddress = address.fromOutputScript(scriptPub, network);
 
   const lockHeight = Buffer.from(cltv, 'hex').readUIntLE(0, cltv.length / 2);
