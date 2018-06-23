@@ -146,8 +146,6 @@ module.exports = ({cache, invoice, network, script}, cbk) => {
       'swapDetails',
       ({getFeeTokens, invoiceDetails, swapDetails}, cbk) =>
     {
-      const {tokens} = invoiceDetails;
-
       return findSwapTransaction({
         cache,
         network,
@@ -156,7 +154,7 @@ module.exports = ({cache, invoice, network, script}, cbk) => {
         payment_hash: invoiceDetails.id,
         refund_public_key_hash: swapDetails.refund_public_key_hash,
         timeout_block_height: swapDetails.timelock_block_height,
-        tokens: tokens + getFeeTokens.tokens,
+        tokens: getFeeTokens.tokens,
       },
       cbk);
     }],

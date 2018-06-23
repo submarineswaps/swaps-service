@@ -124,7 +124,7 @@ module.exports = ({cache, invoice, network, refund}, cbk) => {
     }],
 
     // Swap fee component
-    fee: ['getInvoiceDetails', ({getInvoiceDetails}, cbk) => {
+    getSwapAmount: ['getInvoiceDetails', ({getInvoiceDetails}, cbk) => {
       const {tokens} = getInvoiceDetails;
 
       return getFeeForSwap({cache, network, tokens}, cbk);
@@ -144,8 +144,8 @@ module.exports = ({cache, invoice, network, refund}, cbk) => {
 
     // Swap details
     swap: [
-      'fee',
       'getInvoiceDetails',
+      'getSwapAmount',
       'refundAddress',
       'serverDestinationKey',
       'swapAddress',
@@ -160,8 +160,8 @@ module.exports = ({cache, invoice, network, refund}, cbk) => {
         redeem_script: res.swapAddress.redeem_script,
         refund_address: refund,
         refund_public_key_hash: res.refundAddress.public_key_hash,
-        swap_amount: res.getInvoiceDetails.tokens + res.fee.tokens,
-        swap_fee: res.fee.tokens,
+        swap_amount: res.getSwapAmount.tokens,
+        swap_fee: res.getSwapAmount.fee,
         swap_key_index: res.swapKeyIndex,
         swap_p2sh_address: res.swapAddress.p2sh_address,
         swap_p2sh_p2wsh_address: res.swapAddress.p2sh_p2wsh_address,

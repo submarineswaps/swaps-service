@@ -13,7 +13,8 @@ const {returnResult} = require('./../async-util');
 
   @returns via cbk
   {
-    tokens: <Fee Tokens Number>
+    fee: <Fee Tokens Number>
+    tokens: <Total Tokens With Fee Number>
   }
 */
 module.exports = ({cache, network, tokens}, cbk) => {
@@ -60,11 +61,13 @@ module.exports = ({cache, network, tokens}, cbk) => {
 
       const baseFee = swapFee.base;
       const feePercentage = swapFee.rate / 1e6 * 100;
-      const convertedTokens = tokens * conversionRate;
+      const convertedTokens = Math.round(tokens * conversionRate);
 
       const feeTokens = baseFee + (convertedTokens * feePercentage / 100);
 
-      return cbk(null, {tokens: Math.round(feeTokens)});
+      const fee = Math.round(feeTokens);
+
+      return cbk(null, {fee, tokens: convertedTokens + fee});
     }],
   },
   returnResult({of: 'feeTokens'}, cbk));
