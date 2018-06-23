@@ -1,4 +1,4 @@
-const requiredConfirmations = 1;
+const requiredConfirmations = parseInt(process.env.SSS_WAIT_CONFS || 1, 10);
 
 const msPerConfirmation = 1000 * 60 * 20;
 
