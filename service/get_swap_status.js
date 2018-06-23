@@ -4,6 +4,7 @@ const {parseInvoice} = require('ln-service');
 const completeSwapTransaction = require('./complete_swap_transaction');
 const confirmWaitTime = require('./confirm_wait_time');
 const findSwapTransaction = require('./find_swap_transaction');
+const getFeeForSwap = require('./get_fee_for_swap');
 const {getRecentChainTip} = require('./../blocks');
 const {getSwapKeyIndex} = require('./../scan');
 const {returnResult} = require('./../async-util');
@@ -14,7 +15,6 @@ const {Transaction} = require('./../tokenslib');
 
 const blockSearchDepth = 9;
 const minBlocksUntilRefundHeight = 70;
-const swapRate = 0.015;
 
 /** Get the status of a pkhash swap
 
@@ -130,13 +130,21 @@ module.exports = ({cache, invoice, network, script}, cbk) => {
       return cbk();
     }],
 
+    // Get fee information
+    getFeeTokens: ['invoiceDetails', ({invoiceDetails}, cbk) => {
+      const {tokens} = invoiceDetails;
+
+      return getFeeForSwap({cache, network, tokens}, cbk);
+    }],
+
     // Search for the swap transaction
     findSwapTransaction: [
       'checkDestinationPublicKey',
       'checkTimelockHeight',
+      'getFeeTokens',
       'invoiceDetails',
       'swapDetails',
-      ({invoiceDetails, swapDetails}, cbk) =>
+      ({getFeeTokens, invoiceDetails, swapDetails}, cbk) =>
     {
       const {tokens} = invoiceDetails;
 
@@ -148,7 +156,7 @@ module.exports = ({cache, invoice, network, script}, cbk) => {
         payment_hash: invoiceDetails.id,
         refund_public_key_hash: swapDetails.refund_public_key_hash,
         timeout_block_height: swapDetails.timelock_block_height,
-        tokens: tokens + Math.round(tokens * swapRate),
+        tokens: tokens + getFeeTokens.tokens,
       },
       cbk);
     }],

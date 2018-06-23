@@ -27,7 +27,7 @@ form.collapse.create-swap-quote.mb-4.show
                 )
             i.coin-icon.fab.fa-bitcoin.fa-fw.icon-testnet
             i.coin-icon.fas.fa-stop-circle.fa-fw.icon-bchtestnet(hidden)
-        select.custom-select.form-control.select-currency
+        select.custom-select.form-control.select-currency(disabled)
           option(selected, value="testnet")
             | Testnet Bitcoin
           option(value="ltctestnet")
@@ -36,9 +36,10 @@ form.collapse.create-swap-quote.mb-4.show
             | Testnet Bcash (coming soon)
         .input-group-append
           label.input-group-text
-            | Fee: 1.5%
-      small.form-text.text-muted
-        | You will make an on-chain payment using this currency.
+            span $
+            span.current-fiat-price.mr-2
+            span #{' '}
+            span tUSD
     .form-group
       label
         h4.text-primary To pay a Lightning invoice:
@@ -113,9 +114,22 @@ form.collapse.create-swap-quote.mb-4.show
         span #{' '}
         span.address-currency-label tBTC
         span #{' '}
-        span
-          | address with a private key you control to use for a refund if
-          | things go wrong.
+        span address
+        span #{' '}
+        strong with a private key you control
+        span #{' '}
+        span to use for a refund if things go wrong.
     button.btn.btn-lg.btn-primary.disabled.make(type="submit")
-      span.mr-2 Pay to Swap
+      span Swap Rate
+      span #{' '}
+      span.fee-percentage
+      span %
+      span.final-fee(hidden)
+        span . Total Fee:
+        span #{' '}
+        span $
+        span.fiat-fee-total
+        span #{' '}
+        span tUSD
+      span #{' '}
       i.fa-chevron-circle-right.fas

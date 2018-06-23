@@ -6,6 +6,7 @@ const App = {
   grace_ms: 1800 * 1e3,
   invoice_details: {},
   invoice_refund_keypairs: {},
+  rates: {},
   swaps: {},
 };
 
@@ -25,8 +26,6 @@ App.changedCurrencySelection = function({}) {
   createSwapQuote.find('.coin-icon').prop('hidden', true);
 
   createSwapQuote.find(iconToShow).removeAttr('hidden');
-
-  createSwapQuote.find('.address-currency-label').text(network);
 
   App.updatedSwapDetails({swap: createSwapQuote});
 
@@ -693,11 +692,53 @@ App.init = args => {
   $('.online-refund-details').submit(App.submitOnlineRefundRecovery);
   $('.pay-to-lightning-invoice').on(App.change_events, App.changedInvoice);
   $('.refund-address').on(App.change_events, App.changedRefundAddress);
+  $('.select-currency').prop('disabled', false);
   $('.sign-with-refund-details').submit(App.submitSignWithRefundDetails);
   $('.refund-details-script').on(App.change_events, App.changedRefundScript);
   $('.create-swap-quote .select-currency').change(App.changedCurrencySelection);
   $('#use-paper-wallet').change(App.changedRefundPreference);
   $('.pay-to-lightning-invoice').prop('readonly', false);
+
+  App.initExchangeRates({}, (err, res) => {
+    if (!!err) {
+      return console.log(err);
+    }
+
+    res.rates.forEach(({cents, fees, network}) => {
+      return App.rates[network] = {cents, fees};
+    });
+
+    App.updatedSwapDetails({swap: $('.create-swap-quote')});
+
+    return;
+  });
+
+  return;
+};
+
+/** Initialize exchange rates
+
+  {}
+
+  @returns via cbk
+  {
+    rates: [{
+      cents: <Cents Per Token Number>
+      network: <Network Name String>
+    }]
+  }
+*/
+App.initExchangeRates = ({}, cbk) => {
+  App.makeRequest({api: 'exchange_rates/'})
+    .then(res => {
+      if (!res || !Array.isArray(res.rates)) {
+        throw new Error('ExpectedExchangeRates');
+      }
+
+      return res.rates;
+    })
+    .then(rates => cbk(null, {rates}))
+    .catch(err => cbk(err));
 
   return;
 };
@@ -1259,9 +1300,62 @@ App.updatedSwapDetails = ({swap}) => {
 
   const isReady = (!!hasAddress || !!isPaperRefund) && !!hasInvoiceDetails;
 
-  swap.find('.make').toggleClass('disabled', !isReady);
-
   App.invoice_refund_keypairs[invoice] = keyPair;
+
+  let baseFee = 0;
+  let feePercentage = '';
+  let fiatPrice = '';
+  let networkAddressName = '';
+  let totalFee = 0;
+  let conversionRate = 1;
+
+  switch (network) {
+  case 'ltctestnet':
+    if (!App.rates['ltctestnet']) {
+      break;
+    }
+
+    baseFee = App.rates['ltctestnet'].fees[0].base;
+    conversionRate = App.rates['testnet'].cents / App.rates['ltctestnet'].cents;
+    feePercentage = App.rates['ltctestnet'].fees[0].rate / 1e6 * 100;
+    fiatPrice = (App.rates['ltctestnet'].cents) * 1e8 / 100;
+    networkAddressName = 'Litecoin testnet';
+
+    break;
+
+  case 'testnet':
+    if (!App.rates['testnet']) {
+      break;
+    }
+
+    baseFee = App.rates['testnet'].fees[0].base;
+    feePercentage = App.rates['testnet'].fees[0].rate / 1e6 * 100;
+    fiatPrice = (App.rates['testnet'].cents) * 1e8 / 100;
+    networkAddressName = 'Bitcoin testnet';
+    break;
+
+  default:
+    return console.log([0, 'UnexpectedNetworkName']);
+    break;
+  }
+
+  if (!!App.invoice_details[invoice]) {
+    const {tokens} = App.invoice_details[invoice];
+
+    const convertedTokens = tokens * conversionRate;
+
+    const feeTokens = baseFee + (convertedTokens * feePercentage / 100);
+
+    totalFee = fiatPrice * feeTokens / 1e8;
+  }
+
+  swap.find('.address-currency-label').text(networkAddressName);
+  swap.find('.current-fiat-price').text(fiatPrice.toFixed(2));
+  swap.find('.fee-percentage').text(feePercentage.toFixed(2));
+  swap.find('.fiat-fee-total').text(totalFee.toFixed(2));
+  swap.find('.final-fee').prop('hidden', !totalFee);
+
+  swap.find('.make').toggleClass('disabled', !isReady);
 
   return;
 };

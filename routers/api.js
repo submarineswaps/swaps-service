@@ -5,6 +5,7 @@ const {checkSwapStatus} = require('./../service');
 const {createSwap} = require('./../service');
 const {findSwapOutpoint} = require('./../service');
 const {getAddressDetails} = require('./../service');
+const {getExchangeRates} = require('./../service');
 const {getInvoiceDetails} = require('./../service');
 const {returnJson} = require('./../async-util');
 
@@ -30,6 +31,11 @@ module.exports = ({log}) => {
     const {address} = params;
 
     return getAddressDetails({address, network}, returnJson({log, res}));
+  });
+
+  // GET exchange rate information
+  router.get('/exchange_rates/', ({}, res) => {
+    return getExchangeRates({cache}, returnJson({log, res}));
   });
 
   // GET details about an invoice

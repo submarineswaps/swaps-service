@@ -3,6 +3,7 @@ const createSwap = require('./create_swap');
 const findSwapOutpoint = require('./find_swap_outpoint');
 const findSwapTransaction = require('./find_swap_transaction');
 const getAddressDetails = require('./get_address_details');
+const getExchangeRates = require('./get_exchange_rates');
 const getInvoiceDetails = require('./get_invoice_details');
 const getPrice = require('./get_price');
 const getSwapStatus = require('./get_swap_status');
@@ -13,6 +14,7 @@ module.exports = {
   findSwapOutpoint,
   findSwapTransaction,
   getAddressDetails,
+  getExchangeRates,
   getInvoiceDetails,
   getPrice,
 };

@@ -1,4 +1,4 @@
-const requiredConfirmations = 1;
+const requiredConfirmations = 0;
 
 const msPerConfirmation = 1000 * 60 * 20;
 

@@ -2,13 +2,13 @@ const asyncAuto = require('async/auto');
 
 const getAddressDetails = require('./get_address_details');
 const getInvoiceDetails = require('./get_invoice_details');
+const getFeeForSwap = require('./get_fee_for_swap');
 const {getRecentChainTip} = require('./../blocks');
 const {returnResult} = require('./../async-util');
 const serverSwapKeyPair = require('./server_swap_key_pair');
 const {swapAddress} = require('./../swaps');
 const watchSwapOutput = require('./../scan/watch_swap_output');
 
-const swapRate = 0.015;
 const timeoutBlockCount = 144;
 
 /** Create a swap quote.
@@ -125,7 +125,9 @@ module.exports = ({cache, invoice, network, refund}, cbk) => {
 
     // Swap fee component
     fee: ['getInvoiceDetails', ({getInvoiceDetails}, cbk) => {
-      return cbk(null, Math.round(getInvoiceDetails.tokens * swapRate));
+      const {tokens} = getInvoiceDetails;
+
+      return getFeeForSwap({cache, network, tokens}, cbk);
     }],
 
     // Add the created swap to the watch list
@@ -158,8 +160,8 @@ module.exports = ({cache, invoice, network, refund}, cbk) => {
         redeem_script: res.swapAddress.redeem_script,
         refund_address: refund,
         refund_public_key_hash: res.refundAddress.public_key_hash,
-        swap_amount: res.getInvoiceDetails.tokens + res.fee,
-        swap_fee: res.fee,
+        swap_amount: res.getInvoiceDetails.tokens + res.fee.tokens,
+        swap_fee: res.fee.tokens,
         swap_key_index: res.swapKeyIndex,
         swap_p2sh_address: res.swapAddress.p2sh_address,
         swap_p2sh_p2wsh_address: res.swapAddress.p2sh_p2wsh_address,
