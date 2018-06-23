@@ -12,7 +12,7 @@ const {returnResult} = require('./../async-util');
 
 const approxTxVSize = 200;
 const currency = 'BTC';
-const defaultMaxFeeRate = 0.01;
+const defaultMaxFeeRate = 0.005;
 const fiatCurrency = 'USD';
 const longFeeEstimateBlocks = 144;
 
