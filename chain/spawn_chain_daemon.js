@@ -1,4 +1,4 @@
-const removeDir = require('rimraf');
+let removeDir;
 const {spawn} = require('child_process');
 const uuidv4 = require('uuid/v4');
 
@@ -28,6 +28,8 @@ const unableToStartServer = /Unable.to.start.server/;
   }
 */
 module.exports = (args, cbk) => {
+  removeDir = removeDir || require('rimraf');
+
   if (!args.mining_public_key) {
     return cbk([400, 'ExpectedPublicKeyForMiningRewardsPayout']);
   }
