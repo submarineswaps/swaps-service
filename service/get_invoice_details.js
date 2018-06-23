@@ -6,7 +6,7 @@ const {getRoutes} = require('ln-service');
 const {parseInvoice} = require('ln-service');
 
 const {getChainFeeRate} = require('./../chain');
-const getPrice = require('./get_price');
+const {getExchangeRate} = require('./../fiat');
 const {lightningDaemon} = require('./../lightning');
 const {returnResult} = require('./../async-util');
 
@@ -19,6 +19,7 @@ const longFeeEstimateBlocks = 144;
 /** Get invoice details
 
   {
+    cache: <Cache Type String>
     [max_invoice_fee_rate]: <Fractional Max invoice Fee Rate Number>
     invoice: <Invoice String>
   }
@@ -164,22 +165,14 @@ module.exports = (args, cbk) => {
       return cbk();
     }],
 
-    // Grab the fiat price
-    getPrice: ['checkInvoice', ({}, cbk) => {
-      return getPrice({
-        from_currency_code: currency,
-        to_currency_code: fiatCurrency,
-      },
-      cbk);
+    // Get the exchange rate
+    getFiatRate: ['checkInvoice', ({}, cbk) => {
+      return getExchangeRate({cache: args.cache, network: 'testnet'}, cbk);
     }],
 
     // Fiat value
-    fiatValue: ['getPrice', 'invoice', ({getPrice, invoice}, cbk) => {
-      if (!getPrice.quote) {
-        return cbk();
-      }
-
-      return cbk(null, Math.round(getPrice.quote * invoice.tokens / 1e8));
+    fiatValue: ['getFiatRate', 'invoice', ({getFiatRate, invoice}, cbk) => {
+      return cbk(null, invoice.tokens * getFiatRate.cents);
     }],
 
     // Invoice Details

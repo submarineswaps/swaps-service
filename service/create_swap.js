@@ -48,7 +48,7 @@ module.exports = ({cache, invoice, network, refund}, cbk) => {
     getChainTip: cbk => getRecentChainTip({cache, network}, cbk),
 
     // Decode the invoice to pay
-    getInvoiceDetails: cbk => getInvoiceDetails({invoice}, cbk),
+    getInvoiceDetails: cbk => getInvoiceDetails({cache, invoice}, cbk),
 
     // Validate basic arguments
     validate: cbk => {

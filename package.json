@@ -8,7 +8,6 @@
     "bitcoinjs-lib": "3.3.2",
     "body-parser": "1.18.3",
     "browserify-middleware": "8.1.1",
-    "coin-ticker": "3.2.0",
     "compression": "1.7.2",
     "cors": "2.8.4",
     "express": "4.16.3",

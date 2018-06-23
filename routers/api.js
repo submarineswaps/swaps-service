@@ -43,6 +43,7 @@ module.exports = ({log}) => {
     const {invoice} = params;
 
     return getInvoiceDetails({
+      cache,
       invoice,
       max_invoice_fee_rate: maxInvoiceFeeRate,
     },
