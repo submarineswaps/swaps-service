@@ -12,7 +12,6 @@ const getCurrentHash = require('./get_current_hash');
 const getCurrentHeight = require('./get_current_height');
 const getMempool = require('./get_mempool');
 const getTransaction = require('./get_transaction');
-const spawnChainDaemon = require('./spawn_chain_daemon');
 const stopChainDaemon = require('./stop_chain_daemon');
 
 module.exports = {
@@ -30,7 +29,6 @@ module.exports = {
   getCurrentHeight,
   getMempool,
   getTransaction,
-  spawnChainDaemon,
   stopChainDaemon,
 };
 

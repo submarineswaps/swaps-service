@@ -1,12 +1,12 @@
-let removeDir;
+const removeDir = require('rimraf');
 const {spawn} = require('child_process');
 const uuidv4 = require('uuid/v4');
 
-const chainServer = require('./conf/chain_server_defaults');
-const credentialsForNetwork = require('./credentials_for_network');
-const {ECPair} = require('./../tokenslib');
-const errCode = require('./conf/error_codes');
-const {networks} = require('./../tokenslib');
+const chainServer = require('./../../chain/conf/chain_server_defaults');
+const credentialsForNetwork = require('./../../chain/credentials_for_network');
+const {ECPair} = require('./../../tokenslib');
+const errCode = require('./../../chain/conf/error_codes');
+const {networks} = require('./../../tokenslib');
 
 const {fromPublicKeyBuffer} = ECPair;
 const rpcServerReady = /RPC.server.listening/;
@@ -28,8 +28,6 @@ const unableToStartServer = /Unable.to.start.server/;
   }
 */
 module.exports = (args, cbk) => {
-  removeDir = removeDir || require('rimraf');
-
   if (!args.mining_public_key) {
     return cbk([400, 'ExpectedPublicKeyForMiningRewardsPayout']);
   }
