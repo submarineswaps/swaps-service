@@ -66,8 +66,11 @@ module.exports = ({cache, invoice, network, script}, cbk) => {
 
     // See if we have a related swap element
     swapElement: ['getSwapFromPool', ({getSwapFromPool}, cbk) => {
-      const [claim] = getSwapFromPool.claim;
-      const [funding] = shuffle(getSwapFromPool.funding);
+      const elements = getSwapFromPool;
+
+      const [claim] = elements.claim;
+      const [funding] = elements.funding.filter(({block}) => !!block);
+      const [unconfirmed] = elements.funding.filter(({block}) => !block);
 
       if (!!claim) {
         return cbk(null, {
@@ -85,6 +88,14 @@ module.exports = ({cache, invoice, network, script}, cbk) => {
         });
       }
 
+      if (!!unconfirmed) {
+        return cbk(null, {
+          output_index: unconfirmed.vout,
+          output_tokens: unconfirmed.tokens,
+          transaction_id: unconfirmed.id,
+        });
+      }
+
       return cbk();
     }],
 
@@ -95,7 +106,9 @@ module.exports = ({cache, invoice, network, script}, cbk) => {
         return cbk();
       }
 
-      return getBlockPlacement({network, block: swapElement.block}, cbk);
+      const {block} = swapElement;
+
+      return getBlockPlacement({block, cache, network}, cbk);
     }],
 
     // Determine wait time still necessary to confirm the swap

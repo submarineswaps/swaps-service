@@ -1,6 +1,6 @@
 const asyncAuto = require('async/auto');
 
-const getBlockPlacement = require('./get_block_placement');
+const {getBlockHeader} = require('./../chain');
 const {getCurrentHash} = require('./../chain');
 const {returnResult} = require('./../async-util');
 
@@ -37,7 +37,7 @@ module.exports = ({network}, cbk) => {
         return cbk([503, 'ExpectedCurrentChainTipBlockHash']);
       }
 
-      return getBlockPlacement({block, network}, cbk);
+      return getBlockHeader({block, network}, cbk);
     }],
 
     // Check header info

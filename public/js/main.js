@@ -99,6 +99,9 @@ App.changedInvoice = function({}) {
         text = 'Couldn\'t read this invoice. Try a different one?';
         break;
 
+      case 'Failed to fetch':
+        text = `Couldn\'t connect to swap server. Try again?`;
+
       case 'InsufficientCapacityForSwap':
         text = 'Value is too high to swap. Use a lower value invoice?';
         break;
@@ -1026,6 +1029,7 @@ App.submitCreateSwapQuote = function(event) {
 
       const text = JSON.stringify(
         {
+          network,
           private_key: !isPaperWallet ? undefined : refundKey.private_key,
           redeem_script: details.redeem_script,
           refund_address: address,

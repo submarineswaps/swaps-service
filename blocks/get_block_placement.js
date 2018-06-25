@@ -2,10 +2,11 @@ const asyncAuto = require('async/auto');
 
 const {getBlockHeader} = require('./../chain');
 const {getJsonFromCache} = require('./../cache');
+const getRecentChainTip = require('./get_recent_chain_tip');
 const {returnResult} = require('./../async-util');
 const {setJsonInCache} = require('./../cache');
 
-const previousBlockCacheMs = 1000 * 60 * 60 * 24;
+const previousBlockCacheMs = 1000 * 60 * 60 * 4;
 
 /** Get the placement of a block within the chain
 
@@ -30,6 +31,10 @@ module.exports = ({block, cache, network}, cbk) => {
         return cbk([400, 'ExpectedBlockId'])
       }
 
+      if (!cache) {
+        return cbk([400, 'ExpectedCacheForPlacementDetection']);
+      }
+
       if (!network) {
         return cbk([400, 'ExpectedNetworkName']);
       }
@@ -37,13 +42,14 @@ module.exports = ({block, cache, network}, cbk) => {
       return cbk();
     },
 
-    // See if the previous block hash value is cached
-    getCached: ['validate', ({}, cbk) => {
-      if (!cache) {
-        return cbk();
-      }
+    // Figure what the current chain tip is, placement is relative to the tip
+    getChainTip: ['validate', ({}, cbk) => {
+      return getRecentChainTip({cache, network}, cbk);
+    }],
 
-      const key = block;
+    // See if the previous block hash value is cached
+    getCached: ['getChainTip', ({getChainTip}, cbk) => {
+      const key = [getChainTip.hash, block].join('/');
       const type = 'block_placement';
 
       return getJsonFromCache({cache, key, type}, cbk);
@@ -51,7 +57,8 @@ module.exports = ({block, cache, network}, cbk) => {
 
     // Pull the fresh block details
     getFresh: ['getCached', ({getCached}, cbk) => {
-      if (!!getCached && !!getCached.previous_block) {
+      // Exit early when cache contains the confirmation info
+      if (!!getCached && !!getCached.previous_block && !!getCached.current_confirmation_count) {
         return cbk();
       }
 
@@ -59,17 +66,18 @@ module.exports = ({block, cache, network}, cbk) => {
     }],
 
     // Set placement data into the cache
-    setCache: ['getFresh', ({getFresh}, cbk) => {
-      if (!cache || !getFresh) {
+    setCache: ['getChainTip', 'getFresh', ({getChainTip, getFresh}, cbk) => {
+      if (!getFresh) {
         return cbk();
       }
 
       return setJsonInCache({
         cache,
-        key: block,
+        key: [getChainTip.hash, block].join('/'),
         ms: previousBlockCacheMs,
         type: 'block_placement',
         value: {
+          current_confirmation_count: getFresh.current_confirmation_count,
           median_created_at: getFresh.median_created_at,
           previous_block: getFresh.previous_block,
         },
@@ -82,7 +90,7 @@ module.exports = ({block, cache, network}, cbk) => {
       const block = getFresh || getCached;
 
       return cbk(null, {
-        current_confirmation_count: block.current_confirmation_count || null,
+        current_confirmation_count: block.current_confirmation_count,
         median_created_at: block.median_created_at,
         previous_block: block.previous_block,
       });

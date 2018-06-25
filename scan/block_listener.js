@@ -82,7 +82,7 @@ module.exports = ({cache, network}) => {
         });
 
         difference(freshIds, ids).forEach(id => {
-          const block = blockForTransaction[id];
+          const block = blockForTransaction[id].id;
 
           return listener.emit('transaction', {block, id});
         });
