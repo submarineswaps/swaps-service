@@ -101,6 +101,7 @@ App.changedInvoice = function({}) {
 
       case 'Failed to fetch':
         text = `Couldn\'t connect to swap server. Try again?`;
+        break;
 
       case 'InsufficientCapacityForSwap':
         text = 'Value is too high to swap. Use a lower value invoice?';

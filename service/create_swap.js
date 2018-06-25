@@ -9,6 +9,7 @@ const serverSwapKeyPair = require('./server_swap_key_pair');
 const {swapAddress} = require('./../swaps');
 const watchSwapOutput = require('./../scan/watch_swap_output');
 
+const msPerSec = 1e3;
 const timeoutBlockCount = 144;
 
 /** Create a swap quote.
@@ -72,8 +73,8 @@ module.exports = ({cache, invoice, network, refund}, cbk) => {
     },
 
     // Determine the HD key index for the swap key
-    swapKeyIndex: ['getChainTip', ({getChainTip}, cbk) => {
-      return cbk(null, getChainTip.height);
+    swapKeyIndex: ['validate', ({}, cbk) => {
+      return cbk(null, Math.round(Date.now() / msPerSec));
     }],
 
     // Make a temporary server public key to send the swap to
