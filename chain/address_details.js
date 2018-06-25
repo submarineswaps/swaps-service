@@ -52,23 +52,32 @@ module.exports = (args) => {
   const isWitness = !!details.prefix;
   let type;
 
-  switch (details.version) {
-  case (networks[args.network].pubKeyHash): // P2PKH Mainnet
-    if (isWitness && details.data.length === publicKeyHashLength) {
+  if (isWitness) {
+    switch (details.data.length) {
+    case publicKeyHashLength:
       type = 'p2wpkh';
-    } else if (isWitness && details.data.length === witnessScriptHashLength) {
+      break;
+
+    case witnessScriptHashLength:
       type = 'p2wsh';
-    } else {
-      type = 'p2pkh';
+      break;
+
+    default:
+      throw new Error('UnexpectedWitnessDataLength');
     }
-    break;
+  } else {
+    switch (details.version) {
+    case (networks[args.network].pubKeyHash):
+      type = 'p2pkh';
+      break;
 
-  case (networks[args.network].scriptHash): // P2SH Mainnet
-    type = 'p2sh';
-    break;
+    case (networks[args.network].scriptHash):
+      type = 'p2sh';
+      break;
 
-  default:
-    throw new Error('UnknownAddressVersion');
+    default:
+      throw new Error('UnknownAddressVersion');
+    }
   }
 
   return {
@@ -76,7 +85,7 @@ module.exports = (args) => {
     data: !details.data ? null : details.data.toString('hex'),
     hash: !details.hash ? null : details.hash.toString('hex'),
     prefix: details.prefix,
-    version: details.version,
+    version: isWitness ? null : details.version,
   };
 };
 

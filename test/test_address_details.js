@@ -25,6 +25,18 @@ const fixtures = {
     network: 'testnet',
   },
 
+  testnet_p2wpkh: {
+    address: 'tb1qecrhxcf662qns27v932g3q3fml6p3t82cltfvz',
+    expected: {
+      data: 'ce0773613ad281382bcc2c54888229dff418acea',
+      hash: null,
+      prefix: 'tb',
+      type: 'p2wpkh',
+      version: null,
+    },
+    network: 'testnet',
+  },
+
   mainnet_p2sh: {
     address: '37GG3YV3xPRupqnLoLTXTcigCjuUuNbedx',
     expected: {
