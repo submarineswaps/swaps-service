@@ -10,7 +10,7 @@ const {getInvoiceDetails} = require('./../service');
 const {returnJson} = require('./../async-util');
 
 const cache = 'redis';
-const maxInvoiceFeeRate = 0.005;
+const maxInvoiceFeeRate = 0.02;
 
 /** Make an api router
 
