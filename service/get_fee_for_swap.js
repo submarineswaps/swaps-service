@@ -1,7 +1,10 @@
 const asyncAuto = require('async/auto');
 
 const getExchangeRates = require('./get_exchange_rates');
+const {getRecentFeeRate} = require('./../blocks');
 const {returnResult} = require('./../async-util');
+
+const claimTxVSize = 150;
 
 /** Given swap information, determine the number of tokens needed for a fee
 
@@ -36,13 +39,19 @@ module.exports = ({cache, network, tokens}, cbk) => {
       return cbk();
     },
 
+    // Get swap fee rate information
+    getChainFee: ['validate', ({}, cbk) => {
+      return getRecentFeeRate({cache, network}, cbk);[]
+    }],
+
     // Get exchange rate information
     getSwapRates: ['validate', ({}, cbk) => {
       return getExchangeRates({cache, networks: [network, 'testnet']}, cbk);
     }],
 
     // Final fee tokens necessary to complete the swap
-    feeTokens: ['getSwapRates', ({getSwapRates}, cbk) => {
+    feeTokens: ['getChainFee', 'getSwapRates', ({getChainFee, getSwapRates}, cbk) => {
+      const claimChainFee = getChainFee.fee_tokens_per_vbyte * claimTxVSize;
       const rates = {};
 
       getSwapRates.rates.forEach(({cents, fees, network}) => {
@@ -61,7 +70,7 @@ module.exports = ({cache, network, tokens}, cbk) => {
 
       const conversionRate = rates['testnet'].cents / rates[network].cents;
 
-      const baseFee = swapFee.base;
+      const baseFee = swapFee.base + claimChainFee;
       const feePercentage = swapFee.rate / 1e6 * 100;
       const convertedTokens = Math.round(tokens * conversionRate);
 

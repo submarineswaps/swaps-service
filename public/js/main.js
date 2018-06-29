@@ -1264,11 +1264,7 @@ App.updatedSwapDetails = ({swap}) => {
   if (!!App.invoice_details[invoice]) {
     const {tokens} = App.invoice_details[invoice];
 
-    const convertedTokens = tokens * conversionRate;
-
-    const feeTokens = baseFee + (convertedTokens * feePercentage / 100);
-
-    totalFee = fiatPrice * feeTokens / 1e8;
+    totalFee = App.invoice_details[invoice].fee_fiat_value / 100;
   }
 
   swap.find('.address-currency-label').text(networkAddressName);
