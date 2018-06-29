@@ -1,0 +1,6 @@
+{
+  "// Network specific chain values": "",
+
+  "ltctestnet": {"ms_per_block": 150000},
+  "testnet": {"ms_per_block": 600000}
+}

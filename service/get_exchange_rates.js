@@ -3,20 +3,13 @@ const asyncMap = require('async/map');
 
 const {getExchangeRate} = require('./../fiat');
 const {returnResult} = require('./../async-util');
-
-const networkRates = {
-  ltctestnet: [{
-    base: 30000, network: 'testnet', rate: 14900,
-  }],
-  testnet: [{
-    base: 1000, network: 'testnet', rate: 1000,
-  }],
-};
+const swapParameters = require('./swap_parameters');
 
 /** Get the exchange rates for trading
 
   {
     cache: <Cache Type String>
+    networks: [<Network Name String>]
   }
 
   @returns via cbk
@@ -32,7 +25,7 @@ const networkRates = {
     }]
   }
 */
-module.exports = ({cache}, cbk) => {
+module.exports = ({cache, networks}, cbk) => {
   return asyncAuto({
     // Check arguments
     validate: cbk => {
@@ -40,11 +33,30 @@ module.exports = ({cache}, cbk) => {
         return cbk([400, 'ExpectedCacheTypeForExchangeRatesLookup']);
       }
 
+      if (!Array.isArray(networks) || !networks.length) {
+        return cbk([400, 'ExpectedNetworksForExchangeRates']);
+      }
+
       return cbk();
     },
 
+    // Determine network rates
+    networkRates: ['validate', ({}, cbk) => {
+      try {
+        const rates = {};
+
+        const swapFees = networks.forEach(network => {
+          rates[network] = swapParameters({network}).swap_fees;
+        });
+
+        return cbk(null, rates);
+      } catch (e) {
+        return cbk([500, 'FailedToGetNetworkRates', e]);
+      }
+    }],
+
     // Pull out the rates for supported networks
-    getRates: ['validate', ({}, cbk) => {
+    getRates: ['networkRates', ({networkRates}, cbk) => {
       return asyncMap(Object.keys(networkRates), (network, cbk) => {
         return getExchangeRate({cache, network}, (err, res) => {
           if (!!err) {

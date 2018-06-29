@@ -10,7 +10,7 @@ const {getInvoiceDetails} = require('./../service');
 const {returnJson} = require('./../async-util');
 
 const cache = 'redis';
-const maxInvoiceFeeRate = 0.02;
+const swapNetworks = ['ltctestnet', 'testnet'];
 
 /** Make an api router
 
@@ -35,17 +35,19 @@ module.exports = ({log}) => {
 
   // GET exchange rate information
   router.get('/exchange_rates/', ({}, res) => {
-    return getExchangeRates({cache}, returnJson({log, res}));
+    return getExchangeRates({
+      cache,
+      networks: swapNetworks,
+    },
+    returnJson({log, res}));
   });
 
   // GET details about an invoice
-  router.get('/invoice_details/:invoice', ({params}, res) => {
-    const {invoice} = params;
-
+  router.get('/invoice_details/:network/:invoice', ({params}, res) => {
     return getInvoiceDetails({
       cache,
-      invoice,
-      max_invoice_fee_rate: maxInvoiceFeeRate,
+      invoice: params.invoice,
+      network: params.network,
     },
     returnJson({log, res}));
   });

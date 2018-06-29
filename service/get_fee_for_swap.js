@@ -37,7 +37,9 @@ module.exports = ({cache, network, tokens}, cbk) => {
     },
 
     // Get exchange rate information
-    getSwapRates: ['validate', ({}, cbk) => getExchangeRates({cache}, cbk)],
+    getSwapRates: ['validate', ({}, cbk) => {
+      return getExchangeRates({cache, networks: [network, 'testnet']}, cbk);
+    }],
 
     // Final fee tokens necessary to complete the swap
     feeTokens: ['getSwapRates', ({getSwapRates}, cbk) => {

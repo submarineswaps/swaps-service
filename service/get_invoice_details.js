@@ -5,191 +5,210 @@ const {getPendingChannels} = require('ln-service');
 const {getRoutes} = require('ln-service');
 const {parseInvoice} = require('ln-service');
 
-const {getChainFeeRate} = require('./../chain');
+const {checkInvoicePayable} = require('./../swaps');
 const {getExchangeRate} = require('./../fiat');
+const getFeeForSwap = require('./get_fee_for_swap');
+const {getRecentChainTip} = require('./../blocks');
+const {getRecentFeeRate} = require('./../blocks');
 const {lightningDaemon} = require('./../lightning');
 const {returnResult} = require('./../async-util');
+const swapParameters = require('./swap_parameters');
 
-const approxTxVSize = 200;
 const currency = 'BTC';
-const defaultMaxFeeRate = 0.005;
+const estimatedTxVirtualSize = 200;
 const fiatCurrency = 'USD';
-const longFeeEstimateBlocks = 144;
 
-/** Get invoice details
+/** Get invoice details in the context of a swap
 
   {
     cache: <Cache Type String>
-    [max_invoice_fee_rate]: <Fractional Max invoice Fee Rate Number>
     invoice: <Invoice String>
+    network: <Network of Chain Swap String>
   }
 
   @returns via cbk
   {
     created_at: <Created At ISO 8601 Date String>
     description: <Payment Description String>
-    [destination_label]: <Destination Label String>
     destination_public_key: invoice.destination,
-    [destination_url]: <Destination Url String>
     expires_at: <Expires At ISO 8601 Date String>
+    fee: <Swap Fee Tokens Number>
+    [fee_fiat_value]: <Fee Fiat Cents Value Number>
     [fiat_currency_code]: <Fiat Currency Code String>
     [fiat_value]: <Fiat Value in Cents Number>
     id: <Invoice Id String>
     is_expired: <Invoice is Expired Bool>
-    network: <Network Name String>
+    network: <Network of Invoice String>
     tokens: <Tokens to Send Number>
   }
 */
-module.exports = (args, cbk) => {
+module.exports = ({cache, invoice, network}, cbk) => {
   return asyncAuto({
+    // Check arguments
+    validate: cbk => {
+      if (!cache) {
+        return cbk([400, 'ExpectedCacheForInvoiceDetails']);
+      }
+
+      if (!invoice) {
+        return cbk([400, 'ExpectedInvoiceForInvoiceDetails']);
+      }
+
+      if (!network) {
+        return cbk([400, 'ExpectedNetworkForInvoiceDetails']);
+      }
+
+      return cbk();
+    },
+
+    // Determine where the chain tip is at
+    getChainTip: ['validate', ({}, cbk) => {
+      return getRecentChainTip({cache, network}, cbk);
+    }],
+
+    // Get the current fee rate
+    getFeeRate: ['validate', ({}, cbk) => {
+      return getRecentFeeRate({cache, network}, cbk);
+    }],
+
     // Decode the supplied invoice
-    invoice: cbk => {
+    parsedInvoice: ['validate', ({}, cbk) => {
       try {
-        return cbk(null, parseInvoice({invoice: args.invoice}));
+        return cbk(null, parseInvoice({invoice}));
       } catch (e) {
         return cbk([400, 'DecodeInvoiceFailure', e]);
       }
-    },
+    }],
 
-    // LND Connection
-    lnd: cbk => {
+    // Figure out what it will cost to do this swap
+    getSwapFee: ['parsedInvoice', ({parsedInvoice}, cbk) => {
+      const {tokens} = parsedInvoice;
+
+      return getFeeForSwap({cache, network, tokens}, cbk);
+    }],
+
+    // LND connection
+    lnd: ['validate', ({}, cbk) => {
       try {
         return cbk(null, lightningDaemon({}));
       } catch (e) {
         return cbk([500, 'FailedToInstantiateLndConnection']);
       }
-    },
-
-    // Destination public key of send
-    destination: ['invoice', ({invoice}, cbk) => {
-      return cbk(null, invoice.destination);
     }],
 
-    // Tokens to send
-    tokens: ['invoice', ({invoice}, cbk) => cbk(null, invoice.tokens)],
-
-    // Check that the supplied invoice is payable
-    checkInvoice: ['tokens', ({tokens}, cbk) => {
-      if (!tokens) {
-        return cbk([400, 'InvoiceMissingTokens']);
+    // Parameters for a swap with an invoice
+    swapParams: ['validate', ({}, cbk) => {
+      try {
+        return cbk(null, swapParameters({network}));
+      } catch (e) {
+        return cbk([400, 'ExpectedSwapParameters', e]);
       }
-
-      return cbk();
     }],
 
     // Pull the pending channels to see if we have a related pending channel
     getPending: ['lnd', ({lnd}, cbk) => getPendingChannels({lnd}, cbk)],
 
-    // Try a minimal route query to see if we can ever send to this destination
-    getMinRoutes: ['destination', 'lnd', ({destination, lnd}, cbk) => {
-      const maxFeeRate = args.max_invoice_fee_rate || defaultMaxFeeRate;
-
-      // Minimal tokens are where the fees wouldn't consume all of the tokens
-      const tokens = approxTxVSize / maxFeeRate;
-
-      return getRoutes({destination, lnd, tokens}, cbk);
-    }],
-
-    // Check the minimal send route query to make sure we can do any swap
-    checkMinimallyRouteable: [
-      'destination',
-      'getMinRoutes',
-      'getPending',
-      ({destination, getMinRoutes, getPending}, cbk) =>
-    {
-      const hasPendingChan = getPending.pending_channels
-        .filter(n => !n.is_opening)
-        .map(n => n.partner_public_key)
-        .find(n => n === destination);
-
-      if (!getMinRoutes.routes.length && !!hasPendingChan) {
-        return cbk([503, 'PendingChannelToDestination']);
-      }
-
-      if (!getMinRoutes.routes.length) {
-        return cbk([503, 'NoCapacityToDestination']);
-      }
-
-      return cbk();
-    }],
-
     // See if this invoice is payable
-    getRoutes: [
-      'destination',
-      'lnd',
-      'tokens',
-      ({destination, lnd, tokens}, cbk) =>
-    {
+    getRoutes: ['lnd', 'parsedInvoice', ({lnd, parsedInvoice}, cbk) => {
+      const {destination} = parsedInvoice;
+      const {tokens} = parsedInvoice;
+
       return getRoutes({destination, lnd, tokens}, cbk);
     }],
 
-    // Make sure the routing fee is not too high
-    checkRoutingFee: [
-      'checkMinimallyRouteable',
+    // Check to make sure the invoice can be paid
+    checkPayable: [
+      'getChainTip',
+      'getFeeRate',
+      'getPending',
       'getRoutes',
-      'invoice',
-      ({getRoutes, invoice}, cbk) =>
+      'getSwapFee',
+      'parsedInvoice',
+      'swapParams',
+      ({
+        getChainTip,
+        getFeeRate,
+        getPending,
+        getRoutes,
+        getSwapFee,
+        parsedInvoice,
+        swapParams,
+      },
+      cbk) =>
     {
-      return nextTick(() => {
-        const maxFee = Math.max(...getRoutes.routes.map(({fee}) => fee));
-
-        if (!getRoutes.routes.length) {
-          return cbk([503, 'InsufficientCapacityForSwap']);
-        }
-
-        if (maxFee / invoice.tokens > args.max_invoice_fee_rate) {
-          return cbk([503, 'RoutingFeesTooHighToSwap']);
-        }
+      try {
+        const check = checkInvoicePayable({
+          network,
+          claim_window: swapParams.claim_window,
+          current_height: getChainTip.height,
+          destination: parsedInvoice.destination,
+          expires_at: parsedInvoice.expires_at,
+          pending_channels: getPending.pending_channels,
+          refund_height: getChainTip.height + swapParams.timeout,
+          required_confirmations: swapParams.funding_confs,
+          routes: getRoutes.routes,
+          swap_fee: getSwapFee.fee,
+          sweep_fee: getFeeRate.fee_tokens_per_vbyte * estimatedTxVirtualSize,
+          tokens: parsedInvoice.tokens,
+        });
 
         return cbk();
-      });
-    }],
-
-    // Get the current chain fees
-    chainFee: ['invoice', ({invoice}, cbk) => {
-      return getChainFeeRate({
-        blocks: longFeeEstimateBlocks,
-        network: invoice.network,
-      },
-      cbk);
-    }],
-
-    // Make sure the chain fee is not too high
-    checkChainFee: ['chainFee', 'invoice', ({chainFee, invoice}, cbk) => {
-      const approxFee = chainFee.fee_tokens_per_vbyte * approxTxVSize;
-
-      if (approxFee / invoice.tokens > args.max_invoice_fee_rate) {
-        return cbk([503, 'ChainFeesTooHighToSwap']);
+      } catch (e) {
+        return cbk([400, e.message]);
       }
-
-      return cbk();
     }],
 
     // Get the exchange rate
-    getFiatRate: ['checkInvoice', ({}, cbk) => {
-      return getExchangeRate({cache: args.cache, network: 'testnet'}, cbk);
+    getFiatRate: ['checkPayable', 'parsedInvoice', ({parsedInvoice}, cbk) => {
+      const {network} = parsedInvoice;
+
+      return getExchangeRate({cache, network}, cbk);
+    }],
+
+    // Get the exchange rate for the fee (may be on a different network)
+    getFeeFiatRate: ['checkPayable', ({}, cbk) => {
+      return getExchangeRate({cache, network}, cbk);
+    }],
+
+    // Fiat value of fee
+    feeFiatValue: [
+      'getFeeFiatRate',
+      'getSwapFee',
+      ({getFeeFiatRate, getSwapFee}, cbk) =>
+    {
+      return cbk(null, getSwapFee.fee * getFeeFiatRate.cents);
     }],
 
     // Fiat value
-    fiatValue: ['getFiatRate', 'invoice', ({getFiatRate, invoice}, cbk) => {
-      return cbk(null, invoice.tokens * getFiatRate.cents);
+    fiatValue: [
+      'getFiatRate',
+      'parsedInvoice',
+      ({getFiatRate, parsedInvoice}, cbk) =>
+    {
+      return cbk(null, parsedInvoice.tokens * getFiatRate.cents);
     }],
 
     // Invoice Details
-    invoiceDetails: ['fiatValue', 'invoice', ({fiatValue, invoice}, cbk) => {
+    invoiceDetails: [
+      'feeFiatValue',
+      'fiatValue',
+      'getSwapFee',
+      'parsedInvoice',
+      ({feeFiatValue, fiatValue, getSwapFee, parsedInvoice}, cbk) =>
+    {
       return cbk(null, {
-        created_at: invoice.created_at,
-        description: invoice.description,
-        destination_label: null,
-        destination_public_key: invoice.destination,
-        destination_url: null,
-        expires_at: invoice.expires_at,
+        created_at: parsedInvoice.created_at,
+        description: parsedInvoice.description,
+        destination_public_key: parsedInvoice.destination,
+        expires_at: parsedInvoice.expires_at,
+        fee: getSwapFee.fee,
+        fee_fiat_value: feeFiatValue,
         fiat_currency_code: fiatCurrency,
         fiat_value: fiatValue || null,
-        id: invoice.id,
-        is_expired: invoice.is_expired,
-        network: invoice.network,
-        tokens: invoice.tokens,
+        id: parsedInvoice.id,
+        is_expired: parsedInvoice.is_expired,
+        network: parsedInvoice.network,
+        tokens: parsedInvoice.tokens,
       });
     }],
   },

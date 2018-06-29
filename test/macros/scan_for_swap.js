@@ -154,7 +154,8 @@ module.exports = ({cache, network, type}, cbk) => {
       'createSwapAddress',
       'generateSwapInvoice',
       'index',
-      ({createSwapAddress, generateSwapInvoice, index}, cbk) =>
+      'utxo',
+      ({createSwapAddress, generateSwapInvoice, index, utxo}, cbk) =>
     {
       return watchSwapOutput({
         cache,
@@ -162,6 +163,7 @@ module.exports = ({cache, network, type}, cbk) => {
         network,
         invoice: generateSwapInvoice.invoice,
         script: createSwapAddress.redeem_script,
+        tokens: utxo.tokens,
       },
       cbk);
     }],

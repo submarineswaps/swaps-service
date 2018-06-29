@@ -18,6 +18,7 @@ const {swapScriptDetails} = require('./../swaps');
       index: <Claim Key Index Number>
       invoice: <BOLT 11 Invoice String>
       script: <Output Redeem Script>
+      tokens: <Tokens Expected Number>
       type: <Type String> 'funding'
     }
   }
@@ -53,11 +54,11 @@ module.exports = ({address, cache, network}, cbk) => {
           return cbk(err);
         }
 
-        if (!res || !res.id || !res.script) {
+        if (!res || !res.id || !res.script || !res.tokens) {
           return cbk();
         }
 
-        return cbk(null, {id: res.id, script: res.script});
+        return cbk(null, {id: res.id, script: res.script, tokens: res.tokens});
       });
     }],
 
@@ -144,6 +145,7 @@ module.exports = ({address, cache, network}, cbk) => {
           index: getClaimKeyIndex.index,
           invoice: getCachedInvoice.invoice,
           script: getCachedAddress.script,
+          tokens: getCachedAddress.tokens,
           type: 'funding',
         }
       });

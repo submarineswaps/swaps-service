@@ -13,9 +13,9 @@ const App = {
 /** Changed the currency
 */
 App.changedCurrencySelection = function({}) {
-  const createSwapQuote = $(this).closest('.create-swap-quote');
+  const swap = $(this).closest('.create-swap-quote');
 
-  if (!createSwapQuote) {
+  if (!swap) {
     return;
   }
 
@@ -23,11 +23,11 @@ App.changedCurrencySelection = function({}) {
 
   const iconToShow = `.icon-${network}`;
 
-  createSwapQuote.find('.coin-icon').prop('hidden', true);
+  swap.find('.coin-icon').prop('hidden', true);
 
-  createSwapQuote.find(iconToShow).removeAttr('hidden');
+  swap.find(iconToShow).removeAttr('hidden');
 
-  App.updatedSwapDetails({swap: createSwapQuote});
+  App.updateInvoiceDetails({swap});
 
   return;
 };
@@ -37,107 +37,11 @@ App.changedCurrencySelection = function({}) {
   Update the details of the payment based on the entered invoice.
 */
 App.changedInvoice = function({}) {
-  const input = $(this);
+  const swap = $(this).closest('.create-swap-quote');
 
-  const invoice = input.val().trim();
-  const swap = input.closest('.create-swap-quote');
+  App.updateInvoiceDetails({swap});
 
-  const detailsDisplay = swap.find('.invoice-details');
-
-  // Exit early when the invoice has not changed
-  if (swap.data().invoice === invoice) {
-    return;
-  }
-
-  swap.data({invoice});
-
-  detailsDisplay.collapse('hide');
-
-  $('.has-invoice-problem').prop('hidden', true);
-
-  // Exit early when the invoice has been removed
-  if (!invoice) {
-    App.updatedSwapDetails({swap});
-
-    $('.looking-up-invoice').prop('hidden', true);
-    $('.not-looking-up-invoice').prop('hidden', false);
-    $('.has-invoice-problem').prop('hidden', true);
-
-    return input.removeClass('is-invalid').removeClass('is-valid');
-  }
-
-  $('.looking-up-invoice').prop('hidden', false);
-  $('.not-looking-up-invoice').prop('hidden', true);
-
-  return App.getInvoiceDetails({invoice}, (err, details) => {
-    // Exit early when input has changed while the fetch was happening.
-    if (input.val().trim() !== invoice) {
-      return;
-    }
-
-    $('.looking-up-invoice').prop('hidden', true);
-    $('.not-looking-up-invoice').prop('hidden', false);
-    $('.has-invoice-problem').prop('hidden', true);
-
-    if (!!err) {
-      const [errCode, errMessage] = err;
-
-      detailsDisplay.collapse('hide');
-
-      $('.has-invoice-problem').prop('hidden', false);
-      $('.not-looking-up-invoice').prop('hidden', true);
-      input.addClass('is-invalid');
-
-      let text;
-
-      switch (errMessage) {
-      case 'ChainFeesTooHighToSwap':
-        text = 'Value too low for a chain swap. Use a higher value invoice?';
-        break;
-
-      case 'DecodeInvoiceFailure':
-        text = 'Couldn\'t read this invoice. Try a different one?';
-        break;
-
-      case 'Failed to fetch':
-        text = `Couldn\'t connect to swap server. Try again?`;
-        break;
-
-      case 'InsufficientCapacityForSwap':
-        text = 'Value is too high to swap. Use a lower value invoice?';
-        break;
-
-      case 'InvoiceExpiresTooSoon':
-        text = 'This invoice expires too soon, get a fresh invoice?';
-        break;
-
-      case 'NoCapacityToDestination':
-        text = 'Can\'t send to this destination, establishing connectivity...';
-        break;
-
-      case 'PendingChannelToDestination':
-        text = 'Channel to destination is still opening, try again later...';
-        break;
-
-      default:
-        console.log('ERR', err);
-        text = 'Unexpected error :( try again or with a different invoice?';
-        break;
-      }
-
-      swap.find('.invoice-issue').text(text);
-
-      return;
-    }
-
-    App.invoice_details[invoice] = details;
-
-    App.showInvoice({invoice, swap});
-
-    App.updatedSwapDetails({swap});
-
-    return;
-  });
+  return;
 };
 
 /** Changed the refund address
@@ -557,19 +461,21 @@ App.getAddressDetails = ({address, network}, cbk) => {
   return;
 };
 
-/** Get invoice details
+/** Get invoice details in the context of a swap
 
   {
     invoice: <Bolt 11 Invoice String>
+    network: <Swapping with Network Name String>
   }
 
   @returns via cbk
   {
     created_at: <Created At ISO 8601 Date String>
     description: <Payment Description String>
-    [destination_label]: <Destination Label String>
-    [destination_url]: <Destination Url String>
+    destination_public_key: <Destination Public Key Hex String>
     [expires_at]: <Expires At ISO 8601 Date String>
+    fee: <Fee Tokens Number>
+    [fee_fiat_value]: <Fee Fiat Value in Cents Number>
     [fiat_currency_code]: <Fiat Currency Code String>
     [fiat_value]: <Fiat Value in Cents Number>
     id: <Invoice Id String>
@@ -577,8 +483,8 @@ App.getAddressDetails = ({address, network}, cbk) => {
     tokens: <Tokens to Send Number>
   }
 */
-App.getInvoiceDetails = ({invoice}, cbk) => {
-  return fetch(`/api/v0/invoice_details/${invoice}`)
+App.getInvoiceDetails = ({invoice, network}, cbk) => {
+  return fetch(`/api/v0/invoice_details/${network}/${invoice}`)
     .then(r => {
       switch (r.status) {
       case 200:
@@ -606,10 +512,8 @@ App.getInvoiceDetails = ({invoice}, cbk) => {
         throw new Error('ExpectedExpiresAt');
       }
 
-      const latestDate = new Date(Date.now() + App.grace_ms).toISOString();
-
-      if (details.expires_at < latestDate) {
-        throw new Error('InvoiceExpiresTooSoon');
+      if (details.fee === undefined) {
+        throw new Error('ExpectedFeeTokensAmount');
       }
 
       if (!details.id) {
@@ -630,7 +534,20 @@ App.getInvoiceDetails = ({invoice}, cbk) => {
 
       return details;
     })
-    .then(details => cbk(null, details))
+    .then(details => cbk(null, {
+      created_at: details.created_at,
+      description: details.description,
+      destination_public_key: details.destination_public_key,
+      expires_at: details.expires_at,
+      fee: details.fee,
+      fee_fiat_value: details.fee_fiat_value || null,
+      fiat_currency_code: details.fiat_currency_code,
+      fiat_value: details.fiat_value || null,
+      id: details.id,
+      is_expired: details.is_expired,
+      network: details.network,
+      tokens: details.tokens,
+    }))
     .catch(err => {
       if (!!err.text) {
         return err.text().then(text => cbk([err.status, text]));
@@ -1363,6 +1280,117 @@ App.updatedSwapDetails = ({swap}) => {
   swap.find('.make').toggleClass('disabled', !isReady);
 
   return;
+};
+
+/** Update invoice details
+
+  {
+    swap: <Create Swap Quote Swap DOM Object>
+  }
+*/
+App.updateInvoiceDetails = ({swap}) => {
+  const input = swap.find('.pay-to-lightning-invoice');
+
+  const detailsDisplay = swap.find('.invoice-details');
+  const invoice = input.val().trim();
+  const network = swap.find('.select-currency').val();
+
+  const quoteFor = [network, invoice].join('/');
+
+  // Exit early when the invoice has not changed
+  if (swap.data().quote_for === quoteFor) {
+    return;
+  }
+
+  swap.data({invoice, quote_for: quoteFor});
+
+  detailsDisplay.collapse('hide');
+
+  $('.has-invoice-problem').prop('hidden', true);
+
+  // Exit early when the invoice has been removed
+  if (!invoice) {
+    App.updatedSwapDetails({swap});
+
+    $('.looking-up-invoice').prop('hidden', true);
+    $('.not-looking-up-invoice').prop('hidden', false);
+    $('.has-invoice-problem').prop('hidden', true);
+
+    return input.removeClass('is-invalid').removeClass('is-valid');
+  }
+
+  $('.looking-up-invoice').prop('hidden', false);
+  $('.not-looking-up-invoice').prop('hidden', true);
+
+  return App.getInvoiceDetails({invoice, network}, (err, details) => {
+    // Exit early when input has changed while the fetch was happening.
+    if (input.val().trim() !== invoice) {
+      return;
+    }
+
+    $('.looking-up-invoice').prop('hidden', true);
+    $('.not-looking-up-invoice').prop('hidden', false);
+    $('.has-invoice-problem').prop('hidden', true);
+
+    if (!!err) {
+      const [errCode, errMessage] = err;
+
+      detailsDisplay.collapse('hide');
+
+      $('.has-invoice-problem').prop('hidden', false);
+      $('.not-looking-up-invoice').prop('hidden', true);
+      input.addClass('is-invalid');
+
+      let text;
+
+      switch (errMessage) {
+      case 'ChainFeesTooHighToSwap':
+        text = 'Value too low for a chain swap. Use a higher value invoice?';
+        break;
+
+      case 'DecodeInvoiceFailure':
+        text = 'Couldn\'t read this invoice. Try a different one?';
+        break;
+
+      case 'Failed to fetch':
+        text = `Couldn\'t connect to swap server. Try again?`;
+        break;
+
+      case 'InsufficientCapacityForSwap':
+        text = 'Value is too high to swap. Use a lower value invoice?';
+        break;
+
+      case 'InvoiceExpiresTooSoon':
+        text = 'This invoice expires too soon, get a fresh invoice?';
+        break;
+
+      case 'NoCapacityToDestination':
+        text = 'Can\'t send to this destination, establishing connectivity...';
+        break;
+
+      case 'PendingChannelToDestination':
+        text = 'Channel to destination is still opening, try again later...';
+        break;
+
+      default:
+        console.log('ERR', err);
+        text = 'Unexpected error :( try again or with a different invoice?';
+        break;
+      }
+
+      swap.find('.invoice-issue').text(text);
+
+      return;
+    }
+
+    App.invoice_details[invoice] = details;
+
+    App.showInvoice({invoice, swap});
+
+    App.updatedSwapDetails({swap});
+
+    return;
+  });
 };
 
 $(() => App.init({}));

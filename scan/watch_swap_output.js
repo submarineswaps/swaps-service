@@ -22,9 +22,10 @@ const swapTimeoutMs = 1000 * 60 * 60 * 24 * 7;
     invoice: <BOLT 11 Invoice String>
     network: <Network Name String>
     script: <Redeem Script Hex String>
+    tokens: <Tokens To Expect In Output Number>
   }
 */
-module.exports = ({cache, index, invoice, network, script}, cbk) => {
+module.exports = ({cache, index, invoice, network, script, tokens}, cbk) => {
   return asyncAuto({
     // Validate arguments
     validate: cbk => {
@@ -33,19 +34,23 @@ module.exports = ({cache, index, invoice, network, script}, cbk) => {
       }
 
       if (!index) {
-        return cbk([400, 'ExpectedKeyIndex']);
+        return cbk([400, 'ExpectedKeyIndexForSwap']);
       }
 
       if (!invoice) {
-        return cbk([400, 'ExpectedInvoice']);
+        return cbk([400, 'ExpectedInvoiceAssociatedWithSwapScript']);
       }
 
       if (!network) {
-        return cbk([400, 'ExpectedNetwork']);
+        return cbk([400, 'ExpectedNetworkToWatchOn']);
       }
 
       if (!script) {
-        return cbk([400, 'ExpectedScript']);
+        return cbk([400, 'ExpectedRedeemScriptToWatchFor']);
+      }
+
+      if (!tokens) {
+        return cbk([400, 'ExpectedTokensToWatchFor']);
       }
 
       return cbk();
@@ -98,21 +103,21 @@ module.exports = ({cache, index, invoice, network, script}, cbk) => {
           key: scriptDetails.p2sh_address,
           ms: swapTimeoutMs,
           type: 'swap_address',
-          value: {id, script},
+          value: {id, script, tokens},
         },
         // Cache the p2sh nested p2wsh address. Default on SW networks
         {
           key: scriptDetails.p2sh_p2wsh_address,
           ms: swapTimeoutMs,
           type: 'swap_address',
-          value: {id, script},
+          value: {id, script, tokens},
         },
         // Cache the p2wsh address. On SW networks, most efficient
         {
           key: scriptDetails.p2wsh_address,
           ms: swapTimeoutMs,
           type: 'swap_address',
-          value: {id, script},
+          value: {id, script, tokens},
         },
         // Cache the public key association with a seed index
         {

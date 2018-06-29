@@ -48,8 +48,8 @@ module.exports = ({cache, invoice, network, refund}, cbk) => {
     // Get info about the state of the chain
     getChainTip: cbk => getRecentChainTip({cache, network}, cbk),
 
-    // Decode the invoice to pay
-    getInvoiceDetails: cbk => getInvoiceDetails({cache, invoice}, cbk),
+    // Pull details about the invoice to pay
+    getInvoice: cbk => getInvoiceDetails({cache, invoice, network}, cbk),
 
     // Validate basic arguments
     validate: cbk => {
@@ -104,7 +104,7 @@ module.exports = ({cache, invoice, network, refund}, cbk) => {
 
     // Create the swap address
     swapAddress: [
-      'getInvoiceDetails',
+      'getInvoice',
       'refundAddress',
       'serverDestinationKey',
       'timeoutBlockHeight',
@@ -115,7 +115,7 @@ module.exports = ({cache, invoice, network, refund}, cbk) => {
         return cbk(null, swapAddress({
           network,
           destination_public_key: res.serverDestinationKey.public_key,
-          payment_hash: res.getInvoiceDetails.id,
+          payment_hash: res.getInvoice.id,
           refund_public_key_hash: res.refundAddress.public_key_hash,
           timeout_block_height: res.timeoutBlockHeight,
         }));
@@ -125,27 +125,31 @@ module.exports = ({cache, invoice, network, refund}, cbk) => {
     }],
 
     // Swap fee component
-    getSwapAmount: ['getInvoiceDetails', ({getInvoiceDetails}, cbk) => {
-      const {tokens} = getInvoiceDetails;
-
-      return getFeeForSwap({cache, network, tokens}, cbk);
+    getSwapAmount: ['getInvoice', ({getInvoice}, cbk) => {
+      return getFeeForSwap({cache, network, tokens: getInvoice.tokens}, cbk);
     }],
 
     // Add the created swap to the watch list
     watchSwap: [
+      'getSwapAmount',
       'swapAddress',
       'swapKeyIndex',
-      ({swapAddress, swapKeyIndex}, cbk) =>
+      ({getSwapAmount, swapAddress, swapKeyIndex}, cbk) =>
     {
-      const index = swapKeyIndex;
-      const script = swapAddress.redeem_script;
-
-      return watchSwapOutput({cache, index, invoice, network, script}, cbk);
+      return watchSwapOutput({
+        cache,
+        invoice,
+        network,
+        index: swapKeyIndex,
+        script: swapAddress.redeem_script,
+        tokens: getSwapAmount.tokens,
+      },
+      cbk);
     }],
 
     // Swap details
     swap: [
-      'getInvoiceDetails',
+      'getInvoice',
       'getSwapAmount',
       'refundAddress',
       'serverDestinationKey',
@@ -157,7 +161,7 @@ module.exports = ({cache, invoice, network, refund}, cbk) => {
       return cbk(null, {
         invoice,
         destination_public_key: res.serverDestinationKey.public_key,
-        payment_hash: res.getInvoiceDetails.id,
+        payment_hash: res.getInvoice.id,
         redeem_script: res.swapAddress.redeem_script,
         refund_address: refund,
         refund_public_key_hash: res.refundAddress.public_key_hash,

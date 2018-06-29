@@ -2,7 +2,7 @@ const asyncAuto = require('async/auto');
 const {parseInvoice} = require('ln-service');
 const {shuffle} = require('lodash');
 
-const confirmWaitTime = require('./confirm_wait_time');
+const swapParameters = require('./swap_parameters');
 const {getConfirmationCount} = require('./../chain');
 const {getBlockPlacement} = require('./../blocks');
 const getDetectedSwaps = require('./../pool/get_detected_swaps');
@@ -112,24 +112,30 @@ module.exports = ({cache, invoice, network, script}, cbk) => {
     }],
 
     // Determine wait time still necessary to confirm the swap
-    waitTime: ['getBlockInfo', ({getBlockInfo}, cbk) => {
+    remainingConfs: ['getBlockInfo', ({getBlockInfo}, cbk) => {
       const conf = !getBlockInfo ? 0 : getBlockInfo.current_confirmation_count;
 
-      return cbk(null, confirmWaitTime({current_confirmations: conf}));
+      try {
+        const requiredFundingConfs = swapParameters({network}).funding_confs;
+
+        return cbk(null, Math.max(0, requiredFundingConfs - conf));
+      } catch (e) {
+        return cbk([500, 'FailedToDetermineWaitConfirmations', e]);
+      }
     }],
 
     // Current swap status
     getSwapStatus: [
+      'remainingConfs',
       'swapElement',
-      'waitTime',
-      ({swapElement, waitTime}, cbk) =>
+      ({remainingConfs, swapElement}, cbk) =>
     {
       if (!swapElement) {
         return cbk([402, 'FundingNotFound']);
       }
 
       return cbk(null, {
-        conf_wait_count: !!waitTime ? waitTime.remaining_confirmations : null,
+        conf_wait_count: !!remainingConfs ? remainingConfs : null,
         output_index: swapElement.output_index,
         output_tokens: swapElement.output_tokens,
         payment_secret: swapElement.payment_secret,

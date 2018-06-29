@@ -108,7 +108,13 @@ module.exports = ({cache, network, transaction}, cbk) => {
             return cbk(err);
           }
 
+          // Exit early when there is no associated swap with the address
           if (!res.swap) {
+            return cbk();
+          }
+
+          // Exit early when the amount sent to the address isn't right
+          if (res.swap.tokens !== tokens) {
             return cbk();
           }
 
