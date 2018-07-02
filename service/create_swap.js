@@ -126,7 +126,13 @@ module.exports = ({cache, invoice, network, refund}, cbk) => {
 
     // Swap fee component
     getSwapAmount: ['getInvoice', ({getInvoice}, cbk) => {
-      return getFeeForSwap({cache, network, tokens: getInvoice.tokens}, cbk);
+      return getFeeForSwap({
+        cache,
+        network,
+        to: getInvoice.network,
+        tokens: getInvoice.tokens,
+      },
+      cbk);
     }],
 
     // Add the created swap to the watch list

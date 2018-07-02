@@ -82,9 +82,10 @@ module.exports = ({cache, invoice, network}, cbk) => {
 
     // Figure out what it will cost to do this swap
     getSwapFee: ['parsedInvoice', ({parsedInvoice}, cbk) => {
+      const to = parsedInvoice.network;
       const {tokens} = parsedInvoice;
 
-      return getFeeForSwap({cache, network, tokens}, cbk);
+      return getFeeForSwap({cache, network, to, tokens}, cbk);
     }],
 
     // LND connection
