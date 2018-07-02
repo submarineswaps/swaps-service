@@ -5,12 +5,14 @@ const {getRecentFeeRate} = require('./../blocks');
 const {returnResult} = require('./../async-util');
 
 const claimTxVSize = 150;
+const rateDivisor = 1e6;
 
 /** Given swap information, determine the number of tokens needed for a fee
 
   {
     cache: <Cache Type for Rate Data>
     network: <Chain Network Name String>
+    to: <Lightning Network Name String>
     tokens: <Lightning Tokens To Send Number>
   }
 
@@ -20,7 +22,7 @@ const claimTxVSize = 150;
     tokens: <Total Tokens With Fee Number>
   }
 */
-module.exports = ({cache, network, tokens}, cbk) => {
+module.exports = ({cache, network, to, tokens}, cbk) => {
   return asyncAuto({
     // Check arguments
     validate: cbk => {
@@ -30,6 +32,10 @@ module.exports = ({cache, network, tokens}, cbk) => {
 
       if (!network) {
         return cbk([400, 'ExpectedNetworkNameForSwapChainTokens']);
+      }
+
+      if (!to) {
+        return cbk([400, 'ExpectedLightningNetworkToSendToName']);
       }
 
       if (!tokens) {
@@ -46,7 +52,7 @@ module.exports = ({cache, network, tokens}, cbk) => {
 
     // Get exchange rate information
     getSwapRates: ['validate', ({}, cbk) => {
-      return getExchangeRates({cache, networks: [network, 'testnet']}, cbk);
+      return getExchangeRates({cache, networks: [network, to]}, cbk);
     }],
 
     // Final fee tokens necessary to complete the swap
@@ -62,19 +68,23 @@ module.exports = ({cache, network, tokens}, cbk) => {
         return cbk([400, 'UnexpectedNetworkForRatesQuery', network]);
       }
 
-      const swapFee = rates[network].fees.find(n => n.network === 'testnet');
+      if (!rates[to]) {
+        return cbk([400, 'UnexpectedLightningNetworkForRatesQuery']);
+      }
+
+      const swapFee = rates[network].fees.find(n => n.network === to);
 
       if (!swapFee) {
         return cbk([500, 'ExpectedBaseFeeRate', rates[network]]);
       }
 
-      const conversionRate = rates['testnet'].cents / rates[network].cents;
+      const conversionRate = rates[to].cents / rates[network].cents;
 
       const baseFee = swapFee.base + claimChainFee;
-      const feePercentage = swapFee.rate / 1e6 * 100;
+      const feePercentage = swapFee.rate / rateDivisor;
       const convertedTokens = Math.round(tokens * conversionRate);
 
-      const feeTokens = baseFee + (convertedTokens * feePercentage / 100);
+      const feeTokens = baseFee + (convertedTokens * feePercentage);
 
       const fee = Math.round(feeTokens);
 

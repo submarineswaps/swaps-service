@@ -138,9 +138,10 @@ module.exports = ({cache, invoice, network, script}, cbk) => {
 
     // Get fee information
     getFeeTokens: ['invoiceDetails', ({invoiceDetails}, cbk) => {
+      const to = invoiceDetails.network;
       const {tokens} = invoiceDetails;
 
-      return getFeeForSwap({cache, network, tokens}, cbk);
+      return getFeeForSwap({cache, network, to, tokens}, cbk);
     }],
 
     // Search for the swap transaction
