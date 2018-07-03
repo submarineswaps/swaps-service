@@ -6,7 +6,7 @@ const getRecentChainTip = require('./get_recent_chain_tip');
 const {returnResult} = require('./../async-util');
 const {setJsonInCache} = require('./../cache');
 
-const previousBlockCacheMs = 1000 * 60 * 60 * 4;
+const previousBlockCacheMs = 1000 * 60 * 60 * 3;
 
 /** Get the placement of a block within the chain
 

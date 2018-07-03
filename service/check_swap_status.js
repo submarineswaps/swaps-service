@@ -1,4 +1,7 @@
+const {createHash} = require('crypto');
+
 const asyncAuto = require('async/auto');
+const {getInvoice} = require('ln-service');
 const {parseInvoice} = require('ln-service');
 const {shuffle} = require('lodash');
 
@@ -7,6 +10,7 @@ const {getConfirmationCount} = require('./../chain');
 const {getBlockPlacement} = require('./../blocks');
 const getDetectedSwaps = require('./../pool/get_detected_swaps');
 const getSwapStatus = require('./get_swap_status');
+const {lightningDaemon} = require('./../lightning');
 const {returnResult} = require('./../async-util');
 
 /** Check the status of a swap
@@ -59,6 +63,42 @@ module.exports = ({cache, invoice, network, script}, cbk) => {
       } catch (e) {
         return cbk([400, 'FailedToParseSwapInvoice', e]);
       }
+    }],
+
+    // Get swap attempt in progress
+    getSwapAttempt: ['id', ({id}, cbk) => {
+      let lnd;
+
+      try {
+        lnd = lightningDaemon({});
+      } catch (e) {
+        return cbk(null, [500, 'FailedToCreateLndConnection']);
+      }
+
+      const swapId = Buffer.from(id, 'hex');
+
+      const attemptId = createHash('sha256').update(swapId).digest('hex');
+
+      return getInvoice({lnd, id: attemptId}, (err, details) => {
+        if (!!err) {
+          return cbk();
+        }
+
+        return cbk(null, details.expires_at);
+      });
+    }],
+
+    // Check for swap attempt failure
+    checkSwapAttempt: ['getSwapAttempt', ({getSwapAttempt}, cbk) => {
+      if (!getSwapAttempt) {
+        return cbk();
+      }
+
+      if (new Date().toISOString() > getSwapAttempt) {
+        return cbk([410, 'PaymentFailed']);
+      }
+
+      return cbk();
     }],
 
     // See if the swap is in the swap pool

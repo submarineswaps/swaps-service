@@ -15,6 +15,7 @@ const {returnResult} = require('./../async-util');
 const {setJsonInCache} = require('./../cache');
 const {swapScriptInTransaction} = require('./../swaps');
 
+const paymentTimeoutMs = 1000 * 60;
 const {SSS_CLAIM_LTCTESTNET_ADDRESS} = process.env;
 const {SSS_CLAIM_TESTNET_ADDRESS} = process.env;
 const swapSuccessCacheMs = 1000 * 60 * 60 * 3;
@@ -140,7 +141,13 @@ module.exports = (args, cbk) => {
     {
       const {id} = invoice;
 
-      return createInvoice({lnd, payment_secret: id, tokens: 1}, cbk);
+      return createInvoice({
+        lnd,
+        expires_at: new Date(Date.now() + paymentTimeoutMs).toISOString(),
+        payment_secret: id,
+        tokens: 1,
+      },
+      cbk);
     }],
 
     // Make a new address to sweep out the funds to
