@@ -19,6 +19,7 @@ Requirements:
 
 Configure environment variables as necessary.
 
+    export GRPC_SSL_CIPHER_SUITES="HIGH+ECDSA"
     export NODE_ENV="production" // Add this when running in production
     export PORT="HTTP SERVER PORT" // Override default server port (9889)
     export REDIS_URL="redis://username:password@host:port" // Redis service

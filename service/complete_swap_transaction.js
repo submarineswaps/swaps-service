@@ -7,9 +7,9 @@ const {payInvoice} = require('ln-service');
 
 const {broadcastTransaction} = require('./../chain');
 const {claimTransaction} = require('./../swaps');
-const {getChainFeeRate} = require('./../chain');
 const {getFee} = require('./../chain');
 const {getRecentChainTip} = require('./../blocks');
+const {getRecentFeeRate} = require('./../blocks');
 const {lightningDaemon} = require('./../lightning');
 const {returnResult} = require('./../async-util');
 const {setJsonInCache} = require('./../cache');
@@ -50,7 +50,9 @@ module.exports = (args, cbk) => {
     },
 
     // Figure out what fee is needed to sweep the funds
-    getFee: cbk => getChainFeeRate({network: args.network}, cbk),
+    getFee: cbk => {
+      return getRecentFeeRate({cache: args.cache, network: args.network}, cbk);
+    },
 
     // Parse the given invoice
     invoice: cbk => {
