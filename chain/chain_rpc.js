@@ -5,7 +5,6 @@ const credentialsForNetwork = require('./credentials_for_network');
 
 const chainTimeoutMs = 3000;
 let pauseOnErrorDate;
-const stopAfterErrorsMs = 3000;
 
 /** Execute Chain RPC command
 
