@@ -82,6 +82,7 @@ module.exports = (args, cbk) => {
 
     // Determine mine-to-address
     mineToAddress: ['generateBobKeyPair', ({generateBobKeyPair}, cbk) => {
+      console.log("claim-success mineto");
       switch (args.daemon) {
       case 'bcoin':
       case "bitcoind":
@@ -104,6 +105,7 @@ module.exports = (args, cbk) => {
       'spawnChainDaemon',
       ({generateBobKeyPair, mineToAddress}, cbk) =>
     {
+
       return generateChainBlocks({
         address: mineToAddress,
         daemon: args.daemon,

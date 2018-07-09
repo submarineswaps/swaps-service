@@ -30,8 +30,7 @@ module.exports = ({network}) => {
   if (!network) {
     throw new Error('ExpectedNetwork');
   }
-  console.log(networks);
-  console.log(network);
+
   const keyPair = ECPair.makeRandom({network: networks[network]});
 
   // For pay to public key hash, we need the RIPE160 hash of the pubKey
