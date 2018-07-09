@@ -56,7 +56,6 @@ module.exports = (args, cbk) => {
       try {
         return cbk(null, generateKeyPair({network: args.network}));
       } catch (e) {
-        console.log(e);
         return cbk([0, 'ExpectedGeneratedKeyPair', e]);
       }
     },
@@ -84,9 +83,10 @@ module.exports = (args, cbk) => {
     mineToAddress: ['generateBobKeyPair', ({generateBobKeyPair}, cbk) => {
       switch (args.daemon) {
       case 'bcoin':
-      case "bitcoind":
+      case 'bitcoind':
         const bobKey = Buffer.from(generateBobKeyPair.public_key, 'hex');
         const network = networks[args.network];
+
         return cbk(null, fromPublicKeyBuffer(bobKey, network).getAddress());
       case 'btcd':
       case 'ltcd':
@@ -104,7 +104,6 @@ module.exports = (args, cbk) => {
       'spawnChainDaemon',
       ({generateBobKeyPair, mineToAddress}, cbk) =>
     {
-
       return generateChainBlocks({
         address: mineToAddress,
         daemon: args.daemon,
