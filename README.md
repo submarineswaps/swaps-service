@@ -42,6 +42,11 @@ required to run bcoin bcoinregtest tests.
 
     npm run bcoin_bcoinregtest // bcoinregtest tests
 
+A [bitcoind installation](https://bitcoin.org/en/full-node#what-is-a-full-node) is
+required to run bitcoind_regtest tests.
+
+    npm run bitcoind_regtest // bitcoind_regtest tests
+
 A [btcd installation](https://github.com/btcsuite/btcd#installation) is
 required to run btcd regtest tests.
 
