@@ -61,6 +61,7 @@ module.exports = (args, cbk) => {
     mineToAddress: ['generateAliceKeyPair', ({generateAliceKeyPair}, cbk) => {
       switch (args.daemon) {
       case 'bcoin':
+      case "bitcoind":
         const aliceKey = Buffer.from(generateAliceKeyPair.public_key, 'hex');
         const network = networks[args.network];
 

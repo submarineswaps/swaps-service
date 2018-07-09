@@ -88,11 +88,11 @@ module.exports = ({cache, daemon, network, type}, cbk) => {
     mineToAddress: ['generateKeyPair', ({generateKeyPair}, cbk) => {
       switch (daemon) {
       case 'bcoin':
+      case "bitcoind":
         const key = Buffer.from(generateKeyPair.public_key, 'hex');
         const net = networks[network];
 
         return cbk(null, fromPublicKeyBuffer(key, net).getAddress());
-
       case 'btcd':
       case 'ltcd':
         return cbk();
