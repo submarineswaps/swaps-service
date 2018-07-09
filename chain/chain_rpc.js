@@ -8,11 +8,11 @@ let pauseOnErrorDate;
 
 /** Execute Chain RPC command
 
- {
-   cmd: <Chain RPC Command String>
-   network: <Network Name String>
-   [params]: <RPC Arguments Array>
- }
+  {
+    cmd: <Chain RPC Command String>
+    network: <Network Name String>
+    [params]: <RPC Arguments Array>
+  }
 
  @returns via cbk
  <Result Object>
