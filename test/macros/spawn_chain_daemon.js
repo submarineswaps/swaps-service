@@ -2,8 +2,8 @@ const removeDir = require('rimraf');
 const uuidv4 = require('uuid/v4');
 
 const bcoinTypeDaemon = require('./bcoin_type_daemon');
-const btcsuiteTypeDaemon = require('./btcsuite_type_daemon');
 const bitcoincoreTypeDaemon = require('./bitcoincore_type_daemon')
+const btcsuiteTypeDaemon = require('./btcsuite_type_daemon');
 /** Spawn a chain daemon for testing on regtest
 
   This method will also listen for uncaught exceptions and stop the daemon
