@@ -48,6 +48,7 @@
   "name": "swaps-service",
   "scripts": {
     "bcoin_bcoinregtest": "tap test/bcoin_bcoinregtest/*.js",
+    "bitcoind_regtest": "tap test/core_regtest/*.js",
     "btcd_regtest": "tap test/btcd_regtest/*.js",
     "ltcd_ltcregtest": "tap test/ltcd_regtest/*.js",
     "test": "tap test/*.js"
