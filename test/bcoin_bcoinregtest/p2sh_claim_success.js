@@ -2,8 +2,8 @@ const {test} = require('tap');
 
 const {claimSuccess} = require('./../macros');
 
-const daemon = 'btcd';
-const network = 'regtest';
+const daemon = 'bcoin';
+const network = 'bcoinregtest';
 const swapType = 'p2sh';
 
 [false, true].forEach(isPkHash => {

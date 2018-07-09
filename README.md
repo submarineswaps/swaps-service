@@ -37,13 +37,18 @@ Configure environment variables as necessary.
 
     npm t // Unit tests
 
+A [bcoin installation](https://github.com/bcoin-org/bcoin#install) is
+required to run bcoin bcoinregtest tests.
+
+    npm run bcoin_bcoinregtest // bcoinregtest tests
+
 A [btcd installation](https://github.com/btcsuite/btcd#installation) is
-required to run regtest tests.
+required to run btcd regtest tests.
 
     npm run btcd_regtest // regtest tests
 
 A [ltcd installation](https://github.com/ltcsuite/ltcd#installation) is
-required to run ltcregtest tests.
+required to run ltcd ltcregtest tests.
 
-    npm run ltcd_regtest // ltcregtest tests
+    npm run ltcd_ltcregtest // ltcregtest tests
 

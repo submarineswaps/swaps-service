@@ -3,12 +3,12 @@ const {test} = require('tap');
 const {refundSuccess} = require('./../macros');
 
 [false, true].forEach(isRefundToPublicKeyHash => {
-  test(`p2sh refund test: is pkhash? ${isRefundToPublicKeyHash}`, t => {
+  test(`p2wsh refund test: is pkhash? ${isRefundToPublicKeyHash}`, t => {
     return refundSuccess({
-      daemon: 'btcd',
+      daemon: 'bcoin',
       is_refund_to_public_key_hash: isRefundToPublicKeyHash,
-      network: 'regtest',
-      swap_type: 'p2sh',
+      network: 'bcoinregtest',
+      swap_type: 'p2wsh',
     },
     err => {
       if (!!err) {

@@ -52,16 +52,22 @@ module.exports = ({key, network, preimage, transaction, utxos}) => {
     throw new Error('ExpectedLegacyUtxosForSigning');
   }
 
+  const forkModifier = networks[network].fork_id || null;
   const tx = fromHex(transaction);
   const signingKey = fromWIF(key, networks[network]);
 
   return utxos.map(({redeem, vin}) => {
     const redeemScript = Buffer.from(redeem, 'hex');
+    const sigHashFlag = SIGHASH_ALL | (forkModifier || SIGHASH_ALL);
 
-    const sigHash = tx.hashForSignature(vin, redeemScript, SIGHASH_ALL);
+    const sigHash = tx.hashForSignature(vin, redeemScript, sigHashFlag);
+
+    const sig = signingKey.sign(sigHash);
+
+    const signature = Buffer.concat([sig.toDER(), Buffer.from([sigHashFlag])]);
 
     const inputScriptElements = [
-      signingKey.sign(sigHash).toScriptSignature(SIGHASH_ALL),
+      signature,
       Buffer.from(preimage, 'hex'),
       OP_PUSHDATA1,
       redeemScript

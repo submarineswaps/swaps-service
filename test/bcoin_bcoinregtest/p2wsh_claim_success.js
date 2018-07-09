@@ -2,16 +2,14 @@ const {test} = require('tap');
 
 const {claimSuccess} = require('./../macros');
 
-const network = 'ltcregtest';
-const swapType = 'p2sh';
-
 [false, true].forEach(isPkHash => {
   // Make sure that we can swap with a pkhash
-  test(`perform swap: pkhash: ${isPkHash}, ${swapType} swap address`, t => {
+  test(`perform swap: pkhash: ${isPkHash}, p2wsh swap address`, t => {
     return claimSuccess({
-      network,
+      daemon: 'bcoin',
       is_refund_to_public_key_hash: isPkHash,
-      swap_type: swapType,
+      network: 'bcoinregtest',
+      swap_type: 'p2wsh',
     },
     testErr => {
       if (!!testErr) {

@@ -1,16 +1,8 @@
 const removeDir = require('rimraf');
-const {spawn} = require('child_process');
 const uuidv4 = require('uuid/v4');
 
-const chainServer = require('./../../chain/conf/chain_server_defaults');
-const credentialsForNetwork = require('./../../chain/credentials_for_network');
-const {ECPair} = require('./../../tokenslib');
-const errCode = require('./../../chain/conf/error_codes');
-const {networks} = require('./../../tokenslib');
-
-const {fromPublicKeyBuffer} = ECPair;
-const rpcServerReady = /RPC.server.listening/;
-const unableToStartServer = /Unable.to.start.server/;
+const bcoinTypeDaemon = require('./bcoin_type_daemon');
+const btcsuiteTypeDaemon = require('./btcsuite_type_daemon');
 
 /** Spawn a chain daemon for testing on regtest
 
@@ -18,6 +10,7 @@ const unableToStartServer = /Unable.to.start.server/;
   before the process dies.
 
   {
+    daemon: <Daemon Type String>
     mining_public_key: <Mining Public Key Hex String>
     network: <Network Name String>
   }
@@ -28,54 +21,50 @@ const unableToStartServer = /Unable.to.start.server/;
   }
 */
 module.exports = (args, cbk) => {
-  if (!args.mining_public_key) {
-    return cbk([400, 'ExpectedPublicKeyForMiningRewardsPayout']);
+  if (!args.daemon) {
+    return cbk([400, 'ExpectedDaemonTypeToSpawn']);
   }
 
   if (!args.network) {
     return cbk([400, 'ExpectedNetworkTypeForChainDaemon']);
   }
 
-  let credentials;
+  let daemon;
+  const dir = `/tmp/${uuidv4()}`;
 
-  try {
-    credentials = credentialsForNetwork({network: args.network});
-  } catch (e) {
-    return cbk([500, 'CredentialsLookupFailure', e]);
+  switch (args.daemon) {
+  case 'bcoin':
+    daemon = bcoinTypeDaemon({dir, network: args.network}, cbk);
+    break;
+
+  case 'btcd':
+  case 'ltcd':
+    daemon = btcsuiteTypeDaemon({
+      dir,
+      daemon: args.daemon,
+      mining_public_key: args.mining_public_key,
+      network: args.network,
+    },
+    cbk);
+    break;
+
+  default:
+    return cbk([400, 'UnknownDaemonType', args.daemon]);
   }
 
-  const miningKey = Buffer.from(args.mining_public_key, 'hex');
-  const network = networks[args.network];
-  const tmpDir = `/tmp/${uuidv4()}`;
-
-  const daemon = spawn(chainServer[args.network].executable, [
-    '--datadir', tmpDir,
-    '--logdir', tmpDir,
-    '--miningaddr', fromPublicKeyBuffer(miningKey, network).getAddress(),
-    '--notls',
-    '--regtest',
-    '--relaynonstd',
-    '--rpclisten', `${credentials.host}:${credentials.port}`,
-    '--rpcpass', credentials.pass,
-    '--rpcuser', credentials.user,
-    '--txindex',
-  ]);
-
-  daemon.stderr.on('data', data => console.log(`${data}`));
-
-  daemon.stdout.on('data', data => {
-    if (unableToStartServer.test(`${data}`)) {
-      return cbk([errCode.local_err, 'SpawnDaemonFailure']);
+  daemon.stderr.on('data', data => {
+    if (/mandatory.script.verify.flag/gim.test(data+'')) {
+      return;
     }
 
-    if (rpcServerReady.test(`${data}`)) {
-      return cbk(null, {is_ready: true});
+    if (/txn.already.in.mempool/gim.test(data+'')) {
+      return;
     }
 
-    return;
+    console.log(`${data}`)
   });
 
-  daemon.on('close', code => removeDir(tmpDir, () => {}));
+  daemon.on('close', code => removeDir(dir, () => {}));
 
   process.on('uncaughtException', err => {
     console.log('CHAIN ERROR', err);

@@ -11,11 +11,12 @@ const txConfirmationCount = 6;
 /** Mine a transaction into a block
 
   {
+    [address]: <Address to Mine To String>
     network: <Network Name String>
     transaction: <Transaction Hex String>
   }
 */
-module.exports = ({network, transaction}, cbk) => {
+module.exports = ({address, network, transaction}, cbk) => {
   return asyncAuto({
     // Check if the transaction is already broadcast
     getTransaction: cbk => {
@@ -39,6 +40,7 @@ module.exports = ({network, transaction}, cbk) => {
     // Generate blocks to confirm the transaction into a block
     generateBlock: ['broadcastTransaction', ({}, cbk) => {
       return generateChainBlocks({
+        address,
         network,
         count: txConfirmationCount,
       },

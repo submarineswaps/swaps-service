@@ -5,12 +5,14 @@ const {broadcastTransaction} = require('./../../chain');
 const {claimTransaction} = require('./../../swaps');
 const {chainConstants} = require('./../../chain');
 const {clearCache} = require('./../../cache');
+const {ECPair} = require('./../../tokenslib');
 const {findSwapTransaction} = require('./../../service');
 const {generateChainBlocks} = require('./../../chain');
 const generateInvoice = require('./generate_invoice');
 const {generateKeyPair} = require('./../../chain');
 const {getCurrentHeight} = require('./../../chain'); 
 const mineTransaction = require('./mine_transaction');
+const {networks} = require('./../../tokenslib');
 const sendChainTokensTransaction = require('./send_chain_tokens_tx');
 const spawnChainDaemon = require('./spawn_chain_daemon');
 const {stopChainDaemon} = require('./../../chain');
@@ -19,6 +21,7 @@ const {swapScriptInTransaction} = require('./../../swaps');
 
 const blockSearchDepth = 9;
 const coinbaseIndex = chainConstants.coinbase_tx_index;
+const {fromPublicKeyBuffer} = ECPair;
 const maturityBlockCount = chainConstants.maturity_block_count;
 const staticFeePerVirtualByte = 100;
 const swapTimeoutBlockCount = 200;
@@ -31,6 +34,7 @@ const swapTimeoutBlockCount = 200;
   : Alice sweeps the funds into her address
 
   {
+    daemon: <Daemon Type String>
     [is_refund_to_public_key_hash]: <Is Refund to PKHash Flow Bool>
     network: <Network Name String>
     swap_type: <Swap Address Type String>
@@ -68,15 +72,41 @@ module.exports = (args, cbk) => {
     // We'll bring up a fake chain for this test, with Bob getting the rewards
     spawnChainDaemon: ['generateBobKeyPair', ({generateBobKeyPair}, cbk) => {
       return spawnChainDaemon({
+        daemon: args.daemon,
         network: args.network,
         mining_public_key: generateBobKeyPair.public_key,
       },
       cbk);
     }],
 
+    // Determine mine-to-address
+    mineToAddress: ['generateBobKeyPair', ({generateBobKeyPair}, cbk) => {
+      switch (args.daemon) {
+      case 'bcoin':
+        const bobKey = Buffer.from(generateBobKeyPair.public_key, 'hex');
+        const network = networks[args.network];
+
+        return cbk(null, fromPublicKeyBuffer(bobKey, network).getAddress());
+
+      case 'btcd':
+      case 'ltcd':
+        return cbk();
+
+      default:
+        return cbk([400, 'UnexpectedDaemonForGeneration', args.daemon]);
+      }
+    }],
+
     // The chain needs to progress to maturity for Bob to spend his rewards
-    generateToMaturity: ['spawnChainDaemon', ({}, cbk) => {
+    generateToMaturity: [
+      'generateBobKeyPair',
+      'mineToAddress',
+      'spawnChainDaemon',
+      ({generateBobKeyPair, mineToAddress}, cbk) =>
+    {
       return generateChainBlocks({
+        address: mineToAddress,
+        daemon: args.daemon,
         network: args.network,
         count: maturityBlockCount,
       },
@@ -138,8 +168,13 @@ module.exports = (args, cbk) => {
     }],
 
     // The chain progresses and confirms the swap funding
-    mineFundingTx: ['fundSwapAddress', ({fundSwapAddress}, cbk) => {
+    mineFundingTx: [
+      'fundSwapAddress',
+      'mineToAddress',
+      ({fundSwapAddress, mineToAddress}, cbk) =>
+    {
       return mineTransaction({
+        address: mineToAddress,
         network: args.network,
         transaction: fundSwapAddress.transaction,
       },
@@ -309,10 +344,17 @@ module.exports = (args, cbk) => {
     }],
 
     // Alice's rewarded coins are confirmed back to an address she controls
-    mineClaimTransaction: ['claimTransaction', ({claimTransaction}, cbk) => {
-      const {transaction} = claimTransaction;
-
-      return mineTransaction({network: args.network, transaction}, cbk);
+    mineClaimTransaction: [
+      'claimTransaction',
+      'mineToAddress',
+      ({claimTransaction, mineToAddress}, cbk) =>
+    {
+      return mineTransaction({
+        address: mineToAddress,
+        network: args.network,
+        transaction: claimTransaction.transaction,
+      },
+      cbk);
     }],
   },
   (err, res) => {
