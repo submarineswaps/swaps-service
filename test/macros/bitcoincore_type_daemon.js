@@ -41,18 +41,17 @@ module.exports = ({dir, network}, cbk) => {
   }
 
   const daemon = spawn('bitcoind', [
-    '-conf=""',
-    `-datadir=${dir}`,
-    '-debuglogfile=debug.log',
-    '-regtest=1',
-    `-rpcport=${credentials.port}`,
-    `-rpcpassword=${credentials.pass}`,
-    `-rpcuser=${credentials.user}`,
-    '-txindex=1',
-    '-printtoconsole=1',
-    '-minrelaytxfee=0',
     '-blockmintxfee=0',
-
+    '-conf=""',
+    '-debuglogfile=debug.log',
+    '-minrelaytxfee=0',
+    '-printtoconsole=1',
+    '-regtest=1',
+    '-txindex=1',
+    `-datadir=${dir}`,
+    `-rpcpassword=${credentials.pass}`,
+    `-rpcport=${credentials.port}`,
+    `-rpcuser=${credentials.user}`,
   ]);
 
   daemon.stdout.on('data', data => {
