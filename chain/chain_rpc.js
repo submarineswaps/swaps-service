@@ -53,16 +53,12 @@ module.exports = ({cmd, network, params}, cbk) => {
       called = true;
 
       if (!response) {
-        try {
-          return chainRpc.call(cmd, niceParams, (err, response) => {
-            if (!response) {
-              return cbk([503, 'ExpectedNonEmptyChainResponse']);
-            }
-            return cbk(null, response.result);
-          });
-        } catch (e) {
-          return cbk([500, 'FailedToCallChainRpc', e]);
-        }
+        return chainRpc.call(cmd, niceParams, (err, response) => {
+          if (!response) {
+            return cbk([503, 'ExpectedNonEmptyChainResponse']);
+          }
+          return cbk(null, response.result);
+        });
       }
 
       return cbk(null, response.result);
