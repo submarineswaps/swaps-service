@@ -5,10 +5,6 @@
     "executable": "bcoin",
     "rpc_api": "x:pass@127.0.0.1:18335"
   },
-  "bitcoincoreregtest":{
-    "executable":"bitcoind",
-    "rpc_api":"user:pass@127.0.0.1:18333"
-  },
   "ltcregtest": {
     "executable": "ltcd",
     "rpc_api": "user:pass@127.0.0.1:19332"

@@ -6,7 +6,7 @@ test('the block scanner picks up a claimed swap', t => {
   return scanForSwap({
     cache: 'memory',
     daemon: 'bitcoind',
-    network: 'bitcoincoreregtest',
+    network: 'regtest',
     type: 'claim',
   },
   err => {
