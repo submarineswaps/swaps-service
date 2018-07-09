@@ -32,17 +32,6 @@ module.exports = ({dir, network}, cbk) => {
     return cbk([400, 'ExpectedNetworkNameForDaemon']);
   }
 
-  let networkName;
-
-  switch (network) {
-    case 'bitcoincoreregtest':
-      networkName = 'regtest';
-      break;
-
-    default:
-      return cbk([400, 'UnexpectedNetworkForDaemon', network]);
-  }
-
   let credentials;
 
   try {

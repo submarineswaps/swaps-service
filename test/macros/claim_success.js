@@ -47,6 +47,7 @@ module.exports = (args, cbk) => {
       try {
         return cbk(null, generateKeyPair({network: args.network}));
       } catch (e) {
+        console.log(e);
         return cbk([0, 'ExpectedGeneratedKeyPair', e]);
       }
     },

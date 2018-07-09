@@ -8,7 +8,7 @@ const {claimSuccess} = require('./../macros');
     return claimSuccess({
       daemon: 'bitcoind',
       is_refund_to_public_key_hash: isPkHash,
-      network: 'bitcoincoreregtest',
+      network: 'regtest',
       swap_type: 'p2wsh',
     },
     testErr => {

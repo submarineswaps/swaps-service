@@ -7,7 +7,7 @@ const {refundSuccess} = require('./../macros');
     return refundSuccess({
       daemon: 'bitcoind',
       is_refund_to_public_key_hash: isRefundToPublicKeyHash,
-      network: 'bitcoincoreregtest',
+      network: 'regtest',
       swap_type: 'p2wsh',
     },
     err => {

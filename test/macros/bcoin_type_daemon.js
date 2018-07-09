@@ -31,7 +31,6 @@ module.exports = ({dir, network}, cbk) => {
 
   switch (network) {
   case 'bcoinregtest':
-  case 'bitcoincoreregtest':
     networkName = 'regtest';
     break;
 

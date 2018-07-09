@@ -3,7 +3,7 @@ const {test} = require('tap');
 const {claimSuccess} = require('./../macros');
 
 const daemon = 'bitcoind';
-const network = 'bitcoincoreregtest';
+const network = 'regtest';
 const swapType = 'p2sh';
 
 [false, true].forEach(isPkHash => {
