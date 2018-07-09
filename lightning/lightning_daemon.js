@@ -22,7 +22,6 @@ module.exports = ({}) => {
       macaroon: SSS_LND_MACAROON,
     });
   } catch (e) {
-    console.log(e);
     throw new Error('FailedToInitializedLightningGrpcApi');
   }
 };
