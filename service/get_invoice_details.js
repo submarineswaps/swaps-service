@@ -80,6 +80,11 @@ module.exports = ({cache, invoice, network}, cbk) => {
       }
     }],
 
+    // Get the chain tip for the invoice's network
+    getInvoiceChainTip: ['parsedInvoice', ({parsedInvoice}, cbk) => {
+      return getRecentChainTip({cache, network: parsedInvoice.network}, cbk);
+    }],
+
     // Figure out what it will cost to do this swap
     getSwapFee: ['parsedInvoice', ({parsedInvoice}, cbk) => {
       const to = parsedInvoice.network;
@@ -121,6 +126,7 @@ module.exports = ({cache, invoice, network}, cbk) => {
     checkPayable: [
       'getChainTip',
       'getFeeRate',
+      'getInvoiceChainTip',
       'getPending',
       'getRoutes',
       'getSwapFee',
@@ -129,6 +135,7 @@ module.exports = ({cache, invoice, network}, cbk) => {
       ({
         getChainTip,
         getFeeRate,
+        getInvoiceChainTip,
         getPending,
         getRoutes,
         getSwapFee,
@@ -143,7 +150,9 @@ module.exports = ({cache, invoice, network}, cbk) => {
           claim_window: swapParams.claim_window,
           current_height: getChainTip.height,
           destination: parsedInvoice.destination,
+          destination_height: getInvoiceChainTip.height,
           expires_at: parsedInvoice.expires_at,
+          invoice_network: parsedInvoice.network,
           pending_channels: getPending.pending_channels,
           refund_height: getChainTip.height + swapParams.timeout,
           required_confirmations: swapParams.funding_confs,

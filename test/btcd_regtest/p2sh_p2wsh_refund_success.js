@@ -5,6 +5,7 @@ const {refundSuccess} = require('./../macros');
 [false, true].forEach(isRefundToPublicKeyHash => {
   test(`p2sh p2wsh refund test: is pkhash? ${isRefundToPublicKeyHash}`, t => {
     return refundSuccess({
+      daemon: 'btcd',
       is_refund_to_public_key_hash: isRefundToPublicKeyHash,
       network: 'regtest',
       swap_type: 'p2sh_p2wsh',

@@ -7,12 +7,14 @@ const {broadcastTransaction} = require('./../../chain');
 const {claimTransaction} = require('./../../swaps');
 const {chainConstants} = require('./../../chain');
 const {clearCache} = require('./../../cache');
+const {ECPair} = require('./../../tokenslib');
 const {generateChainBlocks} = require('./../../chain');
 const generateInvoice = require('./generate_invoice');
 const {generateKeyPair} = require('./../../chain');
 const {getCurrentHeight} = require('./../../chain');
 const {getDetectedSwaps} = require('./../../pool');
 const mineTransaction = require('./mine_transaction');
+const {networks} = require('./../../tokenslib');
 const {refundTransaction} = require('./../../swaps');
 const sendChainTokensTransaction = require('./send_chain_tokens_tx');
 const serverSwapKeyPair= require('./../../service/server_swap_key_pair');
@@ -24,6 +26,7 @@ const {Transaction} = require('./../../tokenslib');
 const {watchSwapOutput} = require('./../../scan');
 
 const coinbaseIndex = chainConstants.coinbase_tx_index;
+const {fromPublicKeyBuffer} = ECPair;
 const maturityBlockCount = chainConstants.maturity_block_count;
 const maxKeyIndex = 4e8;
 const minKeyIndex = 0;
@@ -34,11 +37,12 @@ const swapTimeoutBlockCount = 2;
 
   {
     cache: <Cache Type String>
+    daemon: <Daemon Type String>
     network: <Network Name String>
     type: <Resolution Type String> 'claim|refund'
   }
 */
-module.exports = ({cache, network, type}, cbk) => {
+module.exports = ({cache, daemon, network, type}, cbk) => {
   let scanner;
 
   return asyncAuto({
@@ -80,9 +84,28 @@ module.exports = ({cache, network, type}, cbk) => {
       cbk);
     }],
 
+    // Determine mine-to-address
+    mineToAddress: ['generateKeyPair', ({generateKeyPair}, cbk) => {
+      switch (daemon) {
+      case 'bcoin':
+        const key = Buffer.from(generateKeyPair.public_key, 'hex');
+        const net = networks[network];
+
+        return cbk(null, fromPublicKeyBuffer(key, net).getAddress());
+
+      case 'btcd':
+      case 'ltcd':
+        return cbk();
+
+      default:
+        return cbk([400, 'UnexpectedDaemonForGeneration', daemon]);
+      }
+    }],
+
     // Spin up a chain daemon to generate blocks
     spawnChainDaemon: ['generateKeyPair', ({generateKeyPair}, cbk) => {
       return spawnChainDaemon({
+        daemon,
         network,
         mining_public_key: generateKeyPair.public_key,
       },
@@ -105,11 +128,13 @@ module.exports = ({cache, network, type}, cbk) => {
     // The chain needs to progress to maturity for spending purposes
     generateToMaturity: [
       'initializeScanner',
+      'mineToAddress',
       'spawnChainDaemon',
-      ({}, cbk) =>
+      ({mineToAddress}, cbk) =>
     {
       return generateChainBlocks({
         network,
+        address: mineToAddress,
         count: maturityBlockCount,
       },
       cbk);
@@ -252,12 +277,14 @@ module.exports = ({cache, network, type}, cbk) => {
     confirmFunding: [
       'broadcastFunding',
       'fundingTransaction',
+      'mineToAddress',
       'waitForMempoolSwap',
-      ({fundingTransaction}, cbk) =>
+      ({fundingTransaction, mineToAddress}, cbk) =>
     {
+      const address = mineToAddress;
       const {transaction} = fundingTransaction;
 
-      return mineTransaction({network, transaction}, cbk);
+      return mineTransaction({address, network, transaction}, cbk);
     }],
 
     // Make sure there are block swap announcements
@@ -455,10 +482,15 @@ module.exports = ({cache, network, type}, cbk) => {
     }],
 
     // Mine resolution transaction into a block
-    confirmResolution: ['resolutionInMempool', ({resolutionTx}, cbk) => {
+    confirmResolution: [
+      'mineToAddress',
+      'resolutionInMempool',
+      ({mineToAddress, resolutionTx}, cbk) =>
+    {
+      const address = mineToAddress;
       const transaction = resolutionTx;
 
-      return mineTransaction({network, transaction}, cbk);
+      return mineTransaction({address, network, transaction}, cbk);
     }],
 
     // Get the detected swap elements from the pool

@@ -161,6 +161,12 @@ App.checkSwap = ({button, id, quote}) => {
     swap_key_index: App.swaps[id].swap_key_index,
   },
   (err, res) => {
+    if (!!err && err.message === 'Gone') {
+      quote.find('.failure').collapse('show');
+
+      return;
+    }
+
     if (!!App.swaps[id].is_completed) {
       return;
     }

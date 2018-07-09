@@ -3,9 +3,11 @@
 
   "coinbase_tx_index": 0,
   "compressed_public_key_size": 33,
+  "dust_denominator": 3,
   "ecdsa_sig_max_byte_length": 72,
   "maturity_block_count": 432,
   "min_sequence_value": 0,
+  "p2sh_scriptpub_byte_length": 23,
   "sequence_byte_length": 4,
   "short_push_data_length": 1,
   "witness_byte_discount_denominator": 4

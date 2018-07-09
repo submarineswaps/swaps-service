@@ -4,6 +4,7 @@
   "createAddress": "getnewaddress",
   "estimateSmartFee": "estimatesmartfee",
   "generate": "generate",
+  "generateToAddress": "generatetoaddress",
   "getBestBlockHash": "getbestblockhash",
   "getBlock": "getblock",
   "getBlockCount": "getblockcount",

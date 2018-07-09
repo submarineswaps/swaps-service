@@ -4,11 +4,13 @@ const addressForPublicKey = require('./address_for_public_key');
 const {broadcastTransaction} = require('./../../chain');
 const {clearCache} = require('./../../cache');
 const {chainConstants} = require('./../../chain');
+const {ECPair} = require('./../../tokenslib');
 const {generateChainBlocks} = require('./../../chain');
 const generateInvoice = require('./generate_invoice');
 const {generateKeyPair} = require('./../../chain');
 const {getCurrentHeight} = require('./../../chain');
 const mineTransaction = require('./mine_transaction');
+const {networks} = require('./../../tokenslib');
 const {refundTransaction} = require('./../../swaps');
 const sendChainTokensTransaction = require('./send_chain_tokens_tx');
 const spawnChainDaemon = require('./spawn_chain_daemon');
@@ -16,6 +18,7 @@ const {stopChainDaemon} = require('./../../chain');
 const {swapAddress} = require('./../../swaps');
 const {swapScriptInTransaction} = require('./../../swaps');
 
+const {fromPublicKeyBuffer} = ECPair;
 const generateDelayMs = 2;
 const staticFeePerVirtualByte = 100;
 const swapTimeoutBlocks = 25;
@@ -27,6 +30,7 @@ const swapTimeoutBlocks = 25;
   Alice waits out the timeout and takes her tokens back.
 
   {
+    daemon: <Daemon Type String>
     network: <Network Name String>
     [is_refund_to_public_key_hash]: <Is Refund to PK Hash Bool> = false
     swap_type: <Swap Type String>
@@ -46,10 +50,29 @@ module.exports = (args, cbk) => {
     // Chain sync is started. Alice will get block rewards for use in deposit
     spawnChainDaemon: ['generateAliceKeyPair', (res, cbk) => {
       return spawnChainDaemon({
+        daemon: args.daemon,
         network: args.network,
         mining_public_key: res.generateAliceKeyPair.public_key,
       },
       cbk);
+    }],
+
+    // Determine mine-to-address
+    mineToAddress: ['generateAliceKeyPair', ({generateAliceKeyPair}, cbk) => {
+      switch (args.daemon) {
+      case 'bcoin':
+        const aliceKey = Buffer.from(generateAliceKeyPair.public_key, 'hex');
+        const network = networks[args.network];
+
+        return cbk(null, fromPublicKeyBuffer(aliceKey, network).getAddress());
+
+      case 'btcd':
+      case 'ltcd':
+        return cbk();
+
+      default:
+        return cbk([400, 'UnexpectedDaemonForGeneration', args.daemon]);
+      }
     }],
 
     // Bob generates a keypair for his claim output
@@ -71,8 +94,13 @@ module.exports = (args, cbk) => {
     }],
 
     // A bunch of blocks are made so Alice's rewards are mature
-    generateToMaturity: ['spawnChainDaemon', ({}, cbk) => {
+    generateToMaturity: [
+      'mineToAddress',
+      'spawnChainDaemon',
+      ({mineToAddress}, cbk) =>
+    {
       return generateChainBlocks({
+        address: mineToAddress,
         count: chainConstants.maturity_block_count,
         delay: generateDelayMs,
         network: args.network,
@@ -151,8 +179,13 @@ module.exports = (args, cbk) => {
     }],
 
     // The swap funding transaction is mined
-    mineFundingTx: ['fundSwapAddress', ({fundSwapAddress}, cbk) => {
+    mineFundingTx: [
+      'fundSwapAddress',
+      'mineToAddress',
+      ({fundSwapAddress, mineToAddress}, cbk) =>
+    {
       return mineTransaction({
+        address: mineToAddress,
         network: args.network,
         transaction: fundSwapAddress.transaction,
       },
@@ -228,8 +261,13 @@ module.exports = (args, cbk) => {
     }],
 
     // Bob never gets the preimage and claims his funds. Many blocks go by
-    generateTimeoutBlocks: ['mineFundingTx', ({}, cbk) => {
+    generateTimeoutBlocks: [
+      'mineFundingTx',
+      'mineToAddress',
+      ({mineToAddress}, cbk) =>
+    {
       return generateChainBlocks({
+        address: mineToAddress,
         count: swapTimeoutBlocks,
         network: args.network,
       },
@@ -266,8 +304,13 @@ module.exports = (args, cbk) => {
     }],
 
     // Mine the sweep transaction into a block
-    mineSweepTransaction: ['sweepTransaction', ({sweepTransaction}, cbk) => {
+    mineSweepTransaction: [
+      'mineToAddress',
+      'sweepTransaction',
+      ({mineToAddress, sweepTransaction}, cbk) =>
+    {
       return mineTransaction({
+        address: mineToAddress,
         network: args.network,
         transaction: sweepTransaction.transaction,
       },

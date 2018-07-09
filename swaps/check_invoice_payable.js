@@ -1,3 +1,7 @@
+const {ceil} = Math;
+const {floor} = Math;
+const {max} = Math;
+const {min} = Math;
 const {now} = Date;
 
 const {networkParameters} = require('./../chain');
@@ -21,8 +25,11 @@ const channelMinMargin = 1.01;
     claim_window: <Block Count Required to Sweep Claim Number>
     current_height: <Current Block Height Number>
     destination: <Invoice Destination Public Key Hex String>
+    destination_height: <Destination Current Block Height Number>
+    destination_network: <Destination Network Name String>
     expires_at: <Invoice Expires At ISO 8601 Date String>
     [funded_height]: <Expected/Existing Funded Block Height Number>
+    invoice_network: <Invoice Network Name String>
     network: <Network Name String>
     pending_channels: [{
       is_opening: <Channel Is In Opening State Bool>
@@ -58,8 +65,16 @@ module.exports = args => {
     throw new Error('ExpectedCurrentChainHeight');
   }
 
+  if (!args.destination_height) {
+    throw new Error('ExpectedDestinationChainHeight');
+  }
+
   if (!args.expires_at) {
     throw new Error('ExpectedInvoiceExpirationDate');
+  }
+
+  if (!args.invoice_network) {
+    throw new Error('ExpectedInvoiceNetworkName');
   }
 
   if (!args.network) {
@@ -92,7 +107,7 @@ module.exports = args => {
 
   const hasPendingChan = args.pending_channels
     .filter(n => !!n.is_opening)
-    .filter(n => n.local_balance > Math.ceil(args.tokens * channelMinMargin))
+    .filter(n => n.local_balance > ceil(args.tokens * channelMinMargin))
     .map(n => n.partner_public_key)
     .find(n => n === args.destination);
 
@@ -107,14 +122,22 @@ module.exports = args => {
 
   const chainHeight = args.current_height;
   const hasConfirmations = !!args.funded_height;
-  const maxRoutingFee = Math.max(...args.routes.map(({fee}) => fee));
-  const minRouteTimeout = Math.min(...args.routes.map(({timeout}) => timeout));
+  const maxRoutingFee = max(...args.routes.map(({fee}) => fee));
+  const minRouteTimeout = min(...args.routes.map(({timeout}) => timeout));
   const msPerBlock = networkParameters[args.network].ms_per_block;
+  const msPerDestBlock = networkParameters[args.invoice_network].ms_per_block;
 
   const blocksUntilRefund = args.refund_height - chainHeight;
   const fundedConfs = !hasConfirmations ? 0 : chainHeight - args.funded_height;
 
   const confsUntilFundingConfirmed = args.required_confirmations - fundedConfs;
+
+  const blockSpeedModifier = msPerBlock / msPerDestBlock;
+
+  const refundDistance = args.refund_height - args.current_height;
+  const routeFinalityDistance = minRouteTimeout - args.destination_height;
+
+  const relativeFinality = floor(routeFinalityDistance / blockSpeedModifier);
 
   // Are there too few blocks remaining to safely execute a claim sweep?
   if (blocksUntilRefund < args.claim_window) {
@@ -122,7 +145,7 @@ module.exports = args => {
   }
 
   // Does the payment timeout happen too close to the refund height?
-  if (minRouteTimeout - args.refund_height < args.claim_window) {
+  if (relativeFinality - refundDistance < args.claim_window) {
     throw new Error('RouteTimeoutHeightTooClose');
   }
 

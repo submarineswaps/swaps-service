@@ -1,11 +1,9 @@
 const asyncAuto = require('async/auto');
 
+const {feeForSwap} = require('./../swaps');
 const getExchangeRates = require('./get_exchange_rates');
 const {getRecentFeeRate} = require('./../blocks');
 const {returnResult} = require('./../async-util');
-
-const claimTxVSize = 150;
-const rateDivisor = 1e6;
 
 /** Given swap information, determine the number of tokens needed for a fee
 
@@ -55,9 +53,8 @@ module.exports = ({cache, network, to, tokens}, cbk) => {
       return getExchangeRates({cache, networks: [network, to]}, cbk);
     }],
 
-    // Final fee tokens necessary to complete the swap
-    feeTokens: ['getChainFee', 'getSwapRates', ({getChainFee, getSwapRates}, cbk) => {
-      const claimChainFee = getChainFee.fee_tokens_per_vbyte * claimTxVSize;
+    // Mapped fee rates to networks
+    rates: ['getSwapRates', ({getSwapRates}, cbk) => {
       const rates = {};
 
       getSwapRates.rates.forEach(({cents, fees, network}) => {
@@ -78,17 +75,30 @@ module.exports = ({cache, network, to, tokens}, cbk) => {
         return cbk([500, 'ExpectedBaseFeeRate', rates[network]]);
       }
 
-      const conversionRate = rates[to].cents / rates[network].cents;
+      return cbk(null, {
+        base_rate: swapFee.base,
+        rate_destination: rates[to].cents,
+        rate_source: rates[network].cents,
+        swap_rate: swapFee.rate,
+      });
+    }],
 
-      const baseFee = swapFee.base + claimChainFee;
-      const feePercentage = swapFee.rate / rateDivisor;
-      const convertedTokens = Math.round(tokens * conversionRate);
+    // Final fee tokens necessary to complete the swap
+    feeTokens: ['getChainFee', 'rates', ({getChainFee, rates}, cbk) => {
+      try {
+        const fees = feeForSwap({
+          base_rate: rates.base_rate,
+          fee_tokens_per_vbyte: getChainFee.fee_tokens_per_vbyte,
+          rate_destination: rates.rate_destination,
+          rate_source: rates.rate_source,
+          send_tokens: tokens,
+          swap_rate: rates.swap_rate,
+        });
 
-      const feeTokens = baseFee + (convertedTokens * feePercentage);
-
-      const fee = Math.round(feeTokens);
-
-      return cbk(null, {fee, tokens: convertedTokens + fee});
+        return cbk(null, {fee: fees.fee, tokens: fees.tokens});
+      } catch (e) {
+        return cbk([500, 'FailedToCalculateFeeForSwap', e]);
+      }
     }],
   },
   returnResult({of: 'feeTokens'}, cbk));

@@ -47,8 +47,9 @@
   "main": "server.js",
   "name": "swaps-service",
   "scripts": {
+    "bcoin_bcoinregtest": "tap test/bcoin_bcoinregtest/*.js",
     "btcd_regtest": "tap test/btcd_regtest/*.js",
-    "ltcd_regtest": "tap test/ltcd_regtest/*.js",
+    "ltcd_ltcregtest": "tap test/ltcd_regtest/*.js",
     "test": "tap test/*.js"
   },
   "version": "1.0.0"

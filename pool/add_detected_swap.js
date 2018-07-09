@@ -6,7 +6,7 @@ const {addJsonToCachedSet} = require('./../cache');
 const {returnResult} = require('./../async-util');
 const {swapScriptDetails} = require('./../swaps');
 
-const cacheSwapElementMs = 1000 * 60 * 60 * 24 * 7;
+const cacheSwapElementMs = 1000 * 60 * 60 * 3;
 const elementCount = 1; // Number of elements that can be added per call
 
 /** Add a detected swap element to the pool set

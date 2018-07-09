@@ -48,7 +48,7 @@ const timeoutBlockCount = 9;
 
   {}
 */
-module.exports = (args, cbk) => {
+module.exports = ({}, cbk) => {
   return asyncAuto({
     // Determine which network to run the test against
     promptForNetwork: cbk => promptForInput({
@@ -140,6 +140,7 @@ module.exports = (args, cbk) => {
 
       return spawnChainDaemon({
         network,
+        daemon: 'btcd',
         mining_public_key: generateAliceKeyPair.public_key,
       },
       cbk);

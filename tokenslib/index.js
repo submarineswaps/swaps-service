@@ -13,6 +13,7 @@ Object.keys(prefixes).forEach(chain => {
       public: parseInt(prefixes[chain].bip32_public_key, hex),
       private: parseInt(prefixes[chain].bip32_private_key, hex),
     },
+    fork_id: prefixes[chain].fork_id || null,
     messagePrefix: prefixes[chain].message,
     pubKeyHash: parseInt(prefixes[chain].pay_to_public_key_hash_address, hex),
     scriptHash: parseInt(prefixes[chain].pay_to_script_hash_address, hex),
