@@ -1,4 +1,5 @@
 const {spawn} = require('child_process');
+let fs = require('fs');
 
 const credentialsForNetwork = require('./../../chain/credentials_for_network');
 const rpcServerReady = /init message: Done loading/;
@@ -21,6 +22,10 @@ const rpcServerReady = /init message: Done loading/;
 module.exports = ({dir, network}, cbk) => {
   if (!dir) {
     return cbk([400, 'ExpectedDirectoryForDaemon']);
+  }
+
+  if (!fs.existsSync(dir)){
+    fs.mkdirSync(dir);
   }
 
   if (!network) {
