@@ -27,7 +27,6 @@ const notFound = -1;
   }
 */
 module.exports = ({network}) => {
-  console.log("Entering generate_key_pair.js");
   if (!network) {
     throw new Error('ExpectedNetwork');
   }
@@ -43,7 +42,6 @@ module.exports = ({network}) => {
 
   // A p2wpkh address is a bech32 encoded address
   const p2wpkhAddress = fromOutputScript(witnessOutput, networks[network]);
-
   return {
     p2pkh_address: keyPair.getAddress(),
     p2wpkh_address: p2wpkhAddress,
