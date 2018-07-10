@@ -14,9 +14,9 @@ let pauseOnErrorDate;
     [params]: <RPC Arguments Array>
   }
 
-  @returns via cbk
-  <Result Object>
-*/
+ @returns via cbk
+ <Result Object>
+ */
 module.exports = ({cmd, network, params}, cbk) => {
   if (!network) {
     return cbk([400, 'ExpectedNetwork']);
@@ -53,7 +53,12 @@ module.exports = ({cmd, network, params}, cbk) => {
       called = true;
 
       if (!response) {
-        return cbk([503, 'ExpectedNonEmptyChainResponse']);
+        return chainRpc.call(cmd, niceParams, (err, response) => {
+          if (!response) {
+            return cbk([503, 'ExpectedNonEmptyChainResponse']);
+          }
+          return cbk(null, response.result);
+        });
       }
 
       return cbk(null, response.result);
