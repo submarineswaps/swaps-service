@@ -1,8 +1,12 @@
 const {lightningDaemon} = require('ln-service');
 
-const {SSS_LND_GRPC_HOST} = process.env;
-const {SSS_LND_MACAROON} = process.env;
-const {SSS_LND_TLS_CERT} = process.env;
+const {SSS_LND_GRPC_HOST_BTC} = process.env;
+const {SSS_LND_MACAROON_BTC} = process.env;
+const {SSS_LND_TLS_CERT_BTC} = process.env;
+
+const {SSS_LND_GRPC_HOST_LTC} = process.env;
+const {SSS_LND_MACAROON_LTC} = process.env;
+const {SSS_LND_TLS_CERT_LTC} = process.env;
 
 /** Get the Lightning Network Daemon connection
 
@@ -14,13 +18,21 @@ const {SSS_LND_TLS_CERT} = process.env;
   @returns
   <LND GRPC API Object>
 */
-module.exports = ({}) => {
+module.exports = ({network}) => {
   try {
-    return lightningDaemon({
-      cert: SSS_LND_TLS_CERT,
-      host: SSS_LND_GRPC_HOST,
-      macaroon: SSS_LND_MACAROON,
-    });
+    if (network === "testnet") {
+      return lightningDaemon({
+        cert: SSS_LND_TLS_CERT_BTC,
+        host: SSS_LND_GRPC_HOST_BTC,
+        macaroon: SSS_LND_MACAROON_BTC,}
+      );
+    } else if (network === "ltctestnet"){
+      return lightningDaemon({
+        cert: SSS_LND_TLS_CERT_LTC,
+        host: SSS_LND_GRPC_HOST_LTC,
+        macaroon: SSS_LND_MACAROON_LTC,}
+      );
+    }
   } catch (e) {
     throw new Error('FailedToInitializedLightningGrpcApi');
   }
