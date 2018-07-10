@@ -8,9 +8,9 @@ const swapType = 'p2sh';
   // Make sure that we can swap with a pkhash
   test(`perform swap: pkhash: ${isPkHash}, ${swapType} swap address`, t => {
     return claimSuccess({
-      daemon: 'bcoin',
+      daemon: 'bcash',
       is_refund_to_public_key_hash: isPkHash,
-      network: 'bcoinregtest',
+      network: 'bcashregtest',
       swap_type: swapType,
     },
     testErr => {

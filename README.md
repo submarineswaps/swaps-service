@@ -37,6 +37,11 @@ Configure environment variables as necessary.
 
     npm t // Unit tests
 
+A [bcash installation](https://github.com/bcoin-org/bcash#install) is
+required to run bcash bcashregtest tests.
+
+    npm run bcash_bcashregtest // bcashregtest tests
+
 A [bcoin installation](https://github.com/bcoin-org/bcoin#install) is
 required to run bcoin bcoinregtest tests.
 

@@ -33,6 +33,7 @@ module.exports = (args, cbk) => {
   const dir = `/tmp/${uuidv4()}`;
 
   switch (args.daemon) {
+  case 'bcash':
   case 'bcoin':
     daemon = bcoinTypeDaemon({dir, network: args.network}, cbk);
     break;

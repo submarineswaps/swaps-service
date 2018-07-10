@@ -8,6 +8,7 @@ const {Transaction} = require('./../tokenslib');
 
 const {fromHex} = Transaction;
 const {fromWIF} = ECPair;
+const hexBase = 16;
 const {SIGHASH_ALL} = Transaction;
 
 /** Generate input scripts for legacy p2sh claim transaction inputs
@@ -19,6 +20,7 @@ const {SIGHASH_ALL} = Transaction;
     transaction: <Unsigned Transaction Hex String>
     utxos: [{
       redeem: <Redeem Script Hex String>
+      tokens: <Outpoint Tokens Value Number>
       vin: <Input Index Number>
     }]
   }
@@ -52,15 +54,22 @@ module.exports = ({key, network, preimage, transaction, utxos}) => {
     throw new Error('ExpectedLegacyUtxosForSigning');
   }
 
-  const forkModifier = networks[network].fork_id || null;
+  const forkModifier = parseInt(networks[network].fork_id || 0, hexBase);
   const tx = fromHex(transaction);
+  const sigHashAll = parseInt(SIGHASH_ALL, hexBase);
   const signingKey = fromWIF(key, networks[network]);
 
-  return utxos.map(({redeem, vin}) => {
+  return utxos.map(({redeem, tokens, vin}) => {
     const redeemScript = Buffer.from(redeem, 'hex');
-    const sigHashFlag = SIGHASH_ALL | (forkModifier || SIGHASH_ALL);
+    const sigHashFlag = sigHashAll | (forkModifier || sigHashAll);
 
-    const sigHash = tx.hashForSignature(vin, redeemScript, sigHashFlag);
+    let sigHash;
+
+    if (!!forkModifier) {
+      sigHash = tx.hashForWitnessV0(vin, redeemScript, tokens, sigHashFlag);
+    } else {
+      sigHash = tx.hashForSignature(vin, redeemScript, sigHashFlag);
+    }
 
     const sig = signingKey.sign(sigHash);
 
