@@ -2,8 +2,8 @@ const removeDir = require('rimraf');
 const uuidv4 = require('uuid/v4');
 
 const bcoinTypeDaemon = require('./bcoin_type_daemon');
+const bitcoincoreTypeDaemon = require('./bitcoincore_type_daemon')
 const btcsuiteTypeDaemon = require('./btcsuite_type_daemon');
-
 /** Spawn a chain daemon for testing on regtest
 
   This method will also listen for uncaught exceptions and stop the daemon
@@ -37,18 +37,24 @@ module.exports = (args, cbk) => {
   case 'bcoin':
     daemon = bcoinTypeDaemon({dir, network: args.network}, cbk);
     break;
-
   case 'btcd':
   case 'ltcd':
     daemon = btcsuiteTypeDaemon({
-      dir,
-      daemon: args.daemon,
-      mining_public_key: args.mining_public_key,
-      network: args.network,
-    },
-    cbk);
+        dir,
+        daemon: args.daemon,
+        mining_public_key: args.mining_public_key,
+        network: args.network,
+      },
+      cbk);
     break;
-
+  case 'bitcoind':
+    daemon = bitcoincoreTypeDaemon({
+        dir,
+        daemon: args.daemon,
+        network: args.network,
+      },
+      cbk);
+    break;
   default:
     return cbk([400, 'UnknownDaemonType', args.daemon]);
   }
