@@ -10,6 +10,7 @@ const p2shScriptPubByteLength = chainConstants.p2sh_scriptpub_byte_length;
     utxos: [{
       redeem: <Redeem Script Hex String>
       script: <Output Script Hex String>
+      tokens: <Outpoint Tokens Number>
     }]
   }
 
@@ -30,7 +31,7 @@ module.exports = ({network, utxos}) => {
     throw new Error('ExpectedUtxosArrayToFilterForLegacyScriptHashUtxos');
   }
 
-  const legacy = utxos.map(({redeem, script}, vin) => {
+  const legacy = utxos.map(({redeem, script, tokens}, vin) => {
     if (Buffer.from(script, 'hex').length !== p2shScriptPubByteLength) {
       return;
     }
@@ -40,7 +41,7 @@ module.exports = ({network, utxos}) => {
     switch (script) {
     // Standard P2SH output script, no witness
     case (scriptDetails.p2sh_output_script):
-      return {redeem, vin};
+      return {redeem, tokens, vin};
 
     case (scriptDetails.p2sh_p2wsh_output_script):
       return null;

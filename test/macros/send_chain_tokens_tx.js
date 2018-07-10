@@ -1,8 +1,16 @@
-const {ECPair} = require('./../../tokenslib');
-const {networks} = require('./../../tokenslib');
-const {TransactionBuilder} = require('./../../tokenslib');
+const {encode} = require('varuint-bitcoin');
 
 const {address} = require('./../../tokenslib');
+const {crypto} = require('./../../tokenslib');
+const {ECPair} = require('./../../tokenslib');
+const {networks} = require('./../../tokenslib');
+const {script} = require('./../../tokenslib');
+const scriptBufAsScript = require('./../../swaps/script_buffers_as_script');
+const {Transaction} = require('./../../tokenslib');
+const {TransactionBuilder} = require('./../../tokenslib');
+
+const hexBase = 16;
+const {SIGHASH_ALL} = Transaction;
 
 /** Send some tokens to an address
 
@@ -60,6 +68,43 @@ module.exports = (args, cbk) => {
 
   [keyPair].forEach((k, i) => txBuilder.sign(i, k));
 
-  return cbk(null, {transaction: txBuilder.build().toHex()});
+  const forkModifier = parseInt(network.fork_id || 0, hexBase);
+  const transaction = txBuilder.build().toHex();
+  const sigHashAll = parseInt(SIGHASH_ALL, hexBase);
+
+  const tx = Transaction.fromHex(transaction);
+
+  [keyPair].forEach((signingKey, vin) => {
+    const sigHashFlag = !forkModifier ? sigHashAll : sigHashAll | forkModifier;
+
+    const publicKey = signingKey.getPublicKeyBuffer();
+
+    const hash = crypto.hash160(publicKey);
+
+    const scriptPub = script.pubKeyHash.output.encode(hash);
+
+    let sigHash;
+
+    if (!!forkModifier) {
+      sigHash = tx.hashForWitnessV0(vin, scriptPub, args.tokens, sigHashFlag);
+    } else {
+      sigHash = tx.hashForSignature(vin, scriptPub, sigHashFlag);
+    }
+
+    const sig = signingKey.sign(sigHash);
+
+    const signature = Buffer.concat([sig.toDER(), Buffer.from([sigHashFlag])]);
+
+    const sigPush = Buffer.concat([encode(signature.length), signature]);
+    const pubKeyPush = Buffer.concat([encode(publicKey.length), publicKey]);
+
+    const scriptSig = Buffer.concat([sigPush, pubKeyPush]);
+
+    tx.setInputScript(vin, scriptSig);
+
+    return;
+  });
+
+  return cbk(null, {transaction: tx.toHex()});
 };
 

@@ -2,6 +2,7 @@ const {spawn} = require('child_process');
 
 const credentialsForNetwork = require('./../../chain/credentials_for_network');
 const rpcServerReady = /Node.is.loaded/;
+const serverDefaults = require('./../../chain/conf/chain_server_defaults');
 
 /** Start a bcoin style daemon
 
@@ -27,9 +28,14 @@ module.exports = ({dir, network}, cbk) => {
     return cbk([400, 'ExpectedNetworkNameForDaemon']);
   }
 
+  if (!serverDefaults[network]) {
+    return cbk([400, 'UnexpectedNetworkForBcoinTypeDaemon', network]);
+  }
+
   let networkName;
 
   switch (network) {
+  case 'bcashregtest':
   case 'bcoinregtest':
     networkName = 'regtest';
     break;
@@ -41,12 +47,12 @@ module.exports = ({dir, network}, cbk) => {
   let credentials;
 
   try {
-    credentials = credentialsForNetwork({network: network});
+    credentials = credentialsForNetwork({network});
   } catch (e) {
     return cbk([500, 'CredentialsLookupFailure', e]);
   }
 
-  const daemon = spawn('bcoin', [
+  const daemon = spawn(serverDefaults[network].executable, [
     '--api-key', credentials.pass,
     '--http-port', credentials.port,
     '--index-tx',

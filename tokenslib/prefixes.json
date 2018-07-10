@@ -10,6 +10,17 @@
     "wif": "EF"
   },
 
+  "bcashregtest": {
+    "bech32": "",
+    "bip32_private_key": "eab404c7",
+    "bip32_public_key": "eab4fa05",
+    "fork_id": "40",
+    "message": "\\x18Bitcoin Signed Message:\n",
+    "pay_to_public_key_hash_address": "3C",
+    "pay_to_script_hash_address": "26",
+    "wif": "5A"
+  },
+
   "bcoinregtest": {
     "bech32": "rb",
     "bip32_private_key": "eab404c7",

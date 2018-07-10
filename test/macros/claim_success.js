@@ -82,6 +82,7 @@ module.exports = (args, cbk) => {
     // Determine mine-to-address
     mineToAddress: ['generateBobKeyPair', ({generateBobKeyPair}, cbk) => {
       switch (args.daemon) {
+      case 'bcash':
       case 'bcoin':
       case 'bitcoind':
         const bobKey = Buffer.from(generateBobKeyPair.public_key, 'hex');
@@ -244,7 +245,7 @@ module.exports = (args, cbk) => {
     {
       return cbk(null, {
         current_block_height: res.getHeightForSweepTransaction.height,
-        destination: res.generateAliceKeyPair.p2wpkh_address,
+        destination: res.generateAliceKeyPair.p2pkh_address,
         fee_tokens_per_vbyte: staticFeePerVirtualByte,
         preimage: res.generatePaymentPreimage.payment_preimage,
         private_key: res.generateAliceKeyPair.private_key,
