@@ -26,6 +26,7 @@ const {Transaction} = require('./../../tokenslib');
 const {watchSwapOutput} = require('./../../scan');
 
 const coinbaseIndex = chainConstants.coinbase_tx_index;
+const fee = 1e3;
 const {fromPublicKeyBuffer} = ECPair;
 const maturityBlockCount = chainConstants.maturity_block_count;
 const maxKeyIndex = 4e8;
@@ -94,6 +95,7 @@ module.exports = ({cache, daemon, network, type}, cbk) => {
         const net = networks[network];
 
         return cbk(null, fromPublicKeyBuffer(key, net).getAddress());
+
       case 'btcd':
       case 'ltcd':
         return cbk();
@@ -189,7 +191,7 @@ module.exports = ({cache, daemon, network, type}, cbk) => {
         network,
         invoice: generateSwapInvoice.invoice,
         script: createSwapAddress.redeem_script,
-        tokens: utxo.tokens,
+        tokens: utxo.tokens - fee,
       },
       cbk);
     }],
@@ -203,8 +205,9 @@ module.exports = ({cache, daemon, network, type}, cbk) => {
       ({createSwapAddress, generateKeyPair, utxo}, cbk) =>
     {
       return sendChainTokensTransaction({
+        fee,
         network,
-        destination: createSwapAddress.p2sh_p2wsh_address,
+        destination: createSwapAddress.p2sh_address,
         private_key: generateKeyPair.private_key,
         spend_transaction_id: utxo.transaction_id,
         spend_vout: utxo.vout,
@@ -266,7 +269,11 @@ module.exports = ({cache, daemon, network, type}, cbk) => {
     }],
 
     // Push the funding transaction into the mempool
-    broadcastFunding: ['fundingTransaction', 'generateToMaturity', ({fundingTransaction}, cbk) => {
+    broadcastFunding: [
+      'fundingTransaction',
+      'generateToMaturity',
+      ({fundingTransaction}, cbk) =>
+    {
       return broadcastTransaction({
         network,
         transaction: fundingTransaction.transaction,
@@ -321,7 +328,7 @@ module.exports = ({cache, daemon, network, type}, cbk) => {
     {
       return cbk(null, {
         current_block_height: getCurrentHeight.height,
-        destination: generateKeyPair.p2wpkh_address,
+        destination: generateKeyPair.p2pkh_address,
         fee_tokens_per_vbyte: feeRate,
       });
     }],

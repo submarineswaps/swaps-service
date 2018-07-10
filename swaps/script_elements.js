@@ -5,13 +5,11 @@ const {decompile} = require('./../tokenslib').script;
 
   {
     script: <Script Signature Buffer>
-    witness: [<Witness Script Buffer>]
+    [witness]: [<Witness Script Buffer>]
   }
 
   @returns
-  {
-    [<Script Buffer>]
-  }
+  [<Script Buffer>]
 */
 module.exports = ({script, witness}) => {
   return !!witness && !!witness.length ? witness : decompile(script);

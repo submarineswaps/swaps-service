@@ -38,7 +38,7 @@ module.exports = ({cache, network, script}, cbk) => {
       try {
         return cbk(null, swapScriptDetails({network, script}));
       } catch (e) {
-        return cbk([500, 'FailedToDeriveSwapDetails', e]);
+        return cbk([500, 'FailedToDeriveSwapDetailsForKeyIndex', e]);
       }
     }],
 

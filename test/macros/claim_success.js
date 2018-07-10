@@ -107,7 +107,6 @@ module.exports = (args, cbk) => {
     {
       return generateChainBlocks({
         address: mineToAddress,
-        daemon: args.daemon,
         network: args.network,
         count: maturityBlockCount,
       },

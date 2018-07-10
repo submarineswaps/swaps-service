@@ -126,7 +126,8 @@ module.exports = ({cache, index, invoice, network, script, tokens}, cbk) => {
           type: 'swap_key',
           value: {index, invoice},
         },
-      ];
+      ]
+      .filter(({key}) => !!key); // Eliminate missing witness addresses
 
       return asyncEach(cacheEntries, ({key, ms, type, value}, cbk) => {
         return setJsonInCache({cache, key, ms, type, value}, cbk);

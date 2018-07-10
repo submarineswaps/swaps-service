@@ -243,18 +243,29 @@ module.exports = (args) => {
 
   const lockHeight = Buffer.from(cltv, 'hex').readUIntLE(0, cltv.length / 2);
 
-  return {
-    destination_public_key: destinationPublicKey,
-    p2sh_address: fromOutputScript(p2shLegacyOutput, network),
-    p2sh_output_script: p2shLegacyOutput.toString('hex'),
-    p2sh_p2wsh_address: p2shNestedAddr,
-    p2sh_p2wsh_output_script: p2shWrappedWitnessProg.toString('hex'),
-    p2wsh_address: address.fromOutputScript(witnessProgram, network),
-    payment_hash: paymentHash,
-    refund_p2wpkh_address: refundP2wpkhAddress,
-    refund_public_key_hash: refundPublicKeyHash,
-    timelock_block_height: lockHeight,
-    witness_output_script: witnessProgram.toString('hex'),
-  };
+  if (!!network.is_segwit_absent) {
+    return {
+      destination_public_key: destinationPublicKey,
+      p2sh_address: fromOutputScript(p2shLegacyOutput, network),
+      p2sh_output_script: p2shLegacyOutput.toString('hex'),
+      payment_hash: paymentHash,
+      refund_public_key_hash: refundPublicKeyHash,
+      timelock_block_height: lockHeight,
+    };
+  } else {
+    return {
+      destination_public_key: destinationPublicKey,
+      p2sh_address: fromOutputScript(p2shLegacyOutput, network),
+      p2sh_output_script: p2shLegacyOutput.toString('hex'),
+      p2sh_p2wsh_address: p2shNestedAddr,
+      p2sh_p2wsh_output_script: p2shWrappedWitnessProg.toString('hex'),
+      p2wsh_address: address.fromOutputScript(witnessProgram, network),
+      payment_hash: paymentHash,
+      refund_p2wpkh_address: refundP2wpkhAddress,
+      refund_public_key_hash: refundPublicKeyHash,
+      timelock_block_height: lockHeight,
+      witness_output_script: witnessProgram.toString('hex'),
+    };
+  }
 };
 
