@@ -70,7 +70,7 @@ module.exports = ({cache, invoice, network, script}, cbk) => {
       let lnd;
 
       try {
-        lnd = lightningDaemon({});
+        lnd = lightningDaemon({network});
       } catch (e) {
         return cbk(null, [500, 'FailedToCreateLndConnection']);
       }

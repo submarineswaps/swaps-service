@@ -65,13 +65,13 @@ module.exports = (args, cbk) => {
     },
 
     // Initialize the LN daemon connection
-    lnd: cbk => {
+    lnd: ['validate', ({}, cbk) =>  {
       try {
-        return cbk(null, lightningDaemon({}));
+        return cbk(null, lightningDaemon({network}));
       } catch (e) {
         return cbk([500, 'FailedToInitLightningDaemonConnection']);
       }
-    },
+    }],
 
     // Check completion arguments
     validate: cbk => {
