@@ -8,11 +8,18 @@ const {address} = require('./../tokenslib');
 const {chainConstants} = require('./../chain');
 const {crypto} = require('./../tokenslib');
 const {ECPair} = require('./../tokenslib');
+const estimateWeightWithInputs = require('./estimate_weight_with_inputs');
+const inputScriptsForLegacy = require('./input_scripts_for_legacy_p2sh');
+const legacyScriptHashUtxos = require('./legacy_scripthash_utxos');
 const {networks} = require('./../tokenslib');
+const nestedSegWitScript = require('./nested_segwit_script');
+const nestedSegWitUtxos = require('./nested_segwit_utxos');
 const {script} = require('./../tokenslib');
 const scriptBuffersAsScript = require('./script_buffers_as_script');
 const swapScriptDetails = require('./swap_script_details');
 const {Transaction} = require('./../tokenslib');
+const witnessUtxos = require('./witness_utxos');
+const witnessesForResolution = require('./witnesses_for_resolution');
 
 const compressedPubKeySize = chainConstants.compressed_public_key_size;
 const dustRatio = 1 / 3;
@@ -76,6 +83,7 @@ module.exports = args => {
     throw new Error('ExpectedUTXOs');
   }
 
+  let anticipatedWeight;
   const dummy = Buffer.from(OP_FALSE.toString(hexBase), 'hex');
   const isPkHashRefund = !!args.is_public_key_hash_refund;
   const network = networks[args.network];
@@ -83,6 +91,7 @@ module.exports = args => {
   const tokens = args.utxos.reduce((sum, n) => n.tokens + sum, 0);
   const tokensPerVirtualByte = args.fee_tokens_per_vbyte;
   const tx = new Transaction();
+  const {utxos} = args;
 
   tx.addOutput(toOutputScript(args.destination, network), tokens);
 
@@ -94,38 +103,18 @@ module.exports = args => {
   // OP_CLTV prohibits final sequence use
   tx.ins.forEach(txIn => txIn.sequence = minSequence);
 
+  // Set transaction locktime which will be needed for OP_CLTV
   tx.locktime = bip65Encode({blocks: args.timelock_block_height});
 
   // Add redeem scripts for nested p2sh
-  args.utxos.forEach(({redeem, script}, i) => {
-    if (script.length !== nestedScriptPubHexLength) {
-      return;
-    }
-
-    const scriptDetails = swapScriptDetails({
-      network: args.network,
-      script: redeem,
-    });
-
-    if (script === scriptDetails.p2sh_output_script) {
-      return;
-    }
-
-    if (script !== scriptDetails.p2sh_p2wsh_output_script) {
-      throw new Error('UnrecognizedScriptPub');
-    }
-
-    const redeemScript = Buffer.from(redeem, 'hex');
-    const witnessVersion = numberAsBuffer(OP_0).toString('hex');
-
-    const nestComponents = [witnessVersion, sha256(redeemScript)];
-
-    const nest = Buffer.from(scriptBuffersAsScript(nestComponents), 'hex');
-
-    tx.setInputScript(i, Buffer.from(scriptBuffersAsScript([nest]), 'hex'));
-
-    return;
-  });
+  try {
+    nestedSegWitUtxos({utxos, network: args.network})
+      .map(({redeem, vin}) => ({vin, redeem: nestedSegWitScript({redeem})}))
+      .map(({redeem, vin}) => ({vin, redeem: Buffer.from(redeem, 'hex')}))
+      .forEach(({redeem, vin}) => tx.setInputScript(vin, redeem));
+  } catch (err) {
+    throw err;
+  }
 
   // The public key buffer is stubbed all zeros when there is no private key
   if (!!args.private_key) {
@@ -134,72 +123,37 @@ module.exports = args => {
     pubKey = Buffer.alloc(compressedPubKeySize);
   }
 
-  // In place of the preimage a dummy spacer byte or a public key is placed
-  const space = !isPkHashRefund ? dummy : pubKey;
+  // In place of the preimage a dummy spacer 0 byte or a public key is placed
+  const unlock = !isPkHashRefund ? dummy : pubKey;
 
-  // Set legacy p2sh signatures
-  args.utxos.forEach(({redeem, script}, i) => {
-    if (script.length !== nestedScriptPubHexLength) {
-      return;
-    }
-
-    const scriptDetails = swapScriptDetails({
+  // Legacy P2SH: Set input scripts for p2sh utxos for fee calculation purposes
+  try {
+    const legacyUtxos = inputScriptsForLegacy({
+      key: args.private_key,
       network: args.network,
-      script: redeem,
+      transaction: tx.toHex(),
+      unlock: unlock.toString('hex'),
+      utxos: legacyScriptHashUtxos({utxos, network: args.network}),
     });
 
-    if (script === scriptDetails.p2sh_p2wsh_output_script) {
-      return;
-    }
+    legacyUtxos
+      .map(({script, vin}) => ({vin, script: Buffer.from(script, 'hex')}))
+      .forEach(({script, vin}) => tx.setInputScript(vin, script));
+  } catch (err) {
+    throw err;
+  }
 
-    if (script !== scriptDetails.p2sh_output_script) {
-      throw new Error('UnrecognizedScriptPub');
-    }
-
-    const dummyKey = ECPair.makeRandom();
-    const redeemScript = Buffer.from(redeem, 'hex');
-
-    const sigHash = tx.hashForSignature(i, redeemScript, SIGHASH_ALL);
-
-    const sig = dummyKey.sign(sigHash).toScriptSignature(SIGHASH_ALL);
-
-    const pushDatas = scriptBuffersAsScript([sig, space]);
-
-    const inputScript = Buffer.concat([
-      Buffer.from(pushDatas, 'hex'),
-      space,
-      numberAsBuffer(OP_PUSHDATA1),
-      numberAsBuffer(redeemScript.length),
-      redeemScript,
-    ]);
-
-    tx.setInputScript(i, Buffer.from(inputScript, 'hex'));
-
-    return;
-  });
-
-  // Anticipate the final weight of the transaction
-  const anticipatedWeight = args.utxos.reduce((sum, utxo) => {
-    const scriptDetails = swapScriptDetails({
+  // Guess at the final weight of the transaction for fee/vbyte calculation
+  try {
+    anticipatedWeight = estimateWeightWithInputs({
       network: args.network,
-      script: utxo.redeem,
+      unlock: unlock.toString('hex'),
+      utxos: utxos.map(({redeem, script}) => ({redeem, script})),
+      weight: tx.weight(),
     });
-
-    if (utxo.script === scriptDetails.p2sh_output_script) {
-      return sum;
-    }
-
-    return [
-      shortPushdataLength,
-      ecdsaSignatureLength,
-      sequenceLength,
-      (isPkHashRefund ? shortPushdataLength : 0),
-      space.length,
-      utxo.redeem.length / hexCharCountPerByte,
-      sum,
-    ].reduce((sum, n) => sum + n);
-  },
-  tx.weight());
+  } catch (err) {
+    throw err;
+  }
 
   const feeSum = tokensPerVirtualByte * Math.ceil(anticipatedWeight / vRatio);
 
@@ -218,75 +172,40 @@ module.exports = args => {
     return {transaction: tx.toHex()};
   }
 
-  const signingKey = ECPair.fromWIF(args.private_key, network);
-
-  // Set legacy p2sh signatures
-  args.utxos.forEach(({redeem, script}, i) => {
-    if (script.length !== nestedScriptPubHexLength) {
-      return;
-    }
-
-    const scriptDetails = swapScriptDetails({
+  // Legacy P2SH: Set input scripts for p2sh utxos for fee calculation purposes
+  try {
+    const legacyUtxos = inputScriptsForLegacy({
+      key: args.private_key,
       network: args.network,
-      script: redeem,
+      transaction: tx.toHex(),
+      unlock: unlock.toString('hex'),
+      utxos: legacyScriptHashUtxos({utxos, network: args.network}),
     });
 
-    if (script === scriptDetails.p2sh_p2wsh_output_script) {
-      return;
-    }
+    legacyUtxos
+      .map(({script, vin}) => ({vin, script: Buffer.from(script, 'hex')}))
+      .forEach(({script, vin}) => tx.setInputScript(vin, script));
+  } catch (err) {
+    throw err;
+  }
 
-    if (script !== scriptDetails.p2sh_output_script) {
-      throw new Error('UnrecognizedScriptPub');
-    }
-
-    const redeemScript = Buffer.from(redeem, 'hex');
-
-    const sigHash = tx.hashForSignature(i, redeemScript, SIGHASH_ALL);
-
-    const sig = signingKey.sign(sigHash).toScriptSignature(SIGHASH_ALL);
-
-    const pushDatas = scriptBuffersAsScript([sig, space]);
-
-    const inputScriptElements = [sig, space, OP_PUSHDATA1, redeemScript];
-
-    const inputScript = scriptBuffersAsScript(inputScriptElements);
-
-    tx.setInputScript(i, Buffer.from(inputScript, 'hex'));
-
-    return;
-  });
-
-  // Sign each input. We need the dummy to fail the preimage test
-  args.utxos.forEach(({redeem, script, tokens}, i) => {
-    const redeemScript = Buffer.from(redeem, 'hex');
-
-    const scriptDetails = swapScriptDetails({
+  // Witness and Nested Witness P2SH: Set signed witnesses
+  try {
+    const segwitUtxos = witnessesForResolution({
+      key: args.private_key,
       network: args.network,
-      script: redeem,
+      transaction: tx.toHex(),
+      unlock: unlock.toString('hex'),
+      utxos: witnessUtxos({network: args.network, utxos}),
     });
 
-    if (script === scriptDetails.p2sh_output_script) {
-      return;
-    }
-
-    const isNested = script.length === nestedScriptPubHexLength;
-
-    if (isNested) {
-      const witnessVersion = numberAsBuffer(OP_0).toString('hex');
-
-      const nestComponents = [witnessVersion, sha256(redeemScript)];
-
-      const nest = Buffer.from(scriptBuffersAsScript(nestComponents), 'hex');
-
-      tx.setInputScript(i, Buffer.from(scriptBuffersAsScript([nest]), 'hex'));
-    }
-
-    const sigHash = tx.hashForWitnessV0(i, redeemScript, tokens, SIGHASH_ALL);
-
-    const sig = signingKey.sign(sigHash).toScriptSignature(SIGHASH_ALL);
-
-    return [[sig, space, redeemScript]].forEach((w, i) => tx.setWitness(i, w));
-  });
+    segwitUtxos
+      .map(({vin, witness}) => ({i: vin, w: witness}))
+      .map(({i, w}) => ({i, witness: w.map(n => Buffer.from(n, 'hex'))}))
+      .forEach(({i, witness}) => tx.setWitness(i, witness));
+  } catch (err) {
+    throw err;
+  }
 
   return {transaction: tx.toHex()};
 };

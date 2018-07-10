@@ -3,7 +3,7 @@ const bip65Encode = require('bip65').encode;
 const {address} = require('./../tokenslib');
 const {chainConstants} = require('./../chain');
 const estimateWeightWithInputs = require('./estimate_weight_with_inputs');
-const inputScriptsForLegacyClaim = require('./input_scripts_for_legacy_claim');
+const inputScriptsForLegacy = require('./input_scripts_for_legacy_p2sh');
 const legacyScriptHashUtxos = require('./legacy_scripthash_utxos');
 const nestedSegWitScript = require('./nested_segwit_script');
 const nestedSegWitUtxos = require('./nested_segwit_utxos');
@@ -11,7 +11,7 @@ const {networks} = require('./../tokenslib');
 const {script} = require('./../tokenslib');
 const {Transaction} = require('./../tokenslib');
 const witnessUtxos = require('./witness_utxos');
-const witnessesForClaim = require('./witnesses_for_claim');
+const witnessesForResolution = require('./witnesses_for_resolution');
 
 const {toOutputScript} = address;
 
@@ -74,6 +74,7 @@ module.exports = args => {
     throw new Error('ExpectedFundingUtxos');
   }
 
+  let anticipatedWeight;
   const tokens = args.utxos.reduce((sum, n) => n.tokens + sum, 0);
   const tokensPerVirtualByte = args.fee_tokens_per_vbyte;
   const tx = new Transaction();
@@ -105,11 +106,11 @@ module.exports = args => {
 
   // Legacy P2SH: Set input scripts for p2sh utxos for fee calculation purposes
   try {
-    const legacyUtxos = inputScriptsForLegacyClaim({
+    const legacyUtxos = inputScriptsForLegacy({
       key: args.private_key,
       network: args.network,
-      preimage: args.preimage,
       transaction: tx.toHex(),
+      unlock: args.preimage,
       utxos: legacyScriptHashUtxos({utxos, network: args.network}),
     });
 
@@ -120,12 +121,17 @@ module.exports = args => {
     throw err;
   }
 
-  const anticipatedWeight = estimateWeightWithInputs({
-    network: args.network,
-    preimage: args.preimage,
-    utxos: utxos.map(({redeem, script}) => ({redeem, script})),
-    weight: tx.weight(),
-  });
+  // Guess at the final weight of the transaction for fee/vbyte calculation
+  try {
+    anticipatedWeight = estimateWeightWithInputs({
+      network: args.network,
+      unlock: args.preimage,
+      utxos: utxos.map(({redeem, script}) => ({redeem, script})),
+      weight: tx.weight(),
+    });
+  } catch (err) {
+    throw err;
+  }
 
   const feeSum = tokensPerVirtualByte * Math.ceil(anticipatedWeight / vRatio);
 
@@ -141,11 +147,11 @@ module.exports = args => {
 
   // Legacy P2SH: Set final input scripts with proper signatures
   try {
-    const legacyUtxos = inputScriptsForLegacyClaim({
+    const legacyUtxos = inputScriptsForLegacy({
       key: args.private_key,
       network: args.network,
-      preimage: args.preimage,
       transaction: tx.toHex(),
+      unlock: args.preimage,
       utxos: legacyScriptHashUtxos({utxos, network: args.network}),
     });
 
@@ -158,11 +164,11 @@ module.exports = args => {
 
   // Witness and Nested Witness P2SH: Set signed witnesses
   try {
-    const segwitUtxos = witnessesForClaim({
+    const segwitUtxos = witnessesForResolution({
       key: args.private_key,
       network: args.network,
-      preimage: args.preimage,
       transaction: tx.toHex(),
+      unlock: args.preimage,
       utxos: witnessUtxos({network: args.network, utxos}),
     });
 
