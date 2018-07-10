@@ -62,6 +62,7 @@ module.exports = (args, cbk) => {
       switch (args.daemon) {
       case 'bcash':
       case 'bcoin':
+      case "bitcoind":
         const aliceKey = Buffer.from(generateAliceKeyPair.public_key, 'hex');
         const network = networks[args.network];
 
