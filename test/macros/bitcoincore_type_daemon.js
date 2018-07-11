@@ -24,7 +24,7 @@ module.exports = ({dir, network}, cbk) => {
     return cbk([400, 'ExpectedDirectoryForDaemon']);
   }
 
-  if (!fs.existsSync(dir)){
+  if (!fs.existsSync(dir)) {
     fs.mkdirSync(dir);
   }
 
@@ -46,15 +46,19 @@ module.exports = ({dir, network}, cbk) => {
     '-debuglogfile=debug.log',
     '-minrelaytxfee=0',
     '-printtoconsole=1',
-    '-regtest=1',
+    '-debug=1',
+    '-regtest',
     '-txindex=1',
     `-datadir=${dir}`,
     `-rpcpassword=${credentials.pass}`,
     `-rpcport=${credentials.port}`,
     `-rpcuser=${credentials.user}`,
+    `-zmqpubrawblock=tcp://127.0.0.1:28332`,
+    `-zmqpubrawtx=tcp://127.0.0.1:28332`,
   ]);
 
   daemon.stdout.on('data', data => {
+    console.log(data.toString());
     if (rpcServerReady.test(`${data}`)) {
       return cbk(null, {is_ready: true});
     }

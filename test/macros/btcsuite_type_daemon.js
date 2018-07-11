@@ -45,6 +45,7 @@ module.exports = (args, cbk) => {
     return cbk([400, 'ExpectedNetworkNameForDaemon']);
   }
 
+
   let credentials;
   const miningKey = Buffer.from(args.mining_public_key, 'hex');
   const network = networks[args.network];
@@ -54,21 +55,28 @@ module.exports = (args, cbk) => {
   } catch (e) {
     return cbk([500, 'CredentialsLookupFailure', e]);
   }
-
-  const daemon = spawn(args.daemon, [
+  let params = [
     '--datadir', args.dir,
     '--logdir', args.dir,
-    '--miningaddr', fromPublicKeyBuffer(miningKey, network).getAddress(),
-    '--notls',
-    '--regtest',
+    // '--miningaddr', fromPublicKeyBuffer(miningKey, network).getAddress(),
+    '--simnet',
     '--relaynonstd',
     '--rpclisten', `${credentials.host}:${credentials.port}`,
     '--rpcpass', credentials.pass,
     '--rpcuser', credentials.user,
     '--txindex',
-  ]);
+    // '--rpccert', args.dir + "/rpc.cert",
+    // '--notls',
+    '--debuglevel=RPCS=trace'];
+  //
+  // if (!args.lnd){
+  //   params = [...params, '--notls',]
+  // }
 
+  const daemon = spawn(args.daemon, params);
+  console.log(params);
   daemon.stdout.on('data', data => {
+    console.log("==BTCD==" + data.toString());
     if (unableToStartServer.test(`${data}`)) {
       return cbk([errCode.local_err, 'SpawnDaemonFailure']);
     }

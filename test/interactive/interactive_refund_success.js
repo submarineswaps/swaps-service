@@ -138,7 +138,7 @@ module.exports = ({}, cbk) => {
         return cbk();
       }
 
-      return spawnChainDaemon({
+      return spawnChainDa1emon({
         network,
         daemon: 'btcd',
         mining_public_key: generateAliceKeyPair.public_key,

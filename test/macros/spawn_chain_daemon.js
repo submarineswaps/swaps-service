@@ -44,6 +44,7 @@ module.exports = (args, cbk) => {
         daemon: args.daemon,
         mining_public_key: args.mining_public_key,
         network: args.network,
+        lnd: args.lnd,
       },
       cbk);
     break;
