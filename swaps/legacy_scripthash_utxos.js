@@ -41,7 +41,7 @@ module.exports = ({network, utxos}) => {
     switch (script) {
     // Standard P2SH output script, no witness
     case (scriptDetails.p2sh_output_script):
-      return {redeem, tokens, vin};
+      return {redeem, script, tokens, vin};
 
     case (scriptDetails.p2sh_p2wsh_output_script):
       return null;

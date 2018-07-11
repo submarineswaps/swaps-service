@@ -192,6 +192,10 @@ App.checkSwap = ({button, id, quote}) => {
     quote.find('.swap-transaction-id').val(res.transaction_id);
 
     switch (network) {
+    case 'bchtestnet':
+      txUrl = `https://www.blocktrail.com/tBCC/tx/${res.transaction_id}`;
+      break;
+
     case 'testnet':
       txUrl = `https://testnet.smartbit.com.au/tx/${res.transaction_id}`;
       break;
@@ -724,6 +728,11 @@ App.presentCompletedSwap = args => {
   swap.addClass('presented').removeClass('template');
 
   switch (args.network) {
+  case 'bchtestnet':
+    href = `https://www.blocktrail.com/tBCC/tx/${args.transaction_id}`;
+    onChainCurrency = 'tBCH';
+    break;
+
   case 'testnet':
     href = `https://testnet.smartbit.com.au/tx/${args.transaction_id}`;
     onChainCurrency = 'tBTC';
@@ -911,7 +920,7 @@ App.submitCreateSwapQuote = function(event) {
     };
 
     const redeemInfoJsonSpacing = 2;
-    const swapAddress = details.swap_p2sh_p2wsh_address;
+    let swapAddress = details.swap_p2sh_p2wsh_address;
     const swapAmount = App.format({tokens: details.swap_amount});
 
     const qs = $.param({amount: swapAmount, message: details.redeem_script});
@@ -919,6 +928,11 @@ App.submitCreateSwapQuote = function(event) {
     let scheme;
 
     switch (network) {
+    case 'bchtestnet':
+      scheme = 'bitcoincash';
+      swapAddress = details.swap_p2sh_address;
+      break;
+
     case 'ltctestnet':
       scheme = 'litecoin';
       break;
@@ -1238,6 +1252,19 @@ App.updatedSwapDetails = ({swap}) => {
   let conversionRate = 1;
 
   switch (network) {
+  case 'bchtestnet':
+    if (!App.rates['bchtestnet']) {
+      break;
+    }
+
+    baseFee = App.rates['bchtestnet'].fees[0].base;
+    conversionRate = App.rates['testnet'].cents / App.rates['bchtestnet'].cents;
+    feePercentage = App.rates['bchtestnet'].fees[0].rate / 1e6 * 100;
+    fiatPrice = (App.rates['bchtestnet'].cents) * 1e8 / 100;
+    networkAddressName = 'BCash testnet';
+
+    break;
+
   case 'ltctestnet':
     if (!App.rates['ltctestnet']) {
       break;

@@ -41,6 +41,18 @@
     "wif": "EF"
   },
 
+  "bchtestnet": {
+    "bech32": "bchtest",
+    "bip32_private_key": "04358394",
+    "bip32_public_key": "043587CF",
+    "fork_id": "40",
+    "is_segwit_absent": true,
+    "message": "\\x18Bitcoin Signed Message:\n",
+    "pay_to_public_key_hash_address": "6F",
+    "pay_to_script_hash_address": "C4",
+    "wif": "EF"
+  },
+
   "ltctestnet": {
     "bech32": "tltc",
     "bip32_private_key": "019D9CFE",

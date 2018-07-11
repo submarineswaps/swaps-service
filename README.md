@@ -12,6 +12,7 @@ a simple HTLC to help with atomicity.
 Requirements:
 
 - Redis: cache in-flight swap information
+- Bcash Chain Server: Purse BCash
 - Bitcoin Chain Server: Bitcoin Core or btcd will work
 - Litecoin Chain Server: Litecoin Core or ltcd will work
 - BIP 39 seed: running the service without a seed will generate one
@@ -24,9 +25,11 @@ Configure environment variables as necessary.
     export PORT="HTTP SERVER PORT" // Override default server port (9889)
     export REDIS_URL="redis://username:password@host:port" // Redis service
     export SSS_PORT="HTTP SERVER PORT" // Override server port if PORT not set
+    export SSS_CHAIN_BCHTESTNET_RPC_API="user:pass@host:port" // Chain service
     export SSS_CHAIN_LTCTESTNET_RPC_API="user:pass@host:port" // Chain service
     export SSS_CHAIN_TESTNET_RPC_API="user:pass@host:port" // Chain service
     export SSS_CLAIM_BIP39_SEED="bip39 wallet seed" // in-flight claims seed
+    export SSS_CLAIM_BCHTESTNET_ADDRESS="bchtestnet addr" // Claim to address
     export SSS_CLAIM_LTCTESTNET_ADDRESS="ltctestnet addr" // Claim to address
     export SSS_CLAIM_TESTNET_ADDRESS="addr" // Override using LND for claims
     export SSS_LND_GRPC_HOST="host:port" // LND GRPC API

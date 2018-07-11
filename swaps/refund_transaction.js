@@ -24,7 +24,6 @@ const nestedScriptPubHexLength = 46;
 const sequenceLength = chainConstants.sequence_byte_length;
 const {sha256} = crypto;
 const shortPushdataLength = chainConstants.short_push_data_length;
-const {SIGHASH_ALL} = Transaction;
 const {toOutputScript} = address;
 const vRatio = chainConstants.witness_byte_discount_denominator;
 const {witnessScriptHash} = script;

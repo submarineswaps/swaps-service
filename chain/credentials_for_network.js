@@ -4,6 +4,7 @@ const chains = require('./conf/chains');
 const chainServer = require('./conf/chain_server_defaults');
 
 const decBase = 10;
+const {SSS_CHAIN_BCHTESTNET_RPC_API} = process.env;
 const {SSS_CHAIN_LTCTESTNET_RPC_API} = process.env;
 const {SSS_CHAIN_TESTNET_RPC_API} = process.env;
 
@@ -38,6 +39,10 @@ module.exports = ({network}) => {
   let api;
 
   switch (network) {
+  case (chains.bcash_testnet):
+    api = SSS_CHAIN_BCHTESTNET_RPC_API || service.rpc_api;
+    break;
+
   case (chains.bitcoin_testnet):
     api = SSS_CHAIN_TESTNET_RPC_API || service.rpc_api;
     break;

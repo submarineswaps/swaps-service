@@ -24,7 +24,7 @@ const browserifyPath = `${__dirname}/public/browserify/index.js`;
 const cache = 'redis';
 const isProduction = NODE_ENV === 'production';
 const morganLogLevel = 'dev';
-const networks = ['ltctestnet', 'testnet'];
+const networks = ['bchtestnet', 'ltctestnet', 'testnet'];
 const port = PORT || SSS_PORT || 9889;
 
 const app = express();

@@ -46,6 +46,9 @@ module.exports = ({cache, network}, cbk) => {
     // Currency code for remote service
     currencyCode: ['validate', ({}, cbk) => {
       switch (network) {
+      case 'bchtestnet':
+        return cbk(null, 'BCH');
+
       case 'ltctestnet':
         return cbk(null, 'LTC');
 
