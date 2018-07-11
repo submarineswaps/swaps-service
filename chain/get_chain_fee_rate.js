@@ -4,6 +4,7 @@ const parseTokenValue = require('./parse_token_value');
 
 const bytesPerKb = 1e3;
 const cmd = estimateSmartFee;
+const defaultFee = 10;
 const defaultBlockCount = 6;
 
 /** Get blockchain fee rate
@@ -27,6 +28,11 @@ module.exports = ({blocks, network}, cbk) => {
     }
 
     let parsedValue;
+
+    // Exit early when fee is not defined
+    if (res.fee === -1) {
+      return cbk(null, {fee_tokens_per_vbyte: defaultFee});
+    }
 
     if (!res || !res.feerate) {
       return cbk([500, 'ExpectedFeeRate']);

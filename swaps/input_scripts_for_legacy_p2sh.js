@@ -59,21 +59,22 @@ module.exports = ({key, network, transaction, unlock, utxos}) => {
   const sigHashAll = parseInt(SIGHASH_ALL, hexBase);
   const signingKey = fromWIF(key, networks[network]);
 
-  return utxos.map(({redeem, tokens, vin}) => {
+  return utxos.map(({redeem, script, tokens, vin}) => {
     const redeemScript = Buffer.from(redeem, 'hex');
-    const sigHashFlag = sigHashAll | (forkModifier || sigHashAll);
+    const scriptPub = Buffer.from(script, 'hex');
+    const sigFlag = !forkModifier ? sigHashAll : forkModifier | sigHashAll;
 
     let sigHash;
 
     if (!!forkModifier) {
-      sigHash = tx.hashForWitnessV0(vin, redeemScript, tokens, sigHashFlag);
+      sigHash = tx.hashForWitnessV0(vin, redeemScript, tokens, sigFlag);
     } else {
-      sigHash = tx.hashForSignature(vin, redeemScript, sigHashFlag);
+      sigHash = tx.hashForSignature(vin, redeemScript, sigFlag);
     }
 
     const sig = signingKey.sign(sigHash);
 
-    const signature = Buffer.concat([sig.toDER(), Buffer.from([sigHashFlag])]);
+    const signature = Buffer.concat([sig.toDER(), Buffer.from([sigFlag])]);
 
     const inputScriptElements = [
       signature,
@@ -82,9 +83,9 @@ module.exports = ({key, network, transaction, unlock, utxos}) => {
       redeemScript,
     ];
 
-    const script = scriptBuffersAsScript(inputScriptElements);
+    const scriptSig = scriptBuffersAsScript(inputScriptElements);
 
-    return {script, vin};
+    return {vin, script: scriptSig};
   });
 };
 

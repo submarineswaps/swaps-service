@@ -72,10 +72,12 @@ block content
                       | Chain:
                     .col-sm-10
                       select.custom-select.form-control.select-currency
-                        option(selected, value="testnet")
-                          | Testnet BTC
+                        option(value="bchtestnet")
+                          | Testnet BCH
                         option(value="ltctestnet")
                           | Testnet LTC
+                        option(selected, value="testnet")
+                          | Testnet BTC
                   .form-group.row
                     label.col-form-label.col-sm-2
                       | Redeem Script:

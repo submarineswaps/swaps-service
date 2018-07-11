@@ -1,4 +1,5 @@
 const {chainConstants} = require('./../chain');
+const {networks} = require('./../tokenslib');
 const swapScriptDetails = require('./swap_script_details');
 
 /** Filter utxos to get only nested SegWit or native SegWit utxos

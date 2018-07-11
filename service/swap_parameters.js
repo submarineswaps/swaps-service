@@ -1,8 +1,15 @@
 const decBase = 10;
+const {SSS_FUNDING_BCHTESTNET_CONFS} = process.env;
 const {SSS_FUNDING_LTCTESTNET_CONFS} = process.env;
 const {SSS_FUNDING_TESTNET_CONFS} = process.env;
 
 const params = {
+  bchtestnet: {
+    claim_window: 10,
+    funding_confs: parseInt(SSS_FUNDING_BCHTESTNET_CONFS || 3, decBase),
+    refund_timeout: 144,
+    swap_fees: [{base: 10000, network: 'testnet', rate: 10000}],
+  },
   ltctestnet: {
     claim_window: 10,
     funding_confs: parseInt(SSS_FUNDING_LTCTESTNET_CONFS || 12, decBase),

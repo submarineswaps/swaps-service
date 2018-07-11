@@ -16,6 +16,7 @@ const {setJsonInCache} = require('./../cache');
 const {swapScriptInTransaction} = require('./../swaps');
 
 const paymentTimeoutMs = 1000 * 60;
+const {SSS_CLAIM_BCHTESTNET_ADDRESS} = process.env;
 const {SSS_CLAIM_LTCTESTNET_ADDRESS} = process.env;
 const {SSS_CLAIM_TESTNET_ADDRESS} = process.env;
 const swapSuccessCacheMs = 1000 * 60 * 60 * 3;
@@ -158,6 +159,9 @@ module.exports = (args, cbk) => {
       ({lnd}, cbk) =>
     {
       switch (args.network) {
+      case 'bchtestnet':
+        return cbk(null, {address: SSS_CLAIM_BCHTESTNET_ADDRESS});
+
       case 'ltctestnet':
         return cbk(null, {address: SSS_CLAIM_LTCTESTNET_ADDRESS});
 

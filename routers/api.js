@@ -10,7 +10,7 @@ const {getInvoiceDetails} = require('./../service');
 const {returnJson} = require('./../async-util');
 
 const cache = 'redis';
-const swapNetworks = ['ltctestnet', 'testnet'];
+const swapNetworks = ['bchtestnet', 'ltctestnet', 'testnet'];
 
 /** Make an api router
 
