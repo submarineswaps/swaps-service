@@ -181,7 +181,7 @@ module.exports = (args, cbk) => {
     genAddress: ['spawnRPCInterface', ({spawnRPCInterface}, cbk) => {
       console.log("==\n" * 4);
       console.log("Entering genAddress");
-      // return createAddress({lnd: spawnRPCInterface.lnd}, cbk);
+      return createAddress({lnd: spawnRPCInterface.lnd}, cbk);
     }],
 
     stopBTCDBackend: ['genAddress', ({}, cbk) => {
