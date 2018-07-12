@@ -69,7 +69,7 @@ module.exports = (args, cbk) => {
         }
       });
     },
-    spawnLND: ['generateBobKeyPair', 'generateAliceKeyPair', 'spawnChainDaemonA', ({generateBobKeyPair, spawnChainDaemonA}, cbk) => {
+    spawnLND: ['spawnChainDaemonA', ({generateBobKeyPair, spawnChainDaemonA}, cbk) => {
       try {
         console.log("lnd spawnLND entry");
         console.log("Recieved:");
@@ -106,7 +106,7 @@ module.exports = (args, cbk) => {
           ];
           break;
         default:
-          return cbk(['0', 'UnknownLightningBackendChain'])
+          return cbk(['0', 'UnknownLightningBackendChain']);
         }
         const lndDaemon = spawn('lnd', [
           `--configfile=""`,
@@ -127,7 +127,7 @@ module.exports = (args, cbk) => {
 
         console.log("lndDaemon spawned");
         lndDaemon.stderr.on('data', data => {
-          console.log("==LND==" + data.toString())
+          console.log("==LND==" + data.toString());
         });
         lndDaemon.stdout.on('data', data => {
           console.log(data.toString());
@@ -147,8 +147,8 @@ module.exports = (args, cbk) => {
 
         process.on('uncaughtException', err => {
           console.log('LND ERROR', err);
-          daemon.kill();
-          process.exit(1)
+          // daemon.kill();
+          process.exit(1);
         });
 
       } catch (e) {
@@ -175,7 +175,7 @@ module.exports = (args, cbk) => {
         getNetworkInfo({lnd}, (err, res) => {
           console.log(err);
           console.log(res);
-        })
+        });
       }, 15000);
 
       return cbk(null, {lnd});
@@ -183,13 +183,13 @@ module.exports = (args, cbk) => {
     }],
 
     genAddress: ['spawnRPCInterface', ({spawnRPCInterface}, cbk) => {
-      console.log("==\n"*4);
+      console.log("==\n" * 4);
       console.log("Entering genAddress");
-      return createAddress({lnd : spawnRPCInterface.lnd}, cbk);
+      return createAddress({lnd: spawnRPCInterface.lnd}, cbk);
     }],
 
     rebootBTCDWithMiningAddress: ['genAddress', ({genAddress}, cbk) => {
-      console.log("==\n"*4);
+      console.log("==\n" * 4);
       console.log("Entering rebootBTCDWithMiningAddress");
       console.log(genAddress);
     }]
@@ -211,7 +211,7 @@ module.exports = (args, cbk) => {
     }
 
     return clearCache({cache: 'memory'}, cbk);
-  })
+  });
 };
 
 
