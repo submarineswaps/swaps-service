@@ -412,14 +412,6 @@ App.createSwap = ({invoice, network, refund}, cbk) => {
         throw new Error('ExpectedSwapP2shAddress');
       }
 
-      if (!details.swap_p2sh_p2wsh_address) {
-        throw new Error('ExpectedSwapP2shAddress');
-      }
-
-      if (!details.swap_p2wsh_address) {
-        throw new Error('ExpectedSwapP2wshAddress');
-      }
-
       if (!details.timeout_block_height) {
         throw new Error('ExpectedTimeoutBlockHeight');
       }

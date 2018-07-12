@@ -1,15 +1,4 @@
 {
-  "bchregtest": {
-    "bech32": null,
-    "bip32_private_key": "04358394",
-    "bip32_public_key": "043587CF",
-    "fork_id": "40",
-    "message": "\\x18Bitcoin Signed Message:\n",
-    "pay_to_public_key_hash_address": "6F",
-    "pay_to_script_hash_address": "C4",
-    "wif": "EF"
-  },
-
   "bcashregtest": {
     "bech32": "",
     "bip32_private_key": "eab404c7",

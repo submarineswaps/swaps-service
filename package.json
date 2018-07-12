@@ -2,6 +2,7 @@
   "author": "Alex Bosworth",
   "dependencies": {
     "async": "2.6.1",
+    "bchaddrjs": "0.2.1",
     "bip39": "2.5.0",
     "bip65": "1.0.3",
     "bitcoin-ops": "1.4.1",

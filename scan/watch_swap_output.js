@@ -98,6 +98,13 @@ module.exports = ({cache, index, invoice, network, script, tokens}, cbk) => {
           type: 'invoice',
           value: {invoice},
         },
+        // Cache the bch p2sh address. Potentially present on BCH networks
+        {
+          key: scriptDetails.bch_p2sh_address,
+          ms: swapTimeoutMs,
+          type: 'swap_address',
+          value: {id, script, tokens},
+        },
         // Cache the p2sh address. Useful on networks that don't support SW
         {
           key: scriptDetails.p2sh_address,

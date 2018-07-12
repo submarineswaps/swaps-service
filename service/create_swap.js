@@ -164,6 +164,9 @@ module.exports = ({cache, invoice, network, refund}, cbk) => {
       'timeoutBlockHeight',
       (res, cbk) =>
     {
+      // BCH uses a different swap address type for p2sh
+      const bchSwapAddress = res.swapAddress.bch_p2sh_address || null;
+
       return cbk(null, {
         invoice,
         destination_public_key: res.serverDestinationKey.public_key,
@@ -174,7 +177,7 @@ module.exports = ({cache, invoice, network, refund}, cbk) => {
         swap_amount: res.getSwapAmount.tokens,
         swap_fee: res.getSwapAmount.fee,
         swap_key_index: res.swapKeyIndex,
-        swap_p2sh_address: res.swapAddress.p2sh_address,
+        swap_p2sh_address: bchSwapAddress || res.swapAddress.p2sh_address,
         swap_p2sh_p2wsh_address: res.swapAddress.p2sh_p2wsh_address,
         swap_p2wsh_address: res.swapAddress.p2wsh_address,
         timeout_block_height: res.timeoutBlockHeight,
