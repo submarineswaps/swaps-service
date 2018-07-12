@@ -173,7 +173,9 @@ module.exports = (args, cbk) => {
 
     verifyRPCInterface: ['spawnRPCInterface', ({spawnRPCInterface}, cbk) => {
       let out = getPeers({lnd:spawnRPCInterface.lnd}, cbk);
+      console.log("outstart");
       console.log(out);
+      console.log("outend");
 
     }]
 
