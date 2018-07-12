@@ -11,6 +11,8 @@ const fs = require('fs');
 process.env.GRPC_SSL_CIPHER_SUITES = "HIGH+ECDSA";
 const {lightningDaemon} = require('ln-service');
 const {getPeers} = require('ln-service');
+const {signMessage} = require('ln-service');
+
 const {createAddress} = require('ln-service');
 const {generateKeyPair} = require('./../../chain');
 const {stopChainDaemon} = require('./../../chain');
@@ -172,7 +174,7 @@ module.exports = (args, cbk) => {
     }],
 
     verifyRPCInterface: ['spawnRPCInterface', ({spawnRPCInterface}, cbk) => {
-      let out = getPeers({lnd:spawnRPCInterface.lnd}, cbk);
+      let out = signMessage({lnd:spawnRPCInterface.lnd, message:" "}, cbk);
       console.log("outstart");
       console.log(out);
       console.log("outend");
