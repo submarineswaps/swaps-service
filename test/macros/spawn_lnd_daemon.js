@@ -53,7 +53,7 @@ module.exports = (args, cbk) => {
       const chainDir = join('/tmp', uuidv4());
       console.log("spawning chain");
       spawnChainDaemon({
-        network: args.network, daemon: args.daemon, mining_public_key: generateBobKeyPair.public_key, dir: chainDir
+        network: args.network, daemon: args.daemon, dir: chainDir
       }, (err, res) => {
         if (err) {
           return cbk(err, res);
