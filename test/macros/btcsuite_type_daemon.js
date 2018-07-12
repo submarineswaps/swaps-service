@@ -39,7 +39,7 @@ module.exports = (args, cbk) => {
   }
 
   if (!args.mining_public_key) {
-    // return cbk([400, 'ExpectedMiningPublicKeyForDaemon']);
+    return cbk([400, 'ExpectedMiningPublicKeyForDaemon']);
   }
 
   if (!args.network) {
@@ -48,9 +48,7 @@ module.exports = (args, cbk) => {
 
 
   let credentials;
-  if (args.mining_public_key) {
-    const miningKey = Buffer.from(args.mining_public_key, 'hex');
-  }
+
   const network = networks[args.network];
   console.log("initailizing btcdsuite");
   try {
@@ -71,6 +69,10 @@ module.exports = (args, cbk) => {
     // '--rpccert', args.dir + "/rpc.cert",
     // '--notls',
     '--debuglevel=RPCS=trace'];
+  if (args.mining_public_key !== "0") {
+    const miningKey = Buffer.from(args.mining_public_key, 'hex');
+    params = [...params, '--miningaddr', fromPublicKeyBuffer(miningKey, network).getAddress()];
+  }
   //
   // if (!args.lnd){
   //   params = [...params, '--notls',]

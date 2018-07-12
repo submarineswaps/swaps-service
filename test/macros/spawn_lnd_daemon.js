@@ -37,7 +37,7 @@ const credentialsForNetwork = require('./../../chain/credentials_for_network');
 module.exports = (args, cbk) => {
 
   return asyncAuto({
-    spawnChainDaemonA: cbk => {
+    validateCredentials: cbk => {
       if (!args.network) {
         return cbk([400, 'ExpectedNetworkTypeForLNDaemon']);
       }
@@ -51,29 +51,25 @@ module.exports = (args, cbk) => {
         return cbk([500, 'CredentialsLookupFailure', e]);
       }
       const chainDir = join('/tmp', uuidv4());
-      console.log("spawning chain");
-      spawnChainDaemon({
-        network: args.network, daemon: args.daemon, dir: chainDir
-      }, (err, res) => {
-        if (err) {
-          return cbk(err, res);
-        } else {
-          console.log("Spawning chain daemon with credentials:");
-          console.log(credentials);
-          return cbk(null, {
-            chainDir,
-            chainPass: credentials.pass,
-            chainUser: credentials.user,
-            chainPort: credentials.port
-          });
-        }
+      return cbk(null, {
+        chainDir,
+        chainPass: credentials.pass,
+        chainUser: credentials.user,
+        chainPort: credentials.port
       });
     },
-    spawnLND: ['spawnChainDaemonA', ({generateBobKeyPair, spawnChainDaemonA}, cbk) => {
+    spawnChainDaemonA: ['validateCredentials', ({validateCredentials}, cbk) => {
+      console.log("spawning chain");
+      spawnChainDaemon({
+        network: args.network, daemon: args.daemon, dir: validateCredentials.chainDir, mining_public_key:'0'
+      }, (err, res) => {
+        return cbk(err, res);
+      });
+    }],
+    spawnLND: ['spawnChainDaemonA', 'validateCredentials', ({validateCredentials}, cbk) => {
       try {
         console.log("lnd spawnLND entry");
         console.log("Recieved:");
-        console.log(spawnChainDaemonA);
         const lndDir = join('/tmp', uuidv4());
         console.log(lndDir);
         let chainParams;
@@ -81,10 +77,10 @@ module.exports = (args, cbk) => {
         case "btcd":
           console.log("entering btcd");
           chainParams = [
-            `--btcd.dir=${spawnChainDaemonA.chainDir}`,
-            `--btcd.rpcpass=${spawnChainDaemonA.chainPass}`,
-            `--btcd.rpchost=127.0.0.1:${spawnChainDaemonA.chainPort}`,
-            `--btcd.rpcuser=${spawnChainDaemonA.chainUser}`,
+            `--btcd.dir=${validateCredentials.chainDir}`,
+            `--btcd.rpcpass=${validateCredentials.chainPass}`,
+            `--btcd.rpchost=127.0.0.1:${validateCredentials.chainPort}`,
+            `--btcd.rpcuser=${validateCredentials.chainUser}`,
             `--bitcoin.active`,
             `--bitcoin.feerate=2500`,
             `--bitcoin.node=btcd`,
@@ -96,10 +92,10 @@ module.exports = (args, cbk) => {
           chainParams = [
             `--bitcoin.active`,
             `--bitcoin.feerate=2500`,
-            `--bitcoind.dir=${spawnChainDaemonA.chainDir}`,
-            `--bitcoind.rpcpass=${spawnChainDaemonA.chainPass}`,
-            `--bitcoind.rpchost=127.0.0.1:${spawnChainDaemonA.chainPort}`,
-            `--bitcoind.rpcuser=${spawnChainDaemonA.chainUser}`,
+            `--bitcoind.dir=${validateCredentials.chainDir}`,
+            `--bitcoind.rpcpass=${validateCredentials.chainPass}`,
+            `--bitcoind.rpchost=127.0.0.1:${validateCredentials.chainPort}`,
+            `--bitcoind.rpcuser=${validateCredentials.chainUser}`,
             `--bitcoind.zmqpath=tcp://127.0.0.1:28332`,
             `--bitcoin.node=bitcoind`,
             `--bitcoin.regtest`
@@ -142,7 +138,7 @@ module.exports = (args, cbk) => {
 
         lndDaemon.on('close', code => {
           removeDir(lndDir, () => {});
-          removeDir(spawnChainDaemonA.chainDir, () => {});
+          removeDir(validateCredentials.chainDir, () => {});
         });
 
         process.on('uncaughtException', err => {
@@ -188,10 +184,24 @@ module.exports = (args, cbk) => {
       return createAddress({lnd: spawnRPCInterface.lnd}, cbk);
     }],
 
-    rebootBTCDWithMiningAddress: ['genAddress', ({genAddress}, cbk) => {
+    stopBTCDBackend: ['genAddress', ({}, cbk) => {
+      return stopChainDaemon({network: args.network}, stopErr => {return cbk(stopErr);});
+    }],
+
+    rebootBTCDWithMiningAddress: ['stopBTCDBackend, genAddress', 'validateCredentials', ({genAddress, validateCredentials}, cbk) => {
       console.log("==\n" * 4);
       console.log("Entering rebootBTCDWithMiningAddress");
       console.log(genAddress);
+      spawnChainDaemon({
+        network: args.network,
+        daemon: args.daemon,
+        dir: validateCredentials.chainDir,
+        mining_public_key: genAddress.address
+      }, (err, res) => {
+        return cbk(err, res);
+      });
+      // stopChainDaemon({network: args.network}, stopErr => {return cbk(stopErr);});
+
     }]
 
 
