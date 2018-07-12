@@ -53,8 +53,10 @@ module.exports = ({cmd, network, params}, cbk) => {
       called = true;
 
       if (!response) {
+        console.log("rpc failed");
         return chainRpc.call(cmd, niceParams, (err, response) => {
           if (!response) {
+            console.log("Secondary rpc failed");
             return cbk([503, 'ExpectedNonEmptyChainResponse']);
           }
           return cbk(null, response.result);
