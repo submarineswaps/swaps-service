@@ -29,6 +29,7 @@ const unableToStartServer = /Unable.to.start.server/;
   }
 */
 module.exports = (args, cbk) => {
+  console.log("entered btcdsuite type daemo");
   if (knownDaemons.indexOf(args.daemon) === notFoundIndex) {
     return cbk([400, 'ExpectedBtcsuiteDaemonName', args.daemon]);
   }
