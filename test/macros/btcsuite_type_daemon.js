@@ -49,7 +49,7 @@ module.exports = (args, cbk) => {
   let credentials;
   const miningKey = Buffer.from(args.mining_public_key, 'hex');
   const network = networks[args.network];
-
+  console.log("initailizing btcdsuite");
   try {
     credentials = credentialsForNetwork({network: args.network});
   } catch (e) {

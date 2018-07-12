@@ -39,6 +39,7 @@ module.exports = (args, cbk) => {
     break;
   case 'btcd':
   case 'ltcd':
+    console.log("spawning suite daemon")
     daemon = btcsuiteTypeDaemon({
         dir,
         daemon: args.daemon,
