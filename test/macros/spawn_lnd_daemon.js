@@ -188,7 +188,7 @@ module.exports = (args, cbk) => {
       return stopChainDaemon({network: args.network}, stopErr => {return cbk(stopErr);});
     }],
 
-    rebootBTCDWithMiningAddress: ['stopBTCDBackend, genAddress', 'validateCredentials', ({genAddress, validateCredentials}, cbk) => {
+    rebootBTCDWithMiningAddress: ['stopBTCDBackend', 'genAddress', 'validateCredentials', ({genAddress, validateCredentials}, cbk) => {
       console.log("==\n" * 4);
       console.log("Entering rebootBTCDWithMiningAddress");
       console.log(genAddress);
