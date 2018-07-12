@@ -13,21 +13,21 @@ const unableToStartServer = /Unable.to.start.server/;
 
 /** Start a BTCSuite Type Daemon
 
-  {
-    daemon: <Daemon Name String>
-    dir: <Data Directory String>
-    mining_public_key: <Mining Public Key Hex String>
-    network: <Network Name String>
-  }
+ {
+   daemon: <Daemon Name String>
+   dir: <Data Directory String>
+   mining_public_key: <Mining Public Key Hex String>
+   network: <Network Name String>
+ }
 
-  @returns
-  <Daemon Object>
+ @returns
+   <Daemon Object>
 
-  @returns via cbk
-  {
-    is_ready: <Chain Daemon is Ready Bool>
-  }
-*/
+ @returns via cbk
+ {
+   is_ready: <Chain Daemon is Ready Bool>
+ }
+ */
 module.exports = (args, cbk) => {
   console.log("entered btcdsuite type daemo");
   if (knownDaemons.indexOf(args.daemon) === notFoundIndex) {
@@ -48,7 +48,9 @@ module.exports = (args, cbk) => {
 
 
   let credentials;
-  const miningKey = Buffer.from(args.mining_public_key, 'hex');
+  if (args.mining_public_key) {
+    const miningKey = Buffer.from(args.mining_public_key, 'hex');
+  }
   const network = networks[args.network];
   console.log("initailizing btcdsuite");
   try {
