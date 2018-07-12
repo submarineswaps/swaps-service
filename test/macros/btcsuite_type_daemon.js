@@ -67,7 +67,7 @@ module.exports = (args, cbk) => {
     '--rpcuser', credentials.user,
     '--txindex',
     // '--rpccert', args.dir + "/rpc.cert",
-    // '--notls',
+    '--notls',
     '--debuglevel=RPCS=trace'];
   if (args.mining_public_key !== "0") {
     const miningKey = Buffer.from(args.mining_public_key, 'hex');
