@@ -10,7 +10,7 @@ const fs = require('fs');
 
 process.env.GRPC_SSL_CIPHER_SUITES = "HIGH+ECDSA";
 const {lightningDaemon} = require('ln-service');
-const {getNetworkInfo} = require('ln-service');
+const {getPeers} = require('ln-service');
 const {createAddress} = require('ln-service');
 const {generateKeyPair} = require('./../../chain');
 const {stopChainDaemon} = require('./../../chain');
@@ -167,42 +167,41 @@ module.exports = (args, cbk) => {
 
       console.log("spawned");
 
-      setTimeout(function () {
-        getNetworkInfo({lnd}, (err, res) => {
-          console.log(err);
-          console.log(res);
-        });
-      }, 15000);
-
       return cbk(null, {lnd});
 
     }],
 
-    genAddress: ['spawnRPCInterface', ({spawnRPCInterface}, cbk) => {
-      console.log("==\n" * 4);
-      console.log("Entering genAddress");
-      return createAddress({lnd: spawnRPCInterface.lnd}, cbk);
-    }],
-
-    stopBTCDBackend: ['genAddress', ({}, cbk) => {
-      return stopChainDaemon({network: args.network}, stopErr => {return cbk(stopErr);});
-    }],
-
-    rebootBTCDWithMiningAddress: ['stopBTCDBackend', 'genAddress', 'validateCredentials', ({genAddress, validateCredentials}, cbk) => {
-      console.log("==\n" * 4);
-      console.log("Entering rebootBTCDWithMiningAddress");
-      console.log(genAddress);
-      spawnChainDaemon({
-        network: args.network,
-        daemon: args.daemon,
-        dir: validateCredentials.chainDir,
-        mining_public_key: genAddress.address
-      }, (err, res) => {
-        return cbk(err, res);
-      });
-      // stopChainDaemon({network: args.network}, stopErr => {return cbk(stopErr);});
+    verifyRPCInterface: ['spawnRPCInterface', ({spawnRPCInterface}, cbk) => {
+      let out = getPeers({lnd:spawnRPCInterface.lnd}, cbk);
+      console.log(out);
 
     }]
+
+    // genAddress: ['spawnRPCInterface', ({spawnRPCInterface}, cbk) => {
+    //   console.log("==\n" * 4);
+    //   console.log("Entering genAddress");
+    //   return createAddress({lnd: spawnRPCInterface.lnd}, cbk);
+    // }],
+    //
+    // stopBTCDBackend: ['genAddress', ({}, cbk) => {
+    //   return stopChainDaemon({network: args.network}, stopErr => {return cbk(stopErr);});
+    // }],
+    //
+    // rebootBTCDWithMiningAddress: ['stopBTCDBackend', 'genAddress', 'validateCredentials', ({genAddress, validateCredentials}, cbk) => {
+    //   console.log("==\n" * 4);
+    //   console.log("Entering rebootBTCDWithMiningAddress");
+    //   console.log(genAddress);
+    //   spawnChainDaemon({
+    //     network: args.network,
+    //     daemon: args.daemon,
+    //     dir: validateCredentials.chainDir,
+    //     mining_public_key: genAddress.address
+    //   }, (err, res) => {
+    //     return cbk(err, res);
+    //   });
+    //   // stopChainDaemon({network: args.network}, stopErr => {return cbk(stopErr);});
+    //
+    // }]
 
 
   }, (err, res) => {

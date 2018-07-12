@@ -6,7 +6,7 @@ const {spawnLNDDaemon} = require('./../macros');
 test(`spawn lnd + chaindaemon`, t => {
 
   return spawnLNDDaemon({
-      daemon: 'btcd',
+      daemon: 'bitcoind',
       network: 'regtest',
     },
     testErr => {

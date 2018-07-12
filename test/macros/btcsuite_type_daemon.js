@@ -60,14 +60,14 @@ module.exports = (args, cbk) => {
     '--datadir', args.dir,
     '--logdir', args.dir,
     // '--miningaddr', fromPublicKeyBuffer(miningKey, network).getAddress(),
-    '--simnet',
+    '--regtest',
     '--relaynonstd',
     '--rpclisten', `${credentials.host}:${credentials.port}`,
     '--rpcpass', credentials.pass,
     '--rpcuser', credentials.user,
     '--txindex',
     // '--rpccert', args.dir + "/rpc.cert",
-    // '--notls',
+    '--notls',
     '--debuglevel=RPCS=trace'];
   if (args.mining_public_key !== "0") {
     const miningKey = Buffer.from(args.mining_public_key, 'hex');
