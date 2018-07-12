@@ -16,6 +16,7 @@ const {SIGHASH_ALL} = Transaction;
 
   {
     destination: <Destination Address String>
+    fee: <Fee Tokens Number>
     network: <Network Name String>
     private_key: <WIF Serialized Private Key String>
     spend_transaction_id: <Transaction Id to Spend Hex String>
@@ -61,7 +62,7 @@ module.exports = (args, cbk) => {
   txBuilder.addInput(args.spend_transaction_id, args.spend_vout);
 
   try {
-    txBuilder.addOutput(args.destination, args.tokens);
+    txBuilder.addOutput(args.destination, (args.tokens - (args.fee || 0)));
   } catch (e) {
     return cbk([400, 'ErrorAddingOutput', e]);
   }

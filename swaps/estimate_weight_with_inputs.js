@@ -9,11 +9,11 @@ const shortPushdataLength = chainConstants.short_push_data_length;
 
   {
     network: <Network Name String>
-    preimage: <Claim Preimage Hex String>
     utxos: [{
       redeem: <Redeem Script Hex String>
       script: <Output Script Hex String>
     }]
+    unlock: <Claim Preimage, Refund Pubkey, Dummy Preimage Hex String>
     weight: <Weight Without Signed Inputs Number>
   }
 
@@ -22,13 +22,13 @@ const shortPushdataLength = chainConstants.short_push_data_length;
   @returns
   <Estimated Weight Number>
 */
-module.exports = ({network, preimage, utxos, weight}) => {
+module.exports = ({network, unlock, utxos, weight}) => {
   if (!network) {
     throw new Error('ExpectedNetworkForWeightEstimation');
   }
 
-  if (!preimage) {
-    throw new Error('ExpectedPreimageForInputWeightEstimation');
+  if (unlock === undefined) {
+    throw new Error('ExpectedUnlockElementForInputWeightEstimation');
   }
 
   if (!Array.isArray(utxos)) {
@@ -50,8 +50,8 @@ module.exports = ({network, preimage, utxos, weight}) => {
     return [
       shortPushdataLength,
       ecdsaSignatureLength,
-      shortPushdataLength,
-      Buffer.from(preimage, 'hex').length,
+      !!unlock ? shortPushdataLength : [].length,
+      Buffer.from(unlock, 'hex').length,
       sequenceLength,
       Buffer.from(redeem, 'hex').length,
       sum,

@@ -224,7 +224,7 @@ module.exports = (args, cbk) => {
     {
       try {
         return cbk(null, refundTransaction({
-          destination: res.generateAliceKeyPair.p2wpkh_address,
+          destination: res.generateAliceKeyPair.p2pkh_address,
           fee_tokens_per_vbyte: staticFeePerVirtualByte,
           is_public_key_hash_refund: args.is_refund_to_public_key_hash,
           network: args.network,
@@ -292,7 +292,7 @@ module.exports = (args, cbk) => {
     {
       try {
         cbk(null, refundTransaction({
-          destination: res.generateAliceKeyPair.p2wpkh_address,
+          destination: res.generateAliceKeyPair.p2pkh_address,
           fee_tokens_per_vbyte: staticFeePerVirtualByte,
           is_public_key_hash_refund: args.is_refund_to_public_key_hash,
           network: args.network,

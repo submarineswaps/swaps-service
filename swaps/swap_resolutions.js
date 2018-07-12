@@ -41,7 +41,10 @@ module.exports = ({network, transaction}) => {
     .filter(({script, witness}) => !isPublicKeyHashSpend({script, witness}))
     .filter(({script, witness}) => isSwapSpend({network, script, witness}))
     .map(({hash, index, script, witness}) => {
-      const [redeemScript, secret] = scriptElements({script, witness});
+      const elements = scriptElements({script, witness});
+
+      const redeemScript = !witness.length ? elements[2] : elements[0];
+      const secret = elements[1];
 
       const isClaim = secret.length === preimageByteLength;
 

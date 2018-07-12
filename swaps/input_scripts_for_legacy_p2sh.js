@@ -11,13 +11,13 @@ const {fromWIF} = ECPair;
 const hexBase = 16;
 const {SIGHASH_ALL} = Transaction;
 
-/** Generate input scripts for legacy p2sh claim transaction inputs
+/** Generate input scripts for legacy p2sh transaction inputs
 
   {
     key: <Signing Key WIF String>
     network: <Network Name String>
-    preimage: <HTLC Preimage Hex String>
     transaction: <Unsigned Transaction Hex String>
+    unlock: <HTLC Preimage, Dummy Byte or Public Key Hex String>
     utxos: [{
       redeem: <Redeem Script Hex String>
       tokens: <Outpoint Tokens Value Number>
@@ -33,7 +33,7 @@ const {SIGHASH_ALL} = Transaction;
     vin: <Input Index Number>
   }]
 */
-module.exports = ({key, network, preimage, transaction, utxos}) => {
+module.exports = ({key, network, transaction, unlock, utxos}) => {
   if (!key) {
     throw new Error('ExpectedSigningKeyForInputScriptGeneration');
   }
@@ -42,8 +42,8 @@ module.exports = ({key, network, preimage, transaction, utxos}) => {
     throw new Error('ExpectedNetworkNameForSigningInputScripts');
   }
 
-  if (!preimage) {
-    throw new Error('ExpectedHashLockPreimageForInputScriptSignatures');
+  if (unlock === undefined) {
+    throw new Error('ExpectedUnlockElementForInputScriptSignatures');
   }
 
   if (!transaction) {
@@ -78,9 +78,9 @@ module.exports = ({key, network, preimage, transaction, utxos}) => {
 
     const inputScriptElements = [
       signature,
-      Buffer.from(preimage, 'hex'),
+      Buffer.from(unlock, 'hex'),
       OP_PUSHDATA1,
-      redeemScript
+      redeemScript,
     ];
 
     const scriptSig = scriptBuffersAsScript(inputScriptElements);
