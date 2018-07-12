@@ -176,11 +176,13 @@ module.exports = (args, cbk) => {
     verifyRPCInterface: ['spawnRPCInterface', ({spawnRPCInterface}, cbk) => {
       console.log("outstart");
 
-      return signMessage({lnd:spawnRPCInterface.lnd, message:" "}, (res) => {
+      signMessage({lnd:spawnRPCInterface.lnd, message:" "}, (err, res) => {
         console.log("signres:");
+        console.log(err);
         console.log(res);
       });
       // console.log(out);
+      return cbk(null, {});
       console.log("outend");
 
     }]
