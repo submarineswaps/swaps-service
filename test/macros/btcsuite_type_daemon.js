@@ -38,7 +38,7 @@ module.exports = (args, cbk) => {
   }
 
   if (!args.mining_public_key) {
-    return cbk([400, 'ExpectedMiningPublicKeyForDaemon']);
+    // return cbk([400, 'ExpectedMiningPublicKeyForDaemon']);
   }
 
   if (!args.network) {
