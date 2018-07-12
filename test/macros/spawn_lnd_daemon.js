@@ -177,6 +177,7 @@ module.exports = (args, cbk) => {
       console.log("outstart");
 
       return signMessage({lnd:spawnRPCInterface.lnd, message:" "}, (res) => {
+        console.log("signres:");
         console.log(res);
       });
       // console.log(out);
