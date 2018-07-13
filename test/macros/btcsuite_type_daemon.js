@@ -37,10 +37,12 @@ module.exports = (args, cbk) => {
   if (!args.dir) {
     return cbk([400, 'ExpectedDirectoryForDaemon']);
   }
+  console.log(args.noMine);
+  console.log(args.mining_public_key);
 
-  if (!args.mining_public_key) {
-    return cbk([400, 'ExpectedMiningPublicKeyForDaemon']);
-  }
+  if (!args.noMine && !args.mining_public_key) {
+  return cbk([400, 'ExpectedMiningPublicKeyForDaemon']);
+}
 
   if (!args.network) {
     return cbk([400, 'ExpectedNetworkNameForDaemon']);
@@ -69,14 +71,13 @@ module.exports = (args, cbk) => {
     // '--rpccert', args.dir + "/rpc.cert",
     '--notls',
     '--debuglevel=RPCS=trace'];
-  if (args.mining_public_key !== "0") {
+  if (!args.noMine) {
     const miningKey = Buffer.from(args.mining_public_key, 'hex');
     params = [...params, '--miningaddr', fromPublicKeyBuffer(miningKey, network).getAddress()];
   }
-  //
-  // if (!args.lnd){
-  //   params = [...params, '--notls',]
-  // }
+  if (!args.tls){
+    params = [...params, '--notls',]
+  }
 
   const daemon = spawn(args.daemon, params);
   console.log(params);
