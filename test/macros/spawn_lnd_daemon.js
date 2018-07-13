@@ -72,7 +72,7 @@ module.exports = (args, cbk) => {
     spawnTLSBTCD: ['copyCerts', 'validateCredentials', ({validateCredentials}, cbk) => {
       console.log("spawning chain");
       spawnChainDaemon({
-        network: 'btcdbackend', daemon: args.daemon, dir: validateCredentials.chainDir
+        network: args.network, daemon: "btcdbackend", dir: validateCredentials.chainDir
       }, (err, res) => {
         return cbk(err, res);
       });
