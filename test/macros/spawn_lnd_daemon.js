@@ -12,6 +12,7 @@ process.env.GRPC_SSL_CIPHER_SUITES = "HIGH+ECDSA";
 const {lightningDaemon} = require('ln-service');
 const {getPeers} = require('ln-service');
 const {signMessage} = require('ln-service');
+const returnResult = require('./../../async-util/return_result');
 
 const {createAddress} = require('ln-service');
 const {generateKeyPair} = require('./../../chain');
