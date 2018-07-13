@@ -6,7 +6,7 @@ const {ECPair} = require('./../../tokenslib');
 const {networks} = require('./../../tokenslib');
 
 const {fromPublicKeyBuffer} = ECPair;
-const knownDaemons = ['btcd', 'ltcd'];
+const knownDaemons = ['btcd', 'ltcd', 'btcdbackend'];
 const notFoundIndex = -1;
 const rpcServerReady = /RPC.server.listening/;
 const unableToStartServer = /Unable.to.start.server/;
