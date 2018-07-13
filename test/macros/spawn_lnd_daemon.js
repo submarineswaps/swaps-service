@@ -63,8 +63,10 @@ module.exports = (args, cbk) => {
     },
     copyCerts: ['validateCredentials', ({validateCredentials}, cbk) => {
       fs.mkdirSync(validateCredentials.chainDir);
-      fs.copyFile('./swap_regtest/dummyrpc.cert', join(validateCredentials.chainDir, 'rpc.cert'), (err) => {console.log(err);});
-      fs.copyFile('./swap_regtest/dummyrpc.key', join(validateCredentials.chainDir, 'rpc.key'), (err) => {console.log(err);});
+      fs.copyFile(path.resolve('../swap_regtest', 'dummyrpc.cert'), join(validateCredentials.chainDir, 'rpc.cert'),
+        (err) => {console.log(err);});
+      fs.copyFile(path.resolve('../swap_regtest', 'dummyrpc.key'), join(validateCredentials.chainDir, 'rpc.key'),
+        (err) => {console.log(err);});
       return cbk(null, {});
     }],
     spawnTLSBTCD: ['copyCerts', 'validateCredentials', ({validateCredentials}, cbk) => {
