@@ -60,15 +60,20 @@ module.exports = (args, cbk) => {
         chainPort: credentials.port
       });
     },
-    spawnChainDaemonA: ['validateCredentials', ({validateCredentials}, cbk) => {
+    copyCerts: ['validateCredentials', ({validateCredentials}, cbk) => {
+      fs.copyFile('./swap_regtest/dummyrpc.cert', join(validateCredentials.chainDir, 'rpc.cert'));
+      fs.copyFile('./swap_regtest/dummyrpc.key', join(validateCredentials.chainDir, 'rpc.key'));
+      return cbk(null, {});
+    }],
+    spawnTLSBTCD: ['copyCerts', 'validateCredentials', ({validateCredentials}, cbk) => {
       console.log("spawning chain");
       spawnChainDaemon({
-        network: args.network, daemon: args.daemon, dir: validateCredentials.chainDir, mining_public_key:'0'
+        network: 'btcdbackend', daemon: args.daemon, dir: validateCredentials.chainDir
       }, (err, res) => {
         return cbk(err, res);
       });
     }],
-    spawnLND: ['spawnChainDaemonA', 'validateCredentials', ({validateCredentials}, cbk) => {
+    spawnLND: ['spawnTLSBTCD', 'validateCredentials', ({validateCredentials}, cbk) => {
       try {
         console.log("lnd spawnLND entry");
         console.log("Recieved:");
@@ -87,7 +92,7 @@ module.exports = (args, cbk) => {
             `--bitcoin.feerate=2500`,
             `--bitcoin.node=btcd`,
             `--bitcoin.simnet`,
-            // `--btcd.rpccert=${join(spawnChainDaemonA.chainDir, 'rpc.cert')}`
+            // `--btcd.rpccert=${join(spawnTLSBTCD.chainDir, 'rpc.cert')}`
           ];
           break;
         case "bitcoind":
@@ -120,7 +125,6 @@ module.exports = (args, cbk) => {
           `--autopilot.maxchannels=10`,
           `--autopilot.minchansize=100000`,
           `--autopilot.allocation=0.8`,
-
           ...chainParams]);
 
         console.log("lndDaemon spawned");
@@ -176,15 +180,13 @@ module.exports = (args, cbk) => {
     verifyRPCInterface: ['spawnRPCInterface', ({spawnRPCInterface}, cbk) => {
       console.log("outstart");
 
-      signMessage({lnd:spawnRPCInterface.lnd, message:" "}, (err, res) => {
-        console.log("signres:");
-        console.log(err);
-        console.log(res);
+      signMessage({lnd: spawnRPCInterface.lnd, message: " "}, (err, res) => {
+        if (!res.signature) {
+          return cbk([0, 'ExpectedValidLNDSignedMessage']);
+        } else {
+          return cbk(null, {lnd: spawnRPCInterface});
+        }
       });
-      // console.log(out);
-      return cbk(null, {});
-      console.log("outend");
-
     }]
 
     // genAddress: ['spawnRPCInterface', ({spawnRPCInterface}, cbk) => {
@@ -214,26 +216,21 @@ module.exports = (args, cbk) => {
     // }]
 
 
-  }, (err, res) => {
-    console.log("wrapping up spawn_lnd_daemon");
-    if (!!res.spawnLND && !!res.spawnLND.is_ready) {
-      console.log(args.network);
-      // return stopChainDaemon({network: args.network}, stopErr => {
-      //   return cbk(stopErr || err);
-      // });
-    }
-
-    if (!!err) {
-      console.log("spawn lnd error errored at end");
-      console.log(err);
-      return cbk(err);
-    }
-
-    return clearCache({cache: 'memory'}, cbk);
-  });
+    // }, (err, res) => {
+    //   console.log("wrapping up spawn_lnd_daemon");
+    //   if (!!res.spawnLND && !!res.spawnLND.is_ready) {
+    //     console.log(args.network);
+    //     // return stopChainDaemon({network: args.network}, stopErr => {
+    //     //   return cbk(stopErr || err);
+    //     // });
+    //   }
+    //
+    //   if (!!err) {
+    //     console.log("spawn lnd error errored at end");
+    //     console.log(err);
+    //     return cbk(err);
+    //   }
+    //
+    //   return clearCache({cache: 'memory'}, cbk);
+  }, returnResult({of: 'verifyRPCInterface'}, cbk));
 };
-
-
-
-
-
