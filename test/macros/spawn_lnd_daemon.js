@@ -5,7 +5,7 @@ const asyncAuto = require('async/auto');
 const rpcServerReady = /password RPC server listening on|Finished rescan for 0 addresses/;
 
 const exec = require('child_process').exec;
-const {join} = require('path');
+const path = require('path');
 const fs = require('fs');
 
 process.env.GRPC_SSL_CIPHER_SUITES = "HIGH+ECDSA";
@@ -53,7 +53,7 @@ module.exports = (args, cbk) => {
       } catch (e) {
         return cbk([500, 'CredentialsLookupFailure', e]);
       }
-      const chainDir = join('/tmp', uuidv4());
+      const chainDir = path.join('/tmp', uuidv4());
       return cbk(null, {
         chainDir,
         chainPass: credentials.pass,
@@ -63,9 +63,9 @@ module.exports = (args, cbk) => {
     },
     copyCerts: ['validateCredentials', ({validateCredentials}, cbk) => {
       fs.mkdirSync(validateCredentials.chainDir);
-      fs.copyFile(path.resolve('../swap_regtest', 'dummyrpc.cert'), join(validateCredentials.chainDir, 'rpc.cert'),
+      fs.copyFile(path.resolve('../swap_regtest', 'dummyrpc.cert'), path.join(validateCredentials.chainDir, 'rpc.cert'),
         (err) => {console.log(err);});
-      fs.copyFile(path.resolve('../swap_regtest', 'dummyrpc.key'), join(validateCredentials.chainDir, 'rpc.key'),
+      fs.copyFile(path.resolve('../swap_regtest', 'dummyrpc.key'), path.join(validateCredentials.chainDir, 'rpc.key'),
         (err) => {console.log(err);});
       return cbk(null, {});
     }],
@@ -118,9 +118,9 @@ module.exports = (args, cbk) => {
         const lndDaemon = spawn('lnd', [
           `--configfile=""`,
           `--datadir="${lndDir}"`,
-          `--adminmacaroonpath=${join(lndDir, 'admin.macaroon')}`,
-          `--tlscertpath=${join(lndDir, 'tls.cert')}`,
-          `--tlskeypath=${join(lndDir, 'tls.key')}`,
+          `--adminmacaroonpath=${path.join(lndDir, 'admin.macaroon')}`,
+          `--tlscertpath=${path.join(lndDir, 'tls.cert')}`,
+          `--tlskeypath=${path.join(lndDir, 'tls.key')}`,
           `--logdir="${lndDir}/logs/"`,
           '--noencryptwallet',
           '--debuglevel=trace',
@@ -166,8 +166,8 @@ module.exports = (args, cbk) => {
       if (!spawnLND.is_ready) {
         return cbk([0, "LNDaemon failed to ready"]);
       }
-      const cert = new Buffer(fs.readFileSync(join(spawnLND.lndDir, 'tls.cert'))).toString('base64');
-      const macaroon = new Buffer(fs.readFileSync(join(spawnLND.lndDir, 'admin.macaroon'))).toString('base64');
+      const cert = new Buffer(fs.readFileSync(path.join(spawnLND.lndDir, 'tls.cert'))).toString('base64');
+      const macaroon = new Buffer(fs.readFileSync(path.join(spawnLND.lndDir, 'admin.macaroon'))).toString('base64');
 
       console.log(cert);
       console.log(macaroon);
