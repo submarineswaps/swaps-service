@@ -63,9 +63,9 @@ module.exports = (args, cbk) => {
     },
     copyCerts: ['validateCredentials', ({validateCredentials}, cbk) => {
       fs.mkdirSync(validateCredentials.chainDir);
-      fs.copyFile(path.resolve('../swap_regtest', 'dummyrpc.cert'), path.join(validateCredentials.chainDir, 'rpc.cert'),
+      fs.copyFile(path.resolve(__dirname, '../swap_regtest', 'dummyrpc.cert'), path.join(validateCredentials.chainDir, 'rpc.cert'),
         (err) => {console.log(err);});
-      fs.copyFile(path.resolve('../swap_regtest', 'dummyrpc.key'), path.join(validateCredentials.chainDir, 'rpc.key'),
+      fs.copyFile(path.resolve(__dirname, '../swap_regtest', 'dummyrpc.key'), path.join(validateCredentials.chainDir, 'rpc.key'),
         (err) => {console.log(err);});
       return cbk(null, {});
     }],
