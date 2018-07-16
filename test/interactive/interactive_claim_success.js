@@ -29,18 +29,7 @@ const intBase = math.dec_base;
 const maturityBlockCount = chain.maturity_block_count;
 const timeoutBlockCount = 100;
 
-/** Run an interactive claim success scenario.
-
-  This test can run autonomously on regtest or interactively on testnet.
-
-  In this scenario Alice is trading with Bob. Alice presents Bob with a payment
-  hash and asks him to create a swap address.
-
-  Bob creates the swap address and asks Alice to fund it. Alice sends tokens
-  and then Bob pays the invoice and sweeps the tokens.
-
-  This test is interactive on the Lightning invoice and the swap address. It
-  does not cover any cases other than claim_success.
+/** Run an interactive claim success scenario given claim elements.
 
   {}
 */

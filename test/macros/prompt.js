@@ -6,7 +6,6 @@ const {start} = require('prompt');
   {
     [default_value]: <Default Value String>
     explain: <Explanation String>
-    role: <Addressed Role String>
   }
 
   @returns via cbk
@@ -17,7 +16,7 @@ const {start} = require('prompt');
 module.exports = (args, cbk) => {
   start();
 
-  const key = `[${args.role}]: ${args.explain}`;
+  const key = `${args.explain}`;
 
   return get([key], (err, res) => {
     if (!!err) {

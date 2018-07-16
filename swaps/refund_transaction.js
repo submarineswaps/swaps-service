@@ -1,8 +1,5 @@
 const bip65Encode = require('bip65').encode;
-const numberAsBuffer = require('varuint-bitcoin').encode;
-const {OP_0} = require('bitcoin-ops');
 const {OP_FALSE} = require('bitcoin-ops');
-const {OP_PUSHDATA1} = require('bitcoin-ops');
 
 const {address} = require('./../tokenslib');
 const {chainConstants} = require('./../chain');
@@ -23,17 +20,10 @@ const witnessesForResolution = require('./witnesses_for_resolution');
 
 const compressedPubKeySize = chainConstants.compressed_public_key_size;
 const dustRatio = 1 / 3;
-const ecdsaSignatureLength = chainConstants.ecdsa_sig_max_byte_length;
 const hexBase = 16;
-const hexCharCountPerByte = 2;
 const minSequence = chainConstants.min_sequence_value;
-const nestedScriptPubHexLength = 46;
-const sequenceLength = chainConstants.sequence_byte_length;
-const {sha256} = crypto;
-const shortPushdataLength = chainConstants.short_push_data_length;
 const {toOutputScript} = address;
 const vRatio = chainConstants.witness_byte_discount_denominator;
-const {witnessScriptHash} = script;
 
 /** Build a refund transaction to claim funds back from a swap
 

@@ -38,6 +38,7 @@ const encodeScriptHash = scriptHash.output.encode;
     [refund_p2wpkh_address]: <Refund P2WPKH Address String>
     [refund_public_key_hash]: <Refund Public Key Hash Hex String>
     timelock_block_height: <Locked Until Height Number>
+    type: <Swap Script Type String> // 'pk' || 'pkhash'
     witness_output_script: <Witness Output Script Hex String>
   }
 */
@@ -60,11 +61,14 @@ module.exports = (args) => {
   let paymentHash;
   const redeemScript = Buffer.from(args.script, 'hex');
   let refundPublicKeyHash;
+  let type;
 
   const scriptAssembly = toASM(script.decompile(redeemScript)).split(' ');
 
   switch (scriptAssembly.length) {
   case 12: // Public key swap script
+    type = 'pk';
+
     {
       const [
         OP_SHA256, pkPaymentHash, OP_EQUAL,
@@ -137,6 +141,8 @@ module.exports = (args) => {
     break;
 
   case 17: // Public key hash swap script
+    type = 'pkhash';
+
     {
       const [
         OP_DUP,
@@ -252,30 +258,30 @@ module.exports = (args) => {
   const refundP2wpkhAddress = fromOutputScript(p2wpkhScriptPub, network);
 
   const lockHeight = Buffer.from(cltv, 'hex').readUIntLE(0, cltv.length / 2);
+  const p2shAddress = fromOutputScript(p2shLegacyOutput, network);
 
   if (!!network.is_segwit_absent) {
-    const address = fromOutputScript(p2shLegacyOutput, network);
-
     let bchAddress;
 
     switch (args.network) {
     case 'bchtestnet':
       try {
-        bchAddress = toCashAddress(address);
+        bchAddress = toCashAddress(p2shAddress);
+
       } catch (err) {
         throw new Error('FailedToConvertToBchAddress');
       }
       break;
 
     default:
-      bchAddress = address;
       break;
     }
 
     return {
+      type,
       bch_p2sh_address: bchAddress,
       destination_public_key: destinationPublicKey,
-      p2sh_address: address,
+      p2sh_address: p2shAddress,
       p2sh_output_script: p2shLegacyOutput.toString('hex'),
       payment_hash: paymentHash,
       refund_p2pkh_address: refundP2pkhAddress,
@@ -284,8 +290,9 @@ module.exports = (args) => {
     };
   } else {
     return {
+      type,
       destination_public_key: destinationPublicKey,
-      p2sh_address: fromOutputScript(p2shLegacyOutput, network),
+      p2sh_address: p2shAddress,
       p2sh_output_script: p2shLegacyOutput.toString('hex'),
       p2sh_p2wsh_address: p2shNestedAddr,
       p2sh_p2wsh_output_script: p2shWrappedWitnessProg.toString('hex'),
