@@ -18,14 +18,17 @@ const txConfirmationCount = 6;
 */
 module.exports = ({address, network, transaction}, cbk) => {
   return asyncAuto({
-    // Check if the transaction is already broadcast
-    getTransaction: cbk => {
-      return getTransaction({
-        network,
-        id: Transaction.fromHex(transaction).getId(),
-      },
-      cbk);
+    // Transaction id
+    id: cbk => {
+      try {
+        return cbk(null, Transaction.fromHex(transaction).getId());
+      } catch (e) {
+        return cbk([400, 'ExpectedValidTransactionToMine']);
+      }
     },
+
+    // Check if the transaction is already broadcast
+    getTransaction: ['id', ({id}, cbk) => getTransaction({id, network}, cbk)],
 
     // Broadcast the transaction into the mempool
     broadcastTransaction: ['getTransaction', ({getTransaction}, cbk) => {
