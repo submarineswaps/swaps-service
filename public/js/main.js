@@ -187,9 +187,13 @@ App.checkSwap = ({button, id, quote}) => {
     let txUrl = '#';
 
     quote.find('.delete-swap').prop('disabled', true).addClass('disabled');
+    quote.find('.download-file .label').text('Save Full Refund Details');
     quote.find('.refund-output-index').val(res.output_index);
     quote.find('.refund-tokens-total').val(sentAmount);
     quote.find('.swap-transaction-id').val(res.transaction_id);
+
+    App.swaps[id].transaction_id = res.transaction_id;
+    App.swaps[id].transaction_output_index = res.output_index;
 
     switch (network) {
     case 'bchtestnet':
@@ -339,6 +343,7 @@ App.clickedShowSwap = function(event) {
   @returns via cbk
   {
     destination_public_key: <Destination Public Key Hex String>
+    fee_tokens_per_vbyte: <Fee Rate Tokens Per Virtual Byte Number>
     invoice: <Lightning Invoice String>
     payment_hash: <Payment Hash Hex String>
     redeem_script: <Redeem Script Hex String>
@@ -374,6 +379,10 @@ App.createSwap = ({invoice, network, refund}, cbk) => {
 
       if (!details.destination_public_key) {
         throw new Error('ExpectedDestinationPublicKey');
+      }
+
+      if (!details.fee_tokens_per_vbyte) {
+        throw new Error('ExpectedFeeTokensPerVirtualByte');
       }
 
       if (!details.invoice) {
@@ -597,6 +606,10 @@ App.getSwap = (args, cbk) => {
 
       if (!details.transaction_id) {
         throw new Error('ExpectedTransactionId');
+      }
+
+      if (details.output_index === undefined) {
+        throw new Error('ExpectedTransactionVout');
       }
 
       return details;
@@ -897,6 +910,7 @@ App.submitCreateSwapQuote = function(event) {
     App.swaps[details.payment_hash] = {
       network,
       destination_public_key: details.destination_public_key,
+      fee_tokens_per_vbyte: details.fee_tokens_per_vbyte,
       invoice: details.invoice,
       payment_hash: details.payment_hash,
       redeem_script: details.redeem_script,
@@ -957,17 +971,26 @@ App.submitCreateSwapQuote = function(event) {
       const anchor = document.createElement('a');
       const encoding = 'data:text/plain;charset=utf-8';
 
+      const txDetails = App.swaps[details.payment_hash] || {};
+
+      const refundData = {
+        network,
+        private_key: !isPaperWallet ? undefined : refundKey.private_key,
+        redeem_script: details.redeem_script,
+        refund_address: address,
+        refund_fee_tokens_per_vbyte: details.fee_tokens_per_vbyte,
+        refund_after: details.timeout_block_height,
+        swap_address: swapAddress,
+        swap_amount: swapAmount,
+        swap_quote_received_at: new Date().toISOString(),
+        transaction_id: txDetails.transaction_id,
+        transaction_output_index: txDetails.transaction_output_index,
+      };
+
+      refundData.base64 = btoa(JSON.stringify(refundData));
+
       const text = JSON.stringify(
-        {
-          network,
-          private_key: !isPaperWallet ? undefined : refundKey.private_key,
-          redeem_script: details.redeem_script,
-          refund_address: address,
-          refund_after: details.timeout_block_height,
-          swap_address: swapAddress,
-          swap_amount: swapAmount,
-          swap_quote_received_at: new Date().toISOString(),
-        },
+        refundData,
         null,
         redeemInfoJsonSpacing
       );
@@ -985,7 +1008,6 @@ App.submitCreateSwapQuote = function(event) {
       }
 
       quote.find('.make-payment').collapse('show');
-      quote.find('.save-redeem-script').addClass('disabled');
       quote.find('.chain-link').removeClass('disabled');
 
       return;

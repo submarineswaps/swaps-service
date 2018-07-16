@@ -274,7 +274,6 @@ module.exports = (args) => {
       break;
 
     default:
-      bchAddress = address;
       break;
     }
 

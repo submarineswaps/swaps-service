@@ -190,7 +190,7 @@ module.exports = ({}, cbk) => {
       'refundDetails',
       ({refundDetails}, cbk) =>
     {
-      if (!!refundDetails.transaction_output_index) {
+      if (refundDetails.transaction_output_index !== undefined) {
         return cbk(null, {value: refundDetails.transaction_output_index});
       }
 
@@ -204,7 +204,7 @@ module.exports = ({}, cbk) => {
     fundingTxOutputIndex: ['promptForTxVout', ({promptForTxVout}, cbk) => {
       const {value} = promptForTxVout;
 
-      if (!value) {
+      if (value === undefined || value === '') {
         return cbk([400, 'ExpectedFundingTxVout']);
       }
 
@@ -379,11 +379,11 @@ module.exports = ({}, cbk) => {
 };
 
 // Execute scenario
-module.exports({}, (err, res) => {
+module.exports({}, (err, broadcast) => {
   if (!!err) {
     console.log('INTERACTIVE REFUND SUCCESS ERROR', err);
   }
 
-  return console.log('END TEST');
+  return console.log('END TEST', broadcast);
 });
 
