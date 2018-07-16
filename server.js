@@ -1,3 +1,4 @@
+require('dotenv').config();
 const {log} = console;
 
 const {join} = require('path');
