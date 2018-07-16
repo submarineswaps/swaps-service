@@ -41,7 +41,7 @@ module.exports = (args, cbk) => {
     console.log("spawning btcd for lightning backend");
     daemon = btcsuiteTypeDaemon({
         dir,
-        daemon: args.daemon,
+        daemon: 'btcd',
         noMine: true,
         tls: true,
         network: args.network,
@@ -88,7 +88,7 @@ module.exports = (args, cbk) => {
   process.on('uncaughtException', err => {
     console.log('CHAIN ERROR', err);
     daemon.kill();
-    process.exit(1)
+    process.exit(1);
   });
 
   return;
