@@ -1,11 +1,8 @@
 const {test} = require('tap');
-const {log} = console;
 const cache = 'redis';
 const swapNetworks = ['bchtestnet', 'ltctestnet', 'testnet'];
-const {returnJson} = require('./../async-util');
 const {mockAPI} = require('../macros');
-const {reqGetExchangeRates} = require('./../rou')
-
+const {reqGetExchangeRates} = require('./../../routers/apiMethods')
 
 test(`test exchange rates`, t => {
   let v = mockAPI({
@@ -16,5 +13,3 @@ test(`test exchange rates`, t => {
   console.log(v);
 
 });
-
-
