@@ -9,9 +9,6 @@ block content
           h1 Submarine Swap Refund
           p.text-muted Swap didn't work? Receive a refund for your swap.
 
-        .alert.alert-primary(role="alert")
-          | Select the type of refund you prefer:
-
         ul.mb-3.nav.nav-pills#pills-tab(role="tablist")
           li.nav-item
             a.active.nav-link#redeem-script-tab(
@@ -21,7 +18,7 @@ block content
               href="#redeem-script-refund",
               role="tab"
             )
-              | Find refund details
+              | Paste refund details JSON
           li.nav-item
             a.nav-link#tx-details-refund-tab(
               aria-controls="tx-details-refund",
@@ -30,7 +27,7 @@ block content
               href="#tx-details-refund",
               role="tab"
             )
-              | I have the swap transaction details
+              | Swap transaction details
         .tab-content#pills-tabContent
           .active.fade.show.tab-pane#redeem-script-refund(
             aria-labelledby="redeem-script-tab",
@@ -38,20 +35,19 @@ block content
           )
             .card
               .card-body
-                form.online-refund-details(auto-complete="off")
+                form.enter-refund-details(auto-complete="off")
                   .form-group.row
                     label.col-form-label.col-sm-2
-                      | Redeem Script:
+                      | Refund JSON:
                     .col-sm-10
-                      textarea.form-control.online-refund-redeem-script(
-                        placeholder="Enter the swap redeem script",
-                        rows="4"
+                      textarea.form-control.refund-details(
+                        placeholder="Enter the swap refund details JSON",
+                        rows="10"
                       )
                       small.form-text.mb-2.text-muted
-                        | You saved this redeem script when you requested the
-                        | swap.
+                        | You saved these details when you requested the swap.
                   .btn-group
-                    button.btn.btn-lg.btn-primary.search-for-refund
+                    button.btn.btn-lg.btn-primary.show-refund
                       | Get Refund
                   .collapse.hide.refund-details-not-found
                     hr
@@ -103,50 +99,13 @@ block content
                         | funds.
                   .form-group.row
                     label.col-form-label.col-sm-2
-                      | Refund P2WPKH Address:
-                    .col-sm-10
-                      input.form-control.redeem-refund-address(
-                        readonly,
-                        type="text"
-                      )
-                      small.form-text.mb-2.text-muted
-                        | Refund address entered for this redeem script.
-                  .form-group.row
-                    label.col-form-label.col-sm-2
                       | Swap Address:
                     .col-sm-10
-                      .custom-control.custom-radio
-                        input.custom-control-input.form-check-input#swap-p2sh(
-                          checked,
-                          name="swap-output",
-                          type="radio",
-                          value="swap-p2sh")
-                        label.custom-control-label.form-check-label(
-                          for="swap-p2sh"
-                        )
-                          span.refund-p2sh-swap-address
-                            | Base58 Standard P2SH Swap Address
-                      .custom-control.custom-radio
-                        input.custom-control-input.form-check-input#swap-p2sh-p2wsh(
-                          checked,
-                          name="swap-output",
-                          type="radio",
-                          value="swap-p2sh-p2wsh")
-                        label.custom-control-label.form-check-label(
-                          for="swap-p2sh-p2wsh"
-                        )
-                          span.refund-p2sh-p2wsh-swap-address
-                            | SegWit Base58 Standard P2SH Swap Address
-                      .custom-control.custom-radio
-                        input.custom-control-input.form-check-input#swap-p2wsh(
-                          name="swap-output",
-                          type="radio",
-                          value="swap-p2wsh")
-                        label.custom-control-label.form-check-label(
-                          for="swap-p2wsh"
-                        )
-                          span.refund-p2wsh-swap-address
-                            | Bech32 Native SegWit Swap Address
+                      select.custom-select.form-control.select-swap-address
+                        option.bch-p2sh-address(value="")
+                        option.p2sh-address(value="")
+                        option.p2sh-p2wsh-address(value="")
+                        option.p2wsh-address(selected, value="")
                       small.form-text.mb-2.text-muted
                         | Select the swap address you sent to.
                   .form-group.row
@@ -201,16 +160,6 @@ block content
                         | comfortable paying.
                   .form-group.row
                     label.col-form-label.col-sm-2
-                      | Refund address
-                    .col-sm-10
-                      input.form-control.refund-address(
-                        placeholder="Enter address to pay refund back to",
-                        type="text",
-                      )
-                      small.form-text.mb-2.text-muted
-                        | Pay your refund back to this address
-                  .form-group.row
-                    label.col-form-label.col-sm-2
                       | Refund Private Key:
                     .col-sm-10
                       input.form-control.refund-key(
@@ -218,16 +167,20 @@ block content
                         placeholder="Enter your refund private key",
                         type="password")
                       small.form-text.mb-2.text-muted
-                        span In Core you can use
-                        span #{' '}
-                        code dumpprivkey
-                        span #{' '}
-                        code.dump-refund-address
-                        span #{' '}
-                        span command to get this key.
+                        | WIF encoded private key for your refund key
+                  .form-group.row
+                    label.col-form-label.col-sm-2
+                      | Refund Address
+                    .col-sm-10
+                      input.form-control.refund-address(
+                        placeholder="Enter address to pay refund back to",
+                        type="text",
+                      )
+                      small.form-text.mb-2.text-muted
+                        | Pay your refund back to this address
                   .mb-4
                     button.btn.btn-lg.btn-primary(type="submit")
-                      | Create Signed Refund Transaction
+                      | Execute Refund
                   .alert.alert-danger.collapse.generic.hide.mb-4.refund-tx-failure
                     | Failed to create refund transaction.
                   .alert.alert-danger.collapse.hide.mb-4.output-too-small.refund-tx-failure
@@ -241,10 +194,14 @@ block content
                         rows="9"
                       )
                       small.form-text.mb-2.text-muted
-                        span In Core you can use
-                        span #{' '}
-                        code sendrawtransaction
-                        span #{' '}
-                        span to broadcast.
+                        | Signed version of your refund transaction
+                  .alert.alert-success.collapse.hide.refund-tx-success
+                    h5.alert-heading Refund Transaction Created!
+                    span Broadcast to the network: 
+                    a.alert-link.link-to-refund(href="#", target="_blank")
+                    div
+                      span Funds will return to 
+                      span.refund-address mu7t8JeXhiJG9txK16ZAhnEM4zVx6ypL14
+
       .col
 

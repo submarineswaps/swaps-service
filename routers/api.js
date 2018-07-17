@@ -1,6 +1,7 @@
 const bodyParser = require('body-parser');
 const {Router} = require('express');
 
+const {broadcastTransaction} = require('./../service');
 const {checkSwapStatus} = require('./../service');
 const {createSwap} = require('./../service');
 const {findSwapOutpoint} = require('./../service');
@@ -73,12 +74,21 @@ module.exports = ({log}) => {
   });
 
   // POST a swap check request
-  router.post('/swaps/check', ({body, params}, res) => {
+  router.post('/swaps/check', ({body}, res) => {
     return checkSwapStatus({
       cache,
       invoice: body.invoice,
       network: body.network,
       script: body.redeem_script,
+    },
+    returnJson({log, res}));
+  });
+
+  // POST a transaction to broadcast to the network
+  router.post('/transactions/', ({body}, res) => {
+    return broadcastTransaction({
+      network: body.network,
+      transaction: body.transaction,
     },
     returnJson({log, res}));
   });

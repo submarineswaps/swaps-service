@@ -71,8 +71,12 @@ module.exports = ({cache, network}, cbk) => {
       'getCached',
       ({currencyCode, getCached}, cbk) =>
     {
+      const cachedTime = getCached && getCached.time ? getCached.time : 0;
+
+      const isStale = (Date.now() - cachedTime) > rateCacheTimeMs;
+
       // Exit early when there is already a cached version
-      if (!!getCached && !!getCached.cents) {
+      if (!isStale && !!getCached && !!getCached.cents) {
         return cbk();
       }
 
@@ -92,8 +96,9 @@ module.exports = ({cache, network}, cbk) => {
           }
 
           const cents = parseInt(body.last * centsPerUnit, decBase);
+          const time = Date.now();
 
-          return cbk(null, {cents});
+          return cbk(null, {cents, time});
         });
       },
       cbk);
@@ -111,7 +116,7 @@ module.exports = ({cache, network}, cbk) => {
         key: network,
         ms: rateCacheTimeMs,
         type: 'fiat_rate',
-        value: {cents: getFresh.cents},
+        value: {cents: getFresh.cents, time: getFresh.time},
       },
       cbk);
     }],

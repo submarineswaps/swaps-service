@@ -1,4 +1,3 @@
-require('dotenv').config();
 const {log} = console;
 
 const {join} = require('path');
@@ -11,6 +10,8 @@ const {hidePoweredBy} = require('helmet');
 const morgan = require('morgan');
 const serveFavicon = require('serve-favicon');
 const walnut = require('walnut');
+
+require('dotenv').config();
 
 const {addSwapToPool} = require('./pool');
 const apiRouter = require('./routers/api');

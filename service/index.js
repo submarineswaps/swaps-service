@@ -1,3 +1,4 @@
+const broadcastTransaction = require('./broadcast_transaction');
 const checkSwapStatus = require('./check_swap_status');
 const createSwap = require('./create_swap');
 const findSwapOutpoint = require('./find_swap_outpoint');
@@ -8,6 +9,7 @@ const getInvoiceDetails = require('./get_invoice_details');
 const getSwapStatus = require('./get_swap_status');
 
 module.exports = {
+  broadcastTransaction,
   checkSwapStatus,
   createSwap,
   findSwapOutpoint,
