@@ -53,7 +53,7 @@ App.changedRefundAddress = function({}) {
   const swap = input.closest('.create-swap-quote');
 
   // Exit early when the address has not changed
-  if (swap.data().address === address) {
+  if (!swap.data() || swap.data().address === address) {
     return;
   }
 
@@ -1134,6 +1134,9 @@ App.submitRefundRecovery = function(event) {
   }
 
   $('#tx-details-refund-tab').tab('show');
+
+  $('.generic.refund-tx-failure').collapse('hide');
+  $('.refund-tx-success').collapse('hide');
 
   return;
 };
