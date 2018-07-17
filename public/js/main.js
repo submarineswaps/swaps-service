@@ -640,21 +640,6 @@ App.getSwap = (args, cbk) => {
   };
 
   App.makeRequest({post, api: `swaps/check`})
-    .then(details => {
-      if (!details.payment_secret && details.conf_wait_count === undefined) {
-        throw new Error('ExpectedPaymentSecretOrConfirmationsWaitCount');
-      }
-
-      if (!details.transaction_id) {
-        throw new Error('ExpectedTransactionId');
-      }
-
-      if (details.output_index === undefined) {
-        throw new Error('ExpectedTransactionVout');
-      }
-
-      return details;
-    })
     .then(details => cbk(null, details))
     .catch(err => cbk(err));
 
