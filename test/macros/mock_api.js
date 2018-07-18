@@ -12,12 +12,10 @@ const httpMocks = require('node-mocks-http');
 
    Response object
  */
-module.exports = (args) => {
+module.exports = (args, cbk) => {
+  let req = httpMocks.createRequest(args);
+  let res = httpMocks.createResponse();
+  args.method({req, res, log: console, cache: 'memory', cbk});
 
-  let request = httpMocks.createRequest(args);
-  let response = httpMocks.createResponse();
-
-  args.method(request, response);
-  return JSON.parse(response._getData());
 };
 
