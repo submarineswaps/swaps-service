@@ -30,13 +30,13 @@ Configure environment variables as necessary.
     export SSS_CLAIM_LTCTESTNET_ADDRESS="ltctestnet addr" // Claim to address
     export SSS_CLAIM_TESTNET_ADDRESS="addr" // Override using LND for claims
 
-    export SSS_BTC_LND_GRPC_HOST="host:port" // LND GRPC API, LND daemon configured for BTC
-    export SSS_BTC_LND_MACAROON="base64 exported lnd macaroon file" // LND macaroon, LND daemon configured for BTC
-    export SSS_BTC_LND_TLS_CERT="base64 exported TLS cert" // LND TLS cert, LND daemon configured for BTC
+    export SSS_TESTNET_LND_GRPC_HOST="host:port" // LND GRPC API, LND daemon configured for BTC
+    export SSS_TESTNET_LND_MACAROON="base64 exported lnd macaroon file" // LND macaroon, LND daemon configured for BTC
+    export SSS_TESTNET_LND_TLS_CERT="base64 exported TLS cert" // LND TLS cert, LND daemon configured for BTC
 
-    export SSS_LTC_LND_GRPC_HOST="host:port" // LND GRPC API, LND daemon configured for LTC
-    export SSS_LTC_LND_MACAROON="base64 exported lnd macaroon file" // LND macaroon, LND daemon configured for LTC
-    export SSS_LTC_LND_TLS_CERT="base64 exported TLS cert" // LND TLS cert, LND daemon configured for LTC
+    export SSS_LTCTESTNET_LND_GRPC_HOST="host:port" // LND GRPC API, LND daemon configured for LTC
+    export SSS_LTCTESTNET_LND_MACAROON="base64 exported lnd macaroon file" // LND macaroon, LND daemon configured for LTC
+    export SSS_LTCTESTNET_LND_TLS_CERT="base64 exported TLS cert" // LND TLS cert, LND daemon configured for LTC
 
 ## Testing
 
