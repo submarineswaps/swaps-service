@@ -1,15 +1,19 @@
 const {test} = require('tap');
-const cache = 'redis';
-const swapNetworks = ['bchtestnet', 'ltctestnet', 'testnet'];
+const {swapNetworks} = require('./../../chain/conf/api_constants');
 const {mockAPI} = require('../macros');
-const {reqGetExchangeRates} = require('./../../routers/apiMethods')
+const {reqGetExchangeRates} = require('./../../routers/apiMethods');
 
 test(`test exchange rates`, t => {
-  let v = mockAPI({
-    cache,
+  mockAPI({
+    cache: 'memory',
     networks: swapNetworks,
     method: reqGetExchangeRates
+  }, (err, res) => {
+    if (!res.rates) {
+      t.fail("InvalidGetExchangeRatesResponse")
+    }
+    t.end()
+
   });
-  console.log(v);
 
 });
