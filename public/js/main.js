@@ -675,6 +675,8 @@ App.init = args => {
     return;
   });
 
+  App.initFromQueryParams({});
+
   return;
 };
 
@@ -701,6 +703,29 @@ App.initExchangeRates = ({}, cbk) => {
     })
     .then(rates => cbk(null, {rates}))
     .catch(err => cbk(err));
+
+  return;
+};
+
+/** Init state using query parameters
+
+  {}
+*/
+App.initFromQueryParams = ({}) => {
+  let invoice;
+  let network;
+
+  try {
+    invoice = new URL(location.href).searchParams.get('invoice');
+    network = new URL(location.href).searchParams.get('network');
+
+    history.replaceState({}, 'some title', '/');
+  } catch (err) {
+    return;
+  }
+
+  $('.pay-to-lightning-invoice').val(invoice).trigger('change');
+  $('.select-currency').val(network).trigger('change');
 
   return;
 };
