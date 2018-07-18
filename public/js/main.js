@@ -1070,7 +1070,7 @@ App.submitRefundRecovery = function(event) {
 
   clearFields.forEach(n => $(n).val(''));
 
-  const refundDetails = $('.refund-details').val().trim();
+  const refundDetails = ($('.refund-details').val() || '').trim();
 
   let details;
 
@@ -1092,6 +1092,106 @@ App.submitRefundRecovery = function(event) {
 
   if (!!details.swap_address) {
     $('.select-swap-address').val(details.swap_address);
+
+    const address = details.swap_address;
+
+    switch (details.network) {
+    case 'testnet':
+      fetch(`https://api.blockcypher.com/v1/btc/test3/addrs/${address}/full`)
+        .then(r => r.json())
+        .then(details => {
+          if (!details || !Array.isArray(details.txs) || !details.txs.length) {
+            return;
+          }
+
+          let payouts = {};
+
+          details.txs.forEach(({hash, outputs}) => {
+            return outputs.forEach(({addresses}, vout) => {
+              return addresses.forEach(addr => payouts[addr] = {hash, vout});
+            });
+          });
+
+          const tx = payouts[address];
+
+          if (!!tx && !!tx.hash && !$('.refund-transaction-id').val()) {
+            $('.refund-transaction-id').val(tx.hash);
+          }
+
+          if (!!tx && tx.vout !== undefined && !$('.refund-tx-vout').val()) {
+            $('.refund-tx-vout').val(tx.vout);
+          }
+
+          return;
+        })
+        .catch(err => {
+          console.log([503, 'FailedToFetchAddressDetails', err]);
+          return;
+        });
+      break;
+
+    case 'bchtestnet':
+      fetch(`https://test-bch-insight.bitpay.com/api/addrs/${address}/utxo`)
+        .then(r => r.json())
+        .then(transactions => {
+          if (!Array.isArray(transactions) || !transactions.length) {
+            return;
+          }
+
+          const [tx] = transactions;
+
+          if (!!tx && !!tx.txid && !$('.refund-transaction-id').val()) {
+            $('.refund-transaction-id').val(tx.txid);
+          }
+
+          if (!!tx && tx.vout !== undefined && !$('.refund-tx-vout').val()) {
+            $('.refund-tx-vout').val(tx.vout);
+          }
+
+          return;
+        })
+        .catch(err => {
+          console.log([503, 'FailedToFetchAddressDetails']);
+          return;
+        });
+      break;
+
+    case 'ltctestnet':
+      fetch(`https://chain.so/api/v2/get_tx_received/LTCTEST/${address}`)
+        .then(r => r.json())
+        .then(details => {
+          if (!details || !details.data || !Array.isArray(details.data.txs)) {
+            return;
+          }
+
+          if (!details.data.txs.length) {
+            return;
+          }
+
+          const [tx] = details.data.txs;
+
+          if (!tx) {
+            return;
+          }
+
+          if (!!tx.txid && !$('.refund-transaction-id').val()) {
+            $('.refund-transaction-id').val(tx.txid);
+          }
+
+          if (tx.output_no !== undefined && !$('.refund-tx-vout').val()) {
+            $('.refund-tx-vout').val(tx.output_no);
+          }
+
+          return;
+        })
+        .catch(err => {
+          console.log([503, 'FailedToFetchAddressDetails']);
+          return;
+        });
+
+    default:
+      break;
+    }
   }
 
   if (!!details.transaction_id) {
@@ -1108,6 +1208,8 @@ App.submitRefundRecovery = function(event) {
 
   if (!!details.refund_fee_tokens_per_vbyte) {
     $('.refund-fee').val(details.refund_fee_tokens_per_vbyte);
+  } else {
+    $('.refund-fee').val(1);
   }
 
   if (!!details.private_key) {
@@ -1257,6 +1359,10 @@ App.submitSignWithRefundDetails = function(e) {
   }
 */
 App.updatedSwapDetails = ({swap}) => {
+  if (!swap.find('.pay-to-lightning-invoice').length) {
+    return;
+  }
+
   const address = swap.find('.refund-address').val().trim();
   const invoice = swap.find('.pay-to-lightning-invoice').val().trim();
   const network = swap.find('.select-currency').val();
