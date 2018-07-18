@@ -42,6 +42,10 @@ module.exports = ({network}, cbk) => {
 
     // Check header info
     checkHeaderInfo: ['getHeaderInfo', ({getHeaderInfo}, cbk) => {
+      if (!getHeaderInfo || !getHeaderInfo.median_created_at) {
+        return cbk([503, 'FailedToReceiveMedianDate']);
+      }
+
       // Roughly how long has it been since this block was created?
       const delayMs = Date.now() - Date.parse(getHeaderInfo.median_created_at);
 

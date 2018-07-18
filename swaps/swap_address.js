@@ -1,15 +1,7 @@
-const {address} = require('./../tokenslib');
-const {crypto} = require('./../tokenslib');
 const {networks} = require('./../tokenslib');
 const pkSwapScript = require('./pk_swap_script');
 const pkHashSwapScript = require('./pkhash_swap_script');
-const {script} = require('./../tokenslib');
-
-const {fromOutputScript} = address;
-const encodeScriptHash = script.scriptHash.output.encode;
-const {hash160} = crypto;
-const {sha256} = crypto;
-const {witnessScriptHash} = script;
+const swapScriptDetails = require('./swap_script_details');
 
 /** Derive a chain swap address for a swap
 
@@ -28,10 +20,11 @@ const {witnessScriptHash} = script;
 
   @returns
   {
+    bch_p2sh_address: <BCH P2SH Format Address String>
     p2sh_address: <Legacy P2SH Base58 Address String>
     p2sh_output_script: <Legacy P2SH Output Script Hex String>
-    p2sh_p2wsh_output_script: <P2SH Nested Output Script Hex String>
     p2sh_p2wsh_address: <Nested Pay to Witness Script Address String>
+    p2sh_p2wsh_output_script: <P2SH Nested Output Script Hex String>
     p2wsh_address: <Pay to Witness Script Hash Address String>
     redeem_script: <Redeem Script Hex String>
     witness_output_script: <Witness Output Script Hex String>
@@ -44,6 +37,7 @@ module.exports = args => {
 
   const network = networks[args.network];
   let redeemScriptHex;
+  let scriptDetails;
 
   if (!!args.refund_public_key) {
     redeemScriptHex = pkSwapScript({
@@ -63,27 +57,24 @@ module.exports = args => {
     throw new Error('ExpectedRefundKey');
   }
 
-  const redeemScript = Buffer.from(redeemScriptHex, 'hex');
-
-  // Legacy P2SH output script
-  const p2shLegacyOutput = encodeScriptHash(hash160(redeemScript));
-
-  // The witness program is part of the scriptPub: "pay to this script hash"
-  const witnessProgram = witnessScriptHash.output.encode(sha256(redeemScript));
-
-  // When wrapping for legacy p2sh, the program is hashed more and with RIPE160
-  const p2shWrappedWitnessProgram = encodeScriptHash(hash160(witnessProgram));
-
-  const p2shNestedAddr = fromOutputScript(p2shWrappedWitnessProgram, network);
+  try {
+    scriptDetails = swapScriptDetails({
+      network: args.network,
+      script: redeemScriptHex,
+    });
+  } catch (err) {
+    throw err;
+  }
 
   return {
-    p2sh_address: fromOutputScript(p2shLegacyOutput, network),
-    p2sh_output_script: p2shLegacyOutput.toString('hex'),
-    p2sh_p2wsh_output_script: p2shWrappedWitnessProgram.toString('hex'),
-    p2sh_p2wsh_address: p2shNestedAddr,
-    p2wsh_address: fromOutputScript(witnessProgram, network),
-    redeem_script: redeemScriptHex.toString('hex'),
-    witness_output_script: witnessProgram.toString('hex'),
+    bch_p2sh_address: scriptDetails.bch_p2sh_address,
+    p2sh_address: scriptDetails.p2sh_address,
+    p2sh_output_script: scriptDetails.p2sh_output_script,
+    p2sh_p2wsh_address: scriptDetails.p2sh_p2wsh_address,
+    p2sh_p2wsh_output_script: scriptDetails.p2sh_p2wsh_output_script,
+    p2wsh_address: scriptDetails.p2wsh_address,
+    redeem_script: redeemScriptHex,
+    witness_output_script: scriptDetails.witness_output_script,
   };
 };
 

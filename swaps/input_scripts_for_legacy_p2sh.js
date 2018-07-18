@@ -61,7 +61,6 @@ module.exports = ({key, network, transaction, unlock, utxos}) => {
 
   return utxos.map(({redeem, script, tokens, vin}) => {
     const redeemScript = Buffer.from(redeem, 'hex');
-    const scriptPub = Buffer.from(script, 'hex');
     const sigFlag = !forkModifier ? sigHashAll : forkModifier | sigHashAll;
 
     let sigHash;

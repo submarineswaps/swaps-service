@@ -53,7 +53,7 @@ App.changedRefundAddress = function({}) {
   const swap = input.closest('.create-swap-quote');
 
   // Exit early when the address has not changed
-  if (swap.data().address === address) {
+  if (!swap.data() || swap.data().address === address) {
     return;
   }
 
@@ -136,9 +136,50 @@ App.changedRefundScript = function({}) {
   $('.refund-p2sh-p2wsh-swap-address').text(details.p2sh_p2wsh_address);
   $('.refund-p2sh-swap-address').text(details.p2sh_address);
   $('.refund-p2wsh-swap-address').text(details.p2wsh_address);
-  $('#swap-p2sh').val(details.p2sh_output_script);
-  $('#swap-p2sh-p2wsh').val(details.p2sh_p2wsh_output_script);
-  $('#swap-p2wsh').val(details.witness_output_script);
+
+  if (!!details.bch_p2sh_address && !!details.p2sh_output_script) {
+    $('.bch-p2sh-address').prop('value', details.bch_p2sh_address);
+    $('.bch-p2sh-address').text(details.bch_p2sh_address);
+
+    $('.select-swap-address').data(
+      details.bch_p2sh_address,
+      details.p2sh_output_script
+    );
+  } else {
+    $('.bch-p2sh-address').prop('hidden', true);
+  }
+
+  $('.p2sh-address').prop('value', details.p2sh_address);
+  $('.p2sh-address').text(details.p2sh_address);
+
+  $('.select-swap-address').data(
+    details.p2sh_address,
+    details.p2sh_output_script
+  );
+
+  if (!!details.p2sh_p2wsh_address && !!details.p2sh_p2wsh_output_script) {
+    $('.p2sh-p2wsh-address').prop('value', details.p2sh_p2wsh_address);
+    $('.p2sh-p2wsh-address').text(details.p2sh_p2wsh_address);
+
+    $('.select-swap-address').data(
+      details.p2sh_p2wsh_address,
+      details.p2sh_p2wsh_output_script
+    );
+  } else {
+    $('.p2sh-p2wsh-address').prop('hidden', true);
+  }
+
+  if (!!details.p2wsh_address && !!details.p2wsh_output_script) {
+    $('.p2wsh-address').prop('value', details.p2wsh_address);
+    $('.p2wsh-address').text(details.p2wsh_address);
+
+    $('.select-swap-address').data(
+      details.p2wsh_address,
+      details.p2wsh_output_script
+    );
+  } else {
+    $('.p2wsh-address').prop('hidden', true);
+  }
 
   return;
 };
@@ -187,9 +228,13 @@ App.checkSwap = ({button, id, quote}) => {
     let txUrl = '#';
 
     quote.find('.delete-swap').prop('disabled', true).addClass('disabled');
+    quote.find('.download-file .label').text('Save Full Refund Details');
     quote.find('.refund-output-index').val(res.output_index);
     quote.find('.refund-tokens-total').val(sentAmount);
     quote.find('.swap-transaction-id').val(res.transaction_id);
+
+    App.swaps[id].transaction_id = res.transaction_id;
+    App.swaps[id].transaction_output_index = res.output_index;
 
     switch (network) {
     case 'bchtestnet':
@@ -339,6 +384,7 @@ App.clickedShowSwap = function(event) {
   @returns via cbk
   {
     destination_public_key: <Destination Public Key Hex String>
+    fee_tokens_per_vbyte: <Fee Rate Tokens Per Virtual Byte Number>
     invoice: <Lightning Invoice String>
     payment_hash: <Payment Hash Hex String>
     redeem_script: <Redeem Script Hex String>
@@ -376,6 +422,10 @@ App.createSwap = ({invoice, network, refund}, cbk) => {
         throw new Error('ExpectedDestinationPublicKey');
       }
 
+      if (!details.fee_tokens_per_vbyte) {
+        throw new Error('ExpectedFeeTokensPerVirtualByte');
+      }
+
       if (!details.invoice) {
         throw new Error('ExpectedInvoice');
       }
@@ -410,14 +460,6 @@ App.createSwap = ({invoice, network, refund}, cbk) => {
 
       if (!details.swap_p2sh_address) {
         throw new Error('ExpectedSwapP2shAddress');
-      }
-
-      if (!details.swap_p2sh_p2wsh_address) {
-        throw new Error('ExpectedSwapP2shAddress');
-      }
-
-      if (!details.swap_p2wsh_address) {
-        throw new Error('ExpectedSwapP2wshAddress');
       }
 
       if (!details.timeout_block_height) {
@@ -598,17 +640,6 @@ App.getSwap = (args, cbk) => {
   };
 
   App.makeRequest({post, api: `swaps/check`})
-    .then(details => {
-      if (!details.payment_secret && details.conf_wait_count === undefined) {
-        throw new Error('ExpectedPaymentSecretOrConfirmationsWaitCount');
-      }
-
-      if (!details.transaction_id) {
-        throw new Error('ExpectedTransactionId');
-      }
-
-      return details;
-    })
     .then(details => cbk(null, details))
     .catch(err => cbk(err));
 
@@ -619,8 +650,8 @@ App.getSwap = (args, cbk) => {
 */
 App.init = args => {
   $('.create-swap-quote').submit(App.submitCreateSwapQuote);
+  $('.enter-refund-details').submit(App.submitRefundRecovery);
   $('.new-swap').click(App.clickedNewSwap);
-  $('.online-refund-details').submit(App.submitOnlineRefundRecovery);
   $('.pay-to-lightning-invoice').on(App.change_events, App.changedInvoice);
   $('.refund-address').on(App.change_events, App.changedRefundAddress);
   $('.select-currency').prop('disabled', false);
@@ -643,6 +674,8 @@ App.init = args => {
 
     return;
   });
+
+  App.initFromQueryParams({});
 
   return;
 };
@@ -670,6 +703,29 @@ App.initExchangeRates = ({}, cbk) => {
     })
     .then(rates => cbk(null, {rates}))
     .catch(err => cbk(err));
+
+  return;
+};
+
+/** Init state using query parameters
+
+  {}
+*/
+App.initFromQueryParams = ({}) => {
+  let invoice;
+  let network;
+
+  try {
+    invoice = new URL(location.href).searchParams.get('invoice');
+    network = new URL(location.href).searchParams.get('network');
+
+    history.replaceState({}, 'some title', '/');
+  } catch (err) {
+    return;
+  }
+
+  $('.pay-to-lightning-invoice').val(invoice).trigger('change');
+  $('.select-currency').val(network).trigger('change');
 
   return;
 };
@@ -905,6 +961,7 @@ App.submitCreateSwapQuote = function(event) {
     App.swaps[details.payment_hash] = {
       network,
       destination_public_key: details.destination_public_key,
+      fee_tokens_per_vbyte: details.fee_tokens_per_vbyte,
       invoice: details.invoice,
       payment_hash: details.payment_hash,
       redeem_script: details.redeem_script,
@@ -965,17 +1022,26 @@ App.submitCreateSwapQuote = function(event) {
       const anchor = document.createElement('a');
       const encoding = 'data:text/plain;charset=utf-8';
 
+      const txDetails = App.swaps[details.payment_hash] || {};
+
+      const refundData = {
+        network,
+        private_key: !isPaperWallet ? undefined : refundKey.private_key,
+        redeem_script: details.redeem_script,
+        refund_address: address,
+        refund_fee_tokens_per_vbyte: details.fee_tokens_per_vbyte,
+        refund_after: details.timeout_block_height,
+        swap_address: swapAddress,
+        swap_amount: swapAmount,
+        swap_quote_received_at: new Date().toISOString(),
+        transaction_id: txDetails.transaction_id,
+        transaction_output_index: txDetails.transaction_output_index,
+      };
+
+      refundData.base64 = btoa(JSON.stringify(refundData));
+
       const text = JSON.stringify(
-        {
-          network,
-          private_key: !isPaperWallet ? undefined : refundKey.private_key,
-          redeem_script: details.redeem_script,
-          refund_address: address,
-          refund_after: details.timeout_block_height,
-          swap_address: swapAddress,
-          swap_amount: swapAmount,
-          swap_quote_received_at: new Date().toISOString(),
-        },
+        refundData,
         null,
         redeemInfoJsonSpacing
       );
@@ -993,7 +1059,6 @@ App.submitCreateSwapQuote = function(event) {
       }
 
       quote.find('.make-payment').collapse('show');
-      quote.find('.save-redeem-script').addClass('disabled');
       quote.find('.chain-link').removeClass('disabled');
 
       return;
@@ -1014,114 +1079,182 @@ App.submitCreateSwapQuote = function(event) {
   });
 };
 
-/** Submit online refund
+/** Submit refund details derivation
 */
-App.submitOnlineRefundRecovery = function(event) {
+App.submitRefundRecovery = function(event) {
   event.preventDefault();
 
+  $('.claimed-balance').removeClass('show').addClass('hide');
+  $('.no-balance').removeClass('show').addClass('hide');
   $('.refund-details-not-found').collapse('hide');
-  $('.refund-key').val('');
-  $('.search-for-refund').addClass('disabled').prop('disabled', true);
-  $('.search-for-refund').text('Searching for Swap Transaction...')
-  $('.sign-with-refund-details input').val('');
-  $('.sign-with-refund-details textarea').val('');
-  $('.signed-refund-transaction').val('');
 
-  const network = $('.select-currency').val();
-  const redeemScript = $('.online-refund-redeem-script').val().trim();
+  const clearFields = [
+    '.refund-key',
+    '.sign-with-refund-details input',
+    '.sign-with-refund-details textarea',
+    '.signed-refund-transaction',
+  ];
 
-  if (!redeemScript) {
-    return;
+  clearFields.forEach(n => $(n).val(''));
+
+  const refundDetails = ($('.refund-details').val() || '').trim();
+
+  let details;
+
+  try {
+    details = JSON.parse(refundDetails);
+  } catch (err) {
+    return console.log([400, 'FailedToParseRefundDetails']);
   }
 
-  const body = JSON.stringify({network, redeem_script: redeemScript});
-  const headers = {'content-type': 'application/json'};
-  const method = 'POST';
+  if (!!details.network) {
+    $('.select-currency').val(details.network);
+  }
 
-  return fetch('/api/v0/swap_outputs/', {body, headers, method})
-    .then(r => {
-      $('.search-for-refund').removeClass('disabled').prop('disabled', false);
-      $('.search-for-refund').text('Get Refund');
+  if (!!details.redeem_script) {
+    $('.refund-details-script').val(details.redeem_script);
 
-      switch (r.status) {
-      case 200:
-        return Promise.resolve(r);
+    $('.refund-details-script').trigger('change');
+  }
 
-      default:
-        return Promise.reject(new Error(r.statusText));
-      }
-    })
-    .then(r => r.json())
-    .then(details => {
-      if (!details.fee_tokens_per_vbyte) {
-        throw new Error('ExectedFee');
-      }
+  if (!!details.swap_address) {
+    $('.select-swap-address').val(details.swap_address);
 
-      if (!details.refund_p2wpkh_address) {
-        throw new Error('ExpectedRefundAddress');
-      }
+    const address = details.swap_address;
 
-      if (!details.timelock_block_height) {
-        throw new Error('ExpectedLockHeight');
-      }
+    switch (details.network) {
+    case 'testnet':
+      fetch(`https://api.blockcypher.com/v1/btc/test3/addrs/${address}/full`)
+        .then(r => r.json())
+        .then(details => {
+          if (!details || !Array.isArray(details.txs) || !details.txs.length) {
+            return $('.no-balance').collapse('show');
+          }
 
-      if (!details.utxo) {
-        throw new Error('ExpectedUtxo');
-      }
+          if (!details.balance) {
+            return $('.claimed-balance').collapse('show');
+          }
 
-      if (details.utxo.output_index === undefined) {
-        throw new Error('ExpectedOutputIndex');
-      }
+          let payouts = {};
 
-      if (!details.utxo.output_tokens) {
-        throw new Error('ExpectedOutputTokens');
-      }
+          details.txs.forEach(({hash, outputs}) => {
+            return outputs.forEach(({addresses}, vout) => {
+              return addresses.forEach(addr => payouts[addr] = {hash, vout});
+            });
+          });
 
-      if (!details.utxo.transaction_id) {
-        throw new Error('ExpectedTransactionId');
-      }
+          const tx = payouts[address];
 
-      return details;
-    })
-    .then(details => {
-      $('.refund-details-script').val(redeemScript);
-      $('.refund-fee').val(details.fee_tokens_per_vbyte);
-      $('.tokens-total').val((details.utxo.output_tokens / 1e8).toFixed(8));
-      $('.redeem-refund-address').val(details.refund_p2wpkh_address);
-      $('.dump-refund-address').text(details.refund_p2wpkh_address);
-      $('.refund-transaction-id').val(details.utxo.transaction_id);
-      $('.refund-tx-vout').val(details.utxo.output_index);
-      $('.timeout-block-height').val(details.timelock_block_height);
+          if (!!tx && !!tx.hash && !$('.refund-transaction-id').val()) {
+            $('.refund-transaction-id').val(tx.hash);
+          }
 
-      const swap = blockchain.swapScriptDetails({
-        network: $('.select-currency').val(),
-        script: redeemScript,
-      });
+          if (!!tx && tx.vout !== undefined && !$('.refund-tx-vout').val()) {
+            $('.refund-tx-vout').val(tx.vout);
+          }
 
-      $('.refund-p2sh-p2wsh-swap-address').text(swap.p2sh_p2wsh_address);
-      $('.refund-p2sh-swap-address').text(swap.p2sh_address);
-      $('.refund-p2wsh-swap-address').text(swap.p2wsh_address);
-      $('#swap-p2sh').val(swap.p2sh_output_script);
-      $('#swap-p2sh-p2wsh').val(swap.p2sh_p2wsh_output_script);
-      $('#swap-p2wsh').val(swap.witness_output_script);
+          return;
+        })
+        .catch(err => {
+          console.log([503, 'FailedToFetchAddressDetails', err]);
+          return;
+        });
+      break;
 
-      $('#tx-details-refund-tab').tab('show');
+    case 'bchtestnet':
+      fetch(`https://test-bch-insight.bitpay.com/api/addrs/${address}/utxo`)
+        .then(r => r.json())
+        .then(transactions => {
+          if (!Array.isArray(transactions) || !transactions.length) {
+            return $('.no-balance').collapse('show');
+          }
 
-      return;
-    })
-    .catch(err => {
-      switch (err.message) {
-      case 'ExpectedUtxo':
-        $('.refund-details-not-found').collapse('show');
-        break;
+          const [tx] = transactions;
 
-      default:
-        console.log('ERR', err.message);
-        break;
-      }
+          if (!!tx && !!tx.txid && !$('.refund-transaction-id').val()) {
+            $('.refund-transaction-id').val(tx.txid);
+          }
 
-      return;
-    });
+          if (!!tx && tx.vout !== undefined && !$('.refund-tx-vout').val()) {
+            $('.refund-tx-vout').val(tx.vout);
+          }
+
+          return;
+        })
+        .catch(err => {
+          console.log([503, 'FailedToFetchAddressDetails']);
+          return;
+        });
+      break;
+
+    case 'ltctestnet':
+      fetch(`https://chain.so/api/v2/get_tx_received/LTCTEST/${address}`)
+        .then(r => r.json())
+        .then(details => {
+          if (!details || !details.data || !Array.isArray(details.data.txs)) {
+            return;
+          }
+
+          if (!details.data.txs.length) {
+            return;
+          }
+
+          const [tx] = details.data.txs;
+
+          if (!tx) {
+            return;
+          }
+
+          if (!!tx.txid && !$('.refund-transaction-id').val()) {
+            $('.refund-transaction-id').val(tx.txid);
+          }
+
+          if (tx.output_no !== undefined && !$('.refund-tx-vout').val()) {
+            $('.refund-tx-vout').val(tx.output_no);
+          }
+
+          return;
+        })
+        .catch(err => {
+          console.log([503, 'FailedToFetchAddressDetails']);
+          return;
+        });
+
+    default:
+      break;
+    }
+  }
+
+  if (!!details.transaction_id) {
+    $('.refund-transaction-id').val(details.transaction_id);
+  }
+
+  if (details.transaction_output_index !== undefined) {
+    $('.refund-tx-vout').val(details.transaction_output_index);
+  }
+
+  if (!!details.swap_amount) {
+    $('.tokens-total').val(details.swap_amount);
+  }
+
+  if (!!details.refund_fee_tokens_per_vbyte) {
+    $('.refund-fee').val(details.refund_fee_tokens_per_vbyte);
+  } else {
+    $('.refund-fee').val(1);
+  }
+
+  if (!!details.private_key) {
+    $('.refund-key').val(details.private_key);
+  }
+
+  if (!!details.refund_address) {
+    $('.refund-address').val(details.refund_address);
+  }
+
+  $('#tx-details-refund-tab').tab('show');
+
+  $('.generic.refund-tx-failure').collapse('hide');
+  $('.refund-tx-success').collapse('hide');
 
   return;
 };
@@ -1148,12 +1281,14 @@ App.submitSignWithRefundDetails = function(e) {
     return console.log([0, 'FailedToDeriveSwapDetails'], e);
   }
 
+  const network = $('.select-currency').val();
   const refundAddress = $('.refund-address').val().trim();
   const refundFee = parseInt($('.refund-fee').val().trim(), 10);
   const refundKey = $('.refund-key').val().trim();
   const refundAmount = $('.tokens-total').val().trim();
   const refundTxId = $('.refund-transaction-id').val().trim();
   const refundTxVout = parseInt($('.refund-tx-vout').val().trim(), 10);
+  const swapAddress = $('.select-swap-address').val();
 
   if (!refundKey) {
     $('.signed-refund-transaction').val('');
@@ -1171,24 +1306,24 @@ App.submitSignWithRefundDetails = function(e) {
 
   try {
     refund = blockchain.refundTransaction({
+      network,
       destination: refundAddress,
       fee_tokens_per_vbyte: refundFee,
       is_public_key_hash_refund: true,
-      network: $('.select-currency').val(),
       private_key: refundKey,
       timelock_block_height: swapDetails.timelock_block_height,
       utxos: [{
         redeem: redeemScript,
-        script: $('input[name=swap-output]:checked').val(),
+        script: $('.select-swap-address').data()[swapAddress],
         tokens: refundTokens,
         transaction_id: refundTxId,
         vout: refundTxVout,
       }],
     });
-  } catch (e) {
+  } catch (err) {
     $('.signed-refund-transaction').val('');
 
-    console.log('ERROR', e);
+    console.log([400, 'ERROR', err]);
 
     switch (e.message) {
     case 'RefundValueTooSmall':
@@ -1205,6 +1340,45 @@ App.submitSignWithRefundDetails = function(e) {
 
   $('.refund-tx-failure').collapse('hide');
   $('.signed-refund-transaction').val(refund.transaction);
+  $('.refund-tx-success').collapse('hide');
+
+  App.makeRequest({
+    post: {network, transaction: refund.transaction},
+    api: 'transactions/',
+  })
+  .then(details => {
+    if (!details.id) {
+      return;
+    }
+
+    let txUrl;
+
+    switch (network) {
+    case 'bchtestnet':
+      txUrl = `https://www.blocktrail.com/tBCC/tx/${details.id}`;
+      break;
+
+    case 'testnet':
+      txUrl = `https://testnet.smartbit.com.au/tx/${details.id}`;
+      break;
+
+    case 'ltctestnet':
+      txUrl = `https://chain.so/tx/LTCTEST/${details.id}`;
+      break;
+    }
+
+    $('.refund-tx-success').collapse('show');
+    $('.refund-tx-success .refund-address').text(refundAddress);
+    $('.refund-tx-success .link-to-refund').text(details.id);
+    $('.refund-tx-success .link-to-refund').prop('href', txUrl);
+
+    return;
+  })
+  .catch(err => {
+    console.log([503, 'FailedToBroadcastTransaction', err]);
+
+    return;
+  });
 
   return;
 };
@@ -1216,6 +1390,10 @@ App.submitSignWithRefundDetails = function(e) {
   }
 */
 App.updatedSwapDetails = ({swap}) => {
+  if (!swap.find('.pay-to-lightning-invoice').length) {
+    return;
+  }
+
   const address = swap.find('.refund-address').val().trim();
   const invoice = swap.find('.pay-to-lightning-invoice').val().trim();
   const network = swap.find('.select-currency').val();

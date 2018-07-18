@@ -1,6 +1,7 @@
 const bodyParser = require('body-parser');
 const {Router} = require('express');
 
+const {broadcastTransaction} = require('./../service');
 const {checkSwapStatus} = require('./../service');
 const {createSwap} = require('./../service');
 
