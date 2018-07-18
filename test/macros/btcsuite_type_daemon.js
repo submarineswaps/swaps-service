@@ -1,4 +1,5 @@
 const {spawn} = require('child_process');
+const path = require('path');
 
 const chainServer = require('./../../chain/conf/chain_server_defaults');
 const credentialsForNetwork = require('./../../chain/credentials_for_network');
@@ -29,7 +30,6 @@ const unableToStartServer = /Unable.to.start.server/;
  }
  */
 module.exports = (args, cbk) => {
-  console.log("entered btcdsuite type daemo");
   if (knownDaemons.indexOf(args.daemon) === notFoundIndex) {
     return cbk([400, 'ExpectedBtcsuiteDaemonName', args.daemon]);
   }
@@ -37,12 +37,10 @@ module.exports = (args, cbk) => {
   if (!args.dir) {
     return cbk([400, 'ExpectedDirectoryForDaemon']);
   }
-  console.log(args.noMine);
-  console.log(args.mining_public_key);
 
   if (!args.noMine && !args.mining_public_key) {
-  return cbk([400, 'ExpectedMiningPublicKeyForDaemon']);
-}
+    return cbk([400, 'ExpectedMiningPublicKeyForDaemon']);
+  }
 
   if (!args.network) {
     return cbk([400, 'ExpectedNetworkNameForDaemon']);
@@ -52,7 +50,6 @@ module.exports = (args, cbk) => {
   let credentials;
 
   const network = networks[args.network];
-  console.log("initailizing btcdsuite");
   try {
     credentials = credentialsForNetwork({network: args.network});
   } catch (e) {
@@ -61,28 +58,28 @@ module.exports = (args, cbk) => {
   let params = [
     '--datadir', args.dir,
     '--logdir', args.dir,
-    // '--miningaddr', fromPublicKeyBuffer(miningKey, network).getAddress(),
-    '--regtest',
     '--relaynonstd',
-    '--rpclisten', `${credentials.host}:${credentials.port}`,
     '--rpcpass', credentials.pass,
     '--rpcuser', credentials.user,
-    '--txindex',
-    // '--rpccert', args.dir + "/rpc.cert",
-    '--notls',
-    '--debuglevel=RPCS=trace'];
+    '--debuglevel=trace'];
   if (!args.noMine) {
     const miningKey = Buffer.from(args.mining_public_key, 'hex');
     params = [...params, '--miningaddr', fromPublicKeyBuffer(miningKey, network).getAddress()];
   }
-  if (!args.tls){
+  if (args.tls) {
+    params = [...params,
+      `--rpccert=${path.join(args.dir, 'rpc.cert')}`,
+      `--rpckey=${path.join(args.dir, 'rpc.key')}`]
+  } else {
     params = [...params, '--notls',]
   }
-
+  if (args.simnet){
+    params = [...params, '--simnet']
+  } else {
+    params = [...params, '--regtest']
+  }
   const daemon = spawn(args.daemon, params);
-  console.log(params);
   daemon.stdout.on('data', data => {
-    console.log("==BTCD==" + data.toString());
     if (unableToStartServer.test(`${data}`)) {
       return cbk([errCode.local_err, 'SpawnDaemonFailure']);
     }
