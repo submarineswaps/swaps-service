@@ -1,3 +1,6 @@
+const {isCashAddress} = require('bchaddrjs');
+const {toLegacyAddress} = require('bchaddrjs');
+
 const {address} = require('./../tokenslib');
 const {networks} = require('./../tokenslib');
 
@@ -31,14 +34,27 @@ module.exports = (args) => {
     throw new Error('ExpectedNetworkForAddress');
   }
 
+  let normalAddress = args.address;
+
+  switch (args.network) {
+  case 'bchtestnet':
+    if (isCashAddress(args.address)) {
+      normalAddress = toLegacyAddress(args.address);
+    }
+    break;
+
+  default:
+    break;
+  }
+
   let base58Address;
   let bech32Address;
 
-  try { base58Address = address.fromBase58Check(args.address); } catch (e) {
+  try { base58Address = address.fromBase58Check(normalAddress); } catch (e) {
     base58Address = null;
   }
 
-  try { bech32Address = address.fromBech32(args.address); } catch (e) {
+  try { bech32Address = address.fromBech32(normalAddress); } catch (e) {
     bech32Address = null;
   }
 
