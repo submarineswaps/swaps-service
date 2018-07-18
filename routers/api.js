@@ -30,6 +30,7 @@ module.exports = ({log}) => {
   // GET details about an address
   router.get('/address_details/:network/:address', ({params}, res) => {
     const {address} = params;
+    const {network} = params;
 
     return getAddressDetails({address, network}, returnJson({log, res}));
   });

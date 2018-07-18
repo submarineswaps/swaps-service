@@ -1,6 +1,5 @@
 const bip65Encode = require('bip65').encode;
 
-const {address} = require('./../tokenslib');
 const {chainConstants} = require('./../chain');
 const estimateWeightWithInputs = require('./estimate_weight_with_inputs');
 const inputScriptsForLegacy = require('./input_scripts_for_legacy_p2sh');
@@ -8,12 +7,11 @@ const legacyScriptHashUtxos = require('./legacy_scripthash_utxos');
 const nestedSegWitScript = require('./nested_segwit_script');
 const nestedSegWitUtxos = require('./nested_segwit_utxos');
 const {networks} = require('./../tokenslib');
+const outputScriptForAddress = require('./output_script_for_address');
 const {script} = require('./../tokenslib');
 const {Transaction} = require('./../tokenslib');
 const witnessUtxos = require('./witness_utxos');
 const witnessesForResolution = require('./witnesses_for_resolution');
-
-const {toOutputScript} = address;
 
 const dustRatio = 1 / chainConstants.dust_denominator;
 const minSequenceValue = chainConstants.min_sequence_value
@@ -75,6 +73,7 @@ module.exports = args => {
   }
 
   let anticipatedWeight;
+  let destinationScript;
   const tokens = args.utxos.reduce((sum, n) => n.tokens + sum, 0);
   const tokensPerVirtualByte = args.fee_tokens_per_vbyte;
   const tx = new Transaction();
@@ -86,7 +85,17 @@ module.exports = args => {
     .forEach(n => tx.addInput(n.txId.reverse(), n.vout));
 
   // Add the sweep destination as an output script
-  tx.addOutput(toOutputScript(args.destination, networks[args.network]), tokens);
+  try {
+    destinationScript = outputScriptForAddress({
+      address: args.destination,
+      network: args.network,
+    });
+  } catch (err) {
+    throw err;
+  }
+
+  // Add the sweep destination as an output script
+  tx.addOutput(Buffer.from(destinationScript, 'hex'), tokens);
 
   // Set input sequence values to non-final
   tx.ins.forEach(n => n.sequence = minSequenceValue);

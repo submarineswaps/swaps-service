@@ -62,6 +62,14 @@ block content
           )
             .card
               .card-body
+                .alert.alert-warning.collapse.hide.no-balance(role="alert")
+                  i.fa-fw.fa-info-circle.fas.mr-2
+                  span
+                    | The refund balance check didn't find funds for this swap.
+                .alert.alert-warning.claimed-balance.collapse.hide(role="alert")
+                  i.fa-fw.fa-info-circle.fas.mr-2
+                  span
+                    | The refund balance check shows funds as already claimed.
                 form.sign-with-refund-details(auto-complete="off")
                   .form-group.row
                     label.col-form-label.col-sm-2
@@ -114,6 +122,7 @@ block content
                     .col-sm-10
                       input.form-control.refund-transaction-id(
                         placeholder="Enter your transaction id",
+                        required,
                         spellcheck="false",
                       )
                       small.form-text.mb-2.text-muted
@@ -126,6 +135,7 @@ block content
                       input.form-control.refund-tx-vout(
                         min="0",
                         placeholder="0",
+                        required,
                         step="1",
                         type="number"
                       )
@@ -139,6 +149,7 @@ block content
                         max="21000000",
                         min="0",
                         placeholder="0.00000000",
+                        required,
                         step="0.00000001",
                         type="number",
                       )
@@ -152,6 +163,7 @@ block content
                       input.form-control.refund-fee(
                         min="1",
                         placeholder="1",
+                        required,
                         step="1",
                         type="number"
                       )
@@ -165,6 +177,7 @@ block content
                       input.form-control.refund-key(
                         autocomplete="off",
                         placeholder="Enter your refund private key",
+                        required,
                         type="password")
                       small.form-text.mb-2.text-muted
                         | WIF encoded private key for your refund key

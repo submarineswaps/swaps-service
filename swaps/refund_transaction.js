@@ -1,7 +1,6 @@
 const bip65Encode = require('bip65').encode;
 const {OP_FALSE} = require('bitcoin-ops');
 
-const {address} = require('./../tokenslib');
 const {chainConstants} = require('./../chain');
 const {crypto} = require('./../tokenslib');
 const {ECPair} = require('./../tokenslib');
@@ -11,6 +10,7 @@ const legacyScriptHashUtxos = require('./legacy_scripthash_utxos');
 const {networks} = require('./../tokenslib');
 const nestedSegWitScript = require('./nested_segwit_script');
 const nestedSegWitUtxos = require('./nested_segwit_utxos');
+const outputScriptForAddress = require('./output_script_for_address');
 const {script} = require('./../tokenslib');
 const scriptBuffersAsScript = require('./script_buffers_as_script');
 const swapScriptDetails = require('./swap_script_details');
@@ -22,7 +22,6 @@ const compressedPubKeySize = chainConstants.compressed_public_key_size;
 const dustRatio = 1 / 3;
 const hexBase = 16;
 const minSequence = chainConstants.min_sequence_value;
-const {toOutputScript} = address;
 const vRatio = chainConstants.witness_byte_discount_denominator;
 
 /** Build a refund transaction to claim funds back from a swap
@@ -73,6 +72,7 @@ module.exports = args => {
   }
 
   let anticipatedWeight;
+  let destinationScript;
   const dummy = Buffer.from(OP_FALSE.toString(hexBase), 'hex');
   const isPkHashRefund = !!args.is_public_key_hash_refund;
   const network = networks[args.network];
@@ -82,7 +82,17 @@ module.exports = args => {
   const tx = new Transaction();
   const {utxos} = args;
 
-  tx.addOutput(toOutputScript(args.destination, network), tokens);
+  try {
+    destinationScript = outputScriptForAddress({
+      address: args.destination,
+      network: args.network,
+    });
+  } catch (err) {
+    throw err;
+  }
+
+  // Add the refund address as an output script
+  tx.addOutput(Buffer.from(destinationScript, 'hex'), tokens);
 
   // Plug all the utxos into the transaction as inputs
   args.utxos

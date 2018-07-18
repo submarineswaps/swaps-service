@@ -5,7 +5,7 @@ const {getRawTransaction} = require('./conf/rpc_commands');
 const {sendRawTransaction} = require('./conf/rpc_commands');
 const {returnResult} = require('./../async-util');
 
-const broadcastDelayMs = 300;
+const broadcastDelayMs = 200;
 
 /** Broadcast a transaction
 

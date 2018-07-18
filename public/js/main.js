@@ -1059,6 +1059,8 @@ App.submitCreateSwapQuote = function(event) {
 App.submitRefundRecovery = function(event) {
   event.preventDefault();
 
+  $('.claimed-balance').removeClass('show').addClass('hide');
+  $('.no-balance').removeClass('show').addClass('hide');
   $('.refund-details-not-found').collapse('hide');
 
   const clearFields = [
@@ -1101,7 +1103,11 @@ App.submitRefundRecovery = function(event) {
         .then(r => r.json())
         .then(details => {
           if (!details || !Array.isArray(details.txs) || !details.txs.length) {
-            return;
+            return $('.no-balance').collapse('show');
+          }
+
+          if (!details.balance) {
+            return $('.claimed-balance').collapse('show');
           }
 
           let payouts = {};
@@ -1135,7 +1141,7 @@ App.submitRefundRecovery = function(event) {
         .then(r => r.json())
         .then(transactions => {
           if (!Array.isArray(transactions) || !transactions.length) {
-            return;
+            return $('.no-balance').collapse('show');
           }
 
           const [tx] = transactions;
