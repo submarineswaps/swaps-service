@@ -1,8 +1,8 @@
 const {test} = require('tap');
-const cache = 'redis';
+const cache = 'memory';
 const swapNetworks = ['bchtestnet', 'ltctestnet', 'testnet'];
 const {mockAPI} = require('../macros');
-const {reqGetExchangeRates} = require('./../rou')
+const {reqGetAddressDetails} = require('./../../routers/apiMethods');
 
 
 test(`test exchange rates`, t => {
