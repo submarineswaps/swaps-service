@@ -6,100 +6,104 @@ const {findSwapOutpoint} = require('./../service');
 const {getAddressDetails} = require('./../service');
 const {getExchangeRates} = require('./../service');
 const {getInvoiceDetails} = require('./../service');
+const {checkSwapStatus} = require('./../service');
+const {broadcastTransaction} = require('./../service');
 
-const reqGetAddressDetails = function (request, response, log) {
-  console.log("getAddressDetails");
-  console.log("Request:");
-  console.log(request);
-  console.log("\nResponse:");
-  console.log(response);
-  console.log("\nLog:");
-  console.log(log);
-  console.log("\n"*2);
-  const {params} = request;
-  return getAddressDetails({address: params.address, network: params.network}, returnJson({log, response}));
+const reqGetAddressDetails = function (args) {
+  return getAddressDetails({
+      address: args.req.params.address,
+      network: args.req.params.network
+    }, returnJson({log: args.log, res: args.res})
+  );
 };
 
-const reqGetExchangeRates = function (request, response, log) {
-  console.log("reqGetExchangeRates");
-  console.log("Request:");
-  console.log(request);
-  console.log("\nResponse:");
-  console.log(response);
-  console.log("\nLog:");
-  console.log(log);
-  console.log("\n"*2);
+const reqGetExchangeRates = function (args) {
+  args.cache = args.cache || apiConstants.cache;
+
   return getExchangeRates({
-      cache: apiConstants.cache,
+      cache: args.cache,
       networks: apiConstants.swapNetworks,
-    },
-    returnJson({log, response}));
+    }, (err, res) => {
+      returnJson({log: args.log, res: args.res});
+      if (args.cbk) {
+        args.cbk(err, res);
+      }
+    }
+  );
 };
-const reqGetInvoiceDetails = function (request, response, log) {
-  console.log("reqGetInvoiceDetails");
-  console.log("Request:");
-  console.log(request);
-  console.log("\nResponse:");
-  console.log(response);
-  console.log("\nLog:");
-  console.log(log);
-  console.log("\n"*2);
-  const {params} = request;
-  return getInvoiceDetails({
-      cache: apiConstants.cache,
-      invoice: params.invoice,
-      network: params.network,
-    },
-    returnJson({log, response}));
+
+const reqGetInvoiceDetails = function (args) {
+  args.cache = args.cache || apiConstants.cache;
+
+  getInvoiceDetails({
+      cache: args.cache,
+      invoice: args.req.params.invoice,
+      network: args.req.params.network,
+    }, (err, res) => {
+      returnJson({log, res});
+      if (args.cbk) {
+        args.cbk(err, res);
+      }
+    }
+  );
 };
-const reqFindSwapOutpoint = function (request, response, log) {
-  console.log("reqFindSwapOutpoint");
-  console.log("Request:");
-  console.log(request);
-  console.log("\nResponse:");
-  console.log(response);
-  console.log("\nLog:");
-  console.log(log);
-  console.log("\n"*2);
-  const {params} = request;
+const reqFindSwapOutpoint = function (args) {
   return findSwapOutpoint({
-      network: params.body.network,
-      redeem_script: params.body.redeem_script,
+      network: args.req.body.network,
+      redeem_script: args.req.body.redeem_script,
     },
-    returnJson({log, response}));
+    (err, res) => {
+      returnJson({log: args.log, res: args.res});
+      if (args.cbk) {
+        args.cbk(err, res);
+      }
+    });
 };
-const reqCreateSwap = function (request, response, log) {
-  console.log("reqCreateSwap");
-  console.log("Request:");
-  console.log(request);
-  console.log("\nResponse:");
-  console.log(response);
-  console.log("\nLog:");
-  console.log(log);
-  console.log("\n"*2);
-  const {params} = request;
+const reqCreateSwap = function (args) {
+  args.cache = args.cache || apiConstants.cache;
 
-  router.post('/swaps/', ({body}, res) => {
-    return createSwap({
-        cache: apiConstants.cache,
-        invoice: params.body.invoice,
-        network: params.body.network,
-        refund: params.body.refund,
-      },
-      returnJson({log, res}));
-  });
+  return createSwap({
+      cache: args.cache,
+      invoice: args.req.body.invoice,
+      network: args.req.body.network,
+      refund: args.req.params.body.refund,
+    },
+    (err, res) => {
+      returnJson({log: args.log, res: args.res});
+      if (args.cbk) {
+        args.cbk(err, res);
+      }
+    });
 };
-const reqCheckSwapStatus = function (request, response, log) {
-  console.log("reqCheckSwapStatus");
-  console.log("Request:");
-  console.log(request);
-  console.log("\nResponse:");
-  console.log(response);
-  console.log("\nLog:");
-  console.log(log);
-  console.log("\n"*2);
+const reqCheckSwapStatus = function ({args}) {
+  args.cache = args.cache || apiConstants.cache;
+  return checkSwapStatus({
+      cache: args.cache,
+      invoice: args.req.body.invoice,
+      network: args.req.body.network,
+      script: args.req.body.redeem_script,
+    },
+    (err, res) => {
+      returnJson({log: args.log, res: args.res});
+      if (args.cbk) {
+        args.cbk(err, res);
+      }
+    });
+};
 
-};
+const reqBroadcastTransaction = function ({args}) {
+  return broadcastTransaction({
+      network: args.req.body.network,
+      transaction: args.req.body.transaction
+    },
+    (err, res) => {
+      returnJson({log: args.log, res: args.res});
+      if (args.cbk) {
+        args.cbk(err, res);
+      }
+    }
+  )
+}
 
 module.exports = {
   reqGetAddressDetails,
@@ -107,5 +111,6 @@ module.exports = {
   reqGetInvoiceDetails,
   reqFindSwapOutpoint,
   reqCreateSwap,
-  reqCheckSwapStatus
+  reqCheckSwapStatus,
+  reqBroadcastTransaction
 };
