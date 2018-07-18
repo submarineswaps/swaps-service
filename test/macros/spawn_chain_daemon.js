@@ -28,29 +28,43 @@ module.exports = (args, cbk) => {
   if (!args.network) {
     return cbk([400, 'ExpectedNetworkTypeForChainDaemon']);
   }
-
+  let dir;
   let daemon;
-  const dir = `/tmp/${uuidv4()}`;
+  if (!args.dir) {
+    dir = `/tmp/${uuidv4()}`;
+  } else {
+    dir = args.dir;
+  }
 
   switch (args.daemon) {
   case 'bcash':
   case 'bcoin':
     daemon = bcoinTypeDaemon({dir, network: args.network}, cbk);
     break;
+  case 'btcdrpc':
+    daemon = btcsuiteTypeDaemon({
+        dir,
+        daemon: 'btcd',
+        mining_public_key: args.mining_public_key,
+        network: args.network,
+        simnet: true,
+        tls: false,
+      },
+      cbk);
+    break;
   case 'btcdbackend':
-    console.log("spawning btcd for lightning backend");
     daemon = btcsuiteTypeDaemon({
         dir,
         daemon: 'btcd',
         noMine: true,
-        tls: true,
         network: args.network,
+        simnet: true,
+        tls: true,
       },
       cbk);
     break;
   case 'btcd':
   case 'ltcd':
-    console.log("spawning suite daemon");
     daemon = btcsuiteTypeDaemon({
         dir,
         daemon: args.daemon,
@@ -79,14 +93,11 @@ module.exports = (args, cbk) => {
     if (/txn.already.in.mempool/gim.test(data + '')) {
       return;
     }
-
-    console.log(`${data}`)
   });
 
-  daemon.on('close', code => removeDir(dir, () => {}));
+  // daemon.on('close', code => removeDir(dir, () => {}));
 
   process.on('uncaughtException', err => {
-    console.log('CHAIN ERROR', err);
     daemon.kill();
     process.exit(1);
   });
