@@ -139,7 +139,7 @@ module.exports = (args, cbk) => {
           chainParams = [
             `--btcd.dir=${validateCredentials.chainDir}`,
             `--btcd.rpcpass=${validateCredentials.chainPass}`,
-            // `--btcd.rpchost=127.0.0.1:${validateCredentials.chainPort}`,
+            `--btcd.rpchost=127.0.0.1:${validateCredentials.chainPort}`,
             `--btcd.rpcuser=${validateCredentials.chainUser}`,
             `--bitcoin.active`,
             `--bitcoin.feerate=2500`,
@@ -202,7 +202,7 @@ module.exports = (args, cbk) => {
                 `--logdir="${lndDir}/logs/"`,
                 '--noencryptwallet',
                 '--debuglevel=trace',
-                '--rpclisten=127.0.0.1:10009',
+                // '--rpclisten=127.0.0.1:10009',
                 `--autopilot.active`,
                 `--autopilot.maxchannels=10`,
                 `--autopilot.minchansize=100000`,
@@ -277,7 +277,7 @@ module.exports = (args, cbk) => {
           return cbk(null, {lnd: spawnRPCInterface.lnd});
         }
       });
-    }]
+    }],
 
     // genAddress: ['spawnRPCInterface', ({spawnRPCInterface}, cbk) => {
     //   console.log("==\n" * 4);
