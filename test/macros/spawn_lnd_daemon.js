@@ -40,8 +40,13 @@ const credentialsForNetwork = require('./../../chain/credentials_for_network');
    is_ready: <LND Daemon is Ready Bool>
  }
  */
-module.exports = (args, cbk) => {
 
+
+
+module.exports = (args, cbk) => {
+  const copyFail = function (err) {
+    if (err) {return cbk(['0', 'FailedToCopyCredentials', err]);}
+  };
   return asyncAuto({
     validateCredentials: cbk => {
       if (!args.network) {
@@ -56,110 +61,63 @@ module.exports = (args, cbk) => {
       } catch (e) {
         return cbk([500, 'CredentialsLookupFailure', e]);
       }
-      const chainDir = path.join('/tmp', uuidv4());
-      console.log("chain dir = " + chainDir);
+      const baseChainDir = path.join('/tmp', uuidv4());
+      const lndChainDir = path.join('/tmp', uuidv4());
+
       return cbk(null, {
-        chainDir,
+        lndChainDir,
+        baseChainDir,
         chainPass: credentials.pass,
         chainUser: credentials.user,
-        chainPort: credentials.port
+        baseChainPort: credentials.port,
+        lndChainPort: credentials.port - 1,
       });
     },
     copyCerts: ['validateCredentials', ({validateCredentials}, cbk) => {
-      console.log("Copying files to");
-      console.log(path.join(validateCredentials.chainDir, 'rpc.cert'));
-      console.log("from");
-      console.log(path.resolve(__dirname, '../swap_regtest', 'dummyrpc.cert'));
-      fs.mkdirSync(validateCredentials.chainDir);
-      fs.copyFile(path.resolve(__dirname, '../swap_regtest', 'dummyrpc.cert'), path.join(validateCredentials.chainDir, 'rpc.cert'),
-        (err) => {
-          console.log(err);
-          console.log("failed to copy")
-        });
-      fs.copyFile(path.resolve(__dirname, '../swap_regtest', 'dummyrpc.key'), path.join(validateCredentials.chainDir, 'rpc.key'),
-        (err) => {
-          console.log(err);
-          console.log("failed to copy")
-        });
-
-      // fs.createReadStream(path.resolve(__dirname, '../swap_regtest', 'dummyrpc.key')).pipe(fs.createWriteStream( path.join(validateCredentials.chainDir, 'rpc.key')));
+      fs.mkdirSync(validateCredentials.lndChainDir);
+      fs.copyFile(path.resolve(__dirname, '../swap_regtest', 'dummyrpc.cert'), path.join(validateCredentials.lndChainDir, 'rpc.cert'), copyFail);
+      fs.copyFile(path.resolve(__dirname, '../swap_regtest', 'dummyrpc.key'), path.join(validateCredentials.lndChainDir, 'rpc.key'), copyFail);
       return cbk(null, {});
+
     }],
     spawnTLSBTCD: ['copyCerts', 'validateCredentials', ({validateCredentials}, cbk) => {
-      console.log("spawning chain" + validateCredentials.chainDir);
       spawnChainDaemon({
-        network: args.network, daemon: "btcdbackend", dir: validateCredentials.chainDir
+        network: args.network,
+        daemon: "btcd",
+        dir: validateCredentials.lndChainDir,
+        noTLS: false,
+        tls: true,
+        noMine: true,
+        simnet: true,
+        port: validateCredentials.lndChainPort
       }, (err, res) => {
         return cbk(err, res);
       });
     }],
     spawnLND: ['spawnTLSBTCD', 'validateCredentials', ({validateCredentials}, cbk) => {
       try {
-        console.log("lnd spawnLND entry");
-        console.log("Recieved:");
         const lndDir = path.join('/tmp', uuidv4());
         fs.mkdirSync(lndDir);
 
-        fs.copyFile(path.resolve(__dirname, '../swap_regtest', 'dummymacaroons.db'), path.join(lndDir, 'macaroons.db'),
-          (err) => {
-            console.log(err);
-            console.log("failed to copy")
-          });
-        fs.copyFile(path.resolve(__dirname, '../swap_regtest', 'dummyadmin.macaroon'), path.join(lndDir, 'admin.macaroon'),
-          (err) => {
-            console.log(err);
-            console.log("failed to copy")
-          });
-        fs.copyFile(path.resolve(__dirname, '../swap_regtest', 'dummyinvoice.macaroon'), path.join(lndDir, 'invoice.macaroon'),
-          (err) => {
-            console.log(err);
-            console.log("failed to copy")
-          });
-        fs.copyFile(path.resolve(__dirname, '../swap_regtest', 'dummyreadonly.macaroon'), path.join(lndDir, 'readonly.macaroon'),
-          (err) => {
-            console.log(err);
-            console.log("failed to copy")
-          });
-        fs.copyFile(path.resolve(__dirname, '../swap_regtest', 'lndtls.cert'), path.join(lndDir, 'tls.cert'),
-          (err) => {
-            console.log(err);
-            console.log("failed to copy")
-          });
-        fs.copyFile(path.resolve(__dirname, '../swap_regtest', 'lndtls.key'), path.join(lndDir, 'tls.key'),
-          (err) => {
-            console.log(err);
-            console.log("failed to copy")
-          });
-        console.log(`export art=${lndDir} && export sub=${validateCredentials.chainDir}`);
+        fs.copyFile(path.resolve(__dirname, '../swap_regtest', 'dummymacaroons.db'), path.join(lndDir, 'macaroons.db'), copyFail);
+        fs.copyFile(path.resolve(__dirname, '../swap_regtest', 'dummyadmin.macaroon'), path.join(lndDir, 'admin.macaroon'), copyFail);
+        fs.copyFile(path.resolve(__dirname, '../swap_regtest', 'dummyinvoice.macaroon'), path.join(lndDir, 'invoice.macaroon'), copyFail);
+        fs.copyFile(path.resolve(__dirname, '../swap_regtest', 'dummyreadonly.macaroon'), path.join(lndDir, 'readonly.macaroon'), copyFail);
+        fs.copyFile(path.resolve(__dirname, '../swap_regtest', 'lndtls.cert'), path.join(lndDir, 'tls.cert'), copyFail);
+        fs.copyFile(path.resolve(__dirname, '../swap_regtest', 'lndtls.key'), path.join(lndDir, 'tls.key'), copyFail);
         let chainParams;
         switch (args.daemon) {
         case "btcd":
-          console.log("entering btcd");
-          console.log(path.join(validateCredentials.chainDir, 'rpc.cert'));
           chainParams = [
-            `--btcd.dir=${validateCredentials.chainDir}`,
+            `--btcd.dir=${validateCredentials.lndChainDir}`,
             `--btcd.rpcpass=${validateCredentials.chainPass}`,
-            `--btcd.rpchost=127.0.0.1:${validateCredentials.chainPort}`,
+            `--btcd.rpchost=127.0.0.1:${validateCredentials.lndChainPort}`,
             `--btcd.rpcuser=${validateCredentials.chainUser}`,
             `--bitcoin.active`,
             `--bitcoin.feerate=2500`,
             `--bitcoin.node=btcd`,
             `--bitcoin.simnet`,
-            `--btcd.rpccert=${path.join(validateCredentials.chainDir, 'rpc.cert')}`,
-            // `--btcd.rpckey=${path.join(validateCredentials.chainDir, 'rpc.key')}`,
-          ];
-          break;
-        case "bitcoind":
-          chainParams = [
-            `--bitcoin.active`,
-            `--bitcoin.feerate=2500`,
-            `--bitcoind.dir=${validateCredentials.chainDir}`,
-            `--bitcoind.rpcpass=${validateCredentials.chainPass}`,
-            `--bitcoind.rpchost=127.0.0.1:${validateCredentials.chainPort}`,
-            `--bitcoind.rpcuser=${validateCredentials.chainUser}`,
-            `--bitcoind.zmqpath=tcp://127.0.0.1:28332`,
-            `--bitcoin.node=bitcoind`,
-            `--bitcoin.regtest`
+            `--btcd.rpccert=${path.join(validateCredentials.lndChainDir, 'rpc.cert')}`,
           ];
           break;
         default:
@@ -177,41 +135,31 @@ module.exports = (args, cbk) => {
           '--noencryptwallet',
           '--debuglevel=trace',
           '--rpclisten=127.0.0.1:10009',
-          // `--autopilot.active`,
-          // `--autopilot.maxchannels=10`,
-          // `--autopilot.minchansize=100000`,
-          // `--autopilot.allocation=0.8`,
+          `--autopilot.active`,
+          `--autopilot.maxchannels=10`,
+          `--autopilot.minchansize=100000`,
+          `--autopilot.allocation=0.8`,
           ...chainParams]);
-
-        console.log("lndDaemon spawned");
-        lndDaemon.stderr.on('err', data => {
-          console.log("==LNDERR==" + data.toString());
-        });
+        lndDaemon.stderr.on('err', data => { });
         lndDaemon.stdout.on('data', data => {
-            console.log("==LNDOUT==" + data.toString());
             if (namespaceFail.test(`${data}`)) {
-              console.log("namespace failed!!");
               lndDaemon.kill();
               lndDaemon = spawn('lnd', [
                 `--configfile=""`,
                 `--datadir="${lndDir}"`,
-                // '--no-macaroons',
                 `--adminmacaroonpath=${path.join(lndDir, 'admin.macaroon')}`,
                 `--tlscertpath=${path.join(lndDir, 'tls.cert')}`,
                 `--tlskeypath=${path.join(lndDir, 'tls.key')}`,
                 `--logdir="${lndDir}/logs/"`,
                 '--noencryptwallet',
                 '--debuglevel=trace',
-                // '--rpclisten=127.0.0.1:10009',
                 `--autopilot.active`,
                 `--autopilot.maxchannels=10`,
                 `--autopilot.minchansize=100000`,
                 `--autopilot.allocation=0.8`,
                 ...chainParams]);
               lndDaemon.stdout.on('data', data => {
-                console.log("==lnd2== " + data.toString());
                 if (rpcServerReady.test(`${data}`)) {
-                  console.log("rdy!");
                   setTimeout(function () {
                     return cbk(null, {is_ready: true, lndDir});
                   }, 2000);
@@ -220,7 +168,6 @@ module.exports = (args, cbk) => {
               });
 
               if (rpcServerReady.test(`${data}`)) {
-                console.log("rdy!");
                 setTimeout(function () {
                   return cbk(null, {is_ready: true, lndDir});
                 }, 2000);
@@ -232,71 +179,72 @@ module.exports = (args, cbk) => {
 
         lndDaemon.on('close', code => {
           // removeDir(lndDir, () => {});
-          // removeDir(validateCredentials.chainDir, () => {});
+          // removeDir(validateCredentials.lndChainDir, () => {});
         });
 
-        process.on('uncaughtException', err => {
-          console.log('LND ERROR', err);
-          // daemon.kill();
+        process.on('uncaughtException', err => {          // daemon.kill();
           process.exit(1);
         });
 
-      } catch (e) {
-        console.log(e);
-      }
+      } catch (e) { }
     }],
 
-    spawnRPCInterface: ['spawnLND', ({spawnLND}, cbk) => {
+    spawnLNDInterface: ['spawnLND', ({spawnLND}, cbk) => {
       if (!spawnLND.is_ready) {
         return cbk([0, "LNDaemon failed to ready"]);
       }
       const cert = new Buffer(fs.readFileSync(path.join(spawnLND.lndDir, 'tls.cert'))).toString('base64');
       const macaroon = new Buffer(fs.readFileSync(path.join(spawnLND.lndDir, 'admin.macaroon'))).toString('base64');
-
-      console.log(cert);
-      console.log(macaroon);
-
       const host = '127.0.0.1:10009';
       const lnd = lightningDaemon({cert, host, macaroon});
-
-      console.log("spawned");
-
       return cbk(null, {lnd});
 
     }],
 
-    verifyRPCInterface: ['spawnRPCInterface', ({spawnRPCInterface}, cbk) => {
-      console.log("outstart");
-
-      signMessage({lnd: spawnRPCInterface.lnd, message: " "}, (err, res) => {
-        console.log(err);
-        console.log(res);
+    verifyLNDInterface: ['spawnLNDInterface', ({spawnLNDInterface}, cbk) => {
+      signMessage({lnd: spawnLNDInterface.lnd, message: " "}, (err, res) => {
         if (!res.signature) {
           return cbk([0, 'ExpectedValidLNDSignedMessage']);
         } else {
-          return cbk(null, {lnd: spawnRPCInterface.lnd});
+          setTimeout(() => {
+            return cbk(null, {lnd: spawnLNDInterface.lnd});
+          }, 5000);
         }
       });
     }],
 
-    // genAddress: ['spawnRPCInterface', ({spawnRPCInterface}, cbk) => {
-    //   console.log("==\n" * 4);
-    //   console.log("Entering genAddress");
-    //   return createAddress({lnd: spawnRPCInterface.lnd}, cbk);
-    // }],
+
+    genAddress: ['verifyLNDInterface', ({verifyLNDInterface}, cbk) => {
+      return createAddress({lnd: verifyLNDInterface.lnd}, cbk);
+    }],
+
+    startNoTLSBTCD: ['genAddress', 'validateCredentials', ({genAddress, validateCredentials}, cbk) => {
+      spawnChainDaemon({
+        network: args.network,
+        daemon: "btcd",
+        dir: validateCredentials.baseChainDir,
+        finished_mining_public_key: genAddress.address,
+        simnet: true,
+        tls: false,
+      }, (err, res) => {
+        if (err) {
+          return cbk(err);
+        } else {
+          return cbk(null, {lnd: genAddress.lnd});
+        }
+      });
+    }],
+
     //
     // stopBTCDBackend: ['genAddress', ({}, cbk) => {
     //   return stopChainDaemon({network: args.network}, stopErr => {return cbk(stopErr);});
     // }],
     //
     // rebootBTCDWithMiningAddress: ['stopBTCDBackend', 'genAddress', 'validateCredentials', ({genAddress, validateCredentials}, cbk) => {
-    //   console.log("==\n" * 4);
-    //   console.log("Entering rebootBTCDWithMiningAddress");
-    //   console.log(genAddress);
-    //   spawnChainDaemon({
+    //    //    //    //   spawnChainDaemon({
     //     network: args.network,
     //     daemon: args.daemon,
-    //     dir: validateCredentials.chainDir,
+    //     dir: validateCredentials.lndChainDir,
     //     mining_public_key: genAddress.address
     //   }, (err, res) => {
     //     return cbk(err, res);
@@ -307,20 +255,16 @@ module.exports = (args, cbk) => {
 
 
     // }, (err, res) => {
-    //   console.log("wrapping up spawn_lnd_daemon");
-    //   if (!!res.spawnLND && !!res.spawnLND.is_ready) {
-    //     console.log(args.network);
-    //     // return stopChainDaemon({network: args.network}, stopErr => {
+    //    //   if (!!res.spawnLND && !!res.spawnLND.is_ready) {
+    //    //     // return stopChainDaemon({network: args.network}, stopErr => {
     //     //   return cbk(stopErr || err);
     //     // });
     //   }
     //
     //   if (!!err) {
-    //     console.log("spawn lnd error errored at end");
-    //     console.log(err);
-    //     return cbk(err);
+    //    //    //     return cbk(err);
     //   }
     //
     //   return clearCache({cache: 'memory'}, cbk);
-  }, returnResult({of: 'verifyRPCInterface'}, cbk));
+  }, returnResult({of: 'startNoTLSBTCD'}, cbk));
 };
