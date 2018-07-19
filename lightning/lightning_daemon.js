@@ -19,21 +19,22 @@ const {SSS_LTCTESTNET_LND_TLS_CERT} = process.env;
   <LND GRPC API Object>
 */
 module.exports = ({network}) => {
-  try {
-    if (network === "testnet") {
-      return lightningDaemon({
-        cert: SSS_TESTNET_LND_TLS_CERT,
-        host: SSS_TESTNET_LND_GRPC_HOST,
-        macaroon: SSS_TESTNET_LND_MACAROON,}
-      );
-    } else if (network === "ltctestnet"){
-      return lightningDaemon({
-        cert: SSS_LTCTESTNET_LND_TLS_CERT,
-        host: SSS_LTCTESTNET_LND_GRPC_HOST,
-        macaroon: SSS_LTCTESTNET_LND_MACAROON,}
-      );
-    }
-  } catch (e) {
+  switch (network) {
+  case 'testnet':
+    return lightningDaemon({
+      cert: SSS_TESTNET_LND_TLS_CERT,
+      host: SSS_TESTNET_LND_GRPC_HOST,
+      macaroon: SSS_TESTNET_LND_MACAROON,
+    });
+    break;
+  case 'ltctestnet':
+    return lightningDaemon({
+      cert: SSS_LTCTESTNET_LND_TLS_CERT,
+      host: SSS_LTCTESTNET_LND_GRPC_HOST,
+      macaroon: SSS_LTCTESTNET_LND_MACAROON,
+    });
+    break;
+  default:
     throw new Error('FailedToInitializedLightningGrpcApi');
   }
 };
