@@ -7,7 +7,7 @@ test(`spawn lnd + chaindaemon`, t => {
 
   return spawnLNDDaemon({
       daemon: 'btcd',
-      network: 'regtest',
+      network: 'simnet',
     },
     testErr => {
       console.log(testErr);
