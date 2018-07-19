@@ -30,6 +30,7 @@ const unableToStartServer = /Unable.to.start.server/;
  }
  */
 module.exports = (args, cbk) => {
+  console.log(args)
   if (knownDaemons.indexOf(args.daemon) === notFoundIndex) {
     return cbk([400, 'ExpectedBtcsuiteDaemonName', args.daemon]);
   }
@@ -38,7 +39,7 @@ module.exports = (args, cbk) => {
     return cbk([400, 'ExpectedDirectoryForDaemon']);
   }
 
-  if (!args.noMine && !args.mining_public_key) {
+  if (!args.noMine && !args.mining_public_key && !args.finished_mining_public_key) {
     return cbk([400, 'ExpectedMiningPublicKeyForDaemon']);
   }
 
@@ -55,6 +56,10 @@ module.exports = (args, cbk) => {
   } catch (e) {
     return cbk([500, 'CredentialsLookupFailure', e]);
   }
+  if (args.port) {
+    credentials.port = args.port;
+  }
+
   let params = [
     '--datadir', args.dir,
     '--debuglevel=debug',
@@ -65,8 +70,19 @@ module.exports = (args, cbk) => {
     '--rpcuser', credentials.user,
     '--txindex',];
   if (!args.noMine) {
-    const miningKey = Buffer.from(args.mining_public_key, 'hex');
-    params = [...params, '--miningaddr', fromPublicKeyBuffer(miningKey, network).getAddress()];
+    console.log(args);
+    let miningKey;
+    if (args.finished_mining_public_key) {
+      miningKey = args.finished_mining_public_key
+    } else {
+      miningKey = fromPublicKeyBuffer(Buffer.from(args.mining_public_key, 'hex'), network).getAddress();
+    }
+    // console.log(miningKey);
+    // console.log(network);
+
+    params = [...params, '--miningaddr', miningKey];
+    // console.log(miningKey);
+    // console.log(fromPublicKeyBuffer(miningKey, network).getAddress());
   }
   if (args.tls) {
     params = [...params,
@@ -75,11 +91,16 @@ module.exports = (args, cbk) => {
   } else {
     params = [...params, '--notls',]
   }
+  if (args.peer) {
+    params = [...params,
+      '--addpeer', args.peer];
+  }
   if (args.simnet) {
     params = [...params, '--simnet']
   } else {
     params = [...params, '--regtest']
   }
+  console.log(params);
   const daemon = spawn(args.daemon, params);
   daemon.stdout.on('data', data => {
     if (unableToStartServer.test(`${data}`)) {
