@@ -57,7 +57,11 @@ module.exports = ({cache, invoice, network, script}, cbk) => {
     },
 
     parseInvoice: ['validate', ({}, cbk) => {
-      return cbk(null, parseInvoice({invoice}));
+      try {
+        return cbk(null, parseInvoice({invoice}));
+      } catch (e) {
+        return cbk([400, 'FailedToParseSwapInvoice', e]);
+      }
     }],
 
     // Invoice id
