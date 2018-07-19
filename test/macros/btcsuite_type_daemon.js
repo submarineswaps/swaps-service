@@ -75,7 +75,7 @@ module.exports = (args, cbk) => {
   } else {
     params = [...params, '--notls',]
   }
-  if (args.simnet){
+  if (args.simnet) {
     params = [...params, '--simnet']
   } else {
     params = [...params, '--regtest']
