@@ -7,7 +7,7 @@ const decBase = 10;
 const {SSS_CHAIN_BCHTESTNET_RPC_API} = process.env;
 const {SSS_CHAIN_LTCTESTNET_RPC_API} = process.env;
 const {SSS_CHAIN_TESTNET_RPC_API} = process.env;
-
+const {SSS_CHAIN_SIMNET_RPC_API} = process.env;
 /** Get credentials for a given network's chain daemon
 
   {
@@ -50,7 +50,9 @@ module.exports = ({network}) => {
   case (chains.litecoin_testnet):
     api = SSS_CHAIN_LTCTESTNET_RPC_API || service.rpc_api;
     break;
-
+  case (chains.bitcoin_simnet):
+    api = SSS_CHAIN_SIMNET_RPC_API || service.rpc_api;
+    break;
   default:
     api = service.rpc_api;
     break;
