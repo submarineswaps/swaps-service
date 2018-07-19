@@ -3,6 +3,7 @@
 
   "bcash_testnet": "bchtestnet",
   "bitcoin_testnet": "testnet",
-  "litecoin_testnet": "ltctestnet"
+  "litecoin_testnet": "ltctestnet",
+  "bitcoin_simnet": "simnet"
 }
 

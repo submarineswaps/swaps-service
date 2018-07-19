@@ -25,6 +25,10 @@
     "executable": "btcd",
     "rpc_api": "x:pass@127.0.0.1:18335"
   },
+  "simnet":{
+    "executable":"btcd",
+    "rpc_api": "x:pass@127.0.0.1:18335"
+  },
   "testnet": {
     "executable": "btcd",
     "rpc_api": "bitcoinrpc:pass@127.0.0.1:18334"
