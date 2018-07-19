@@ -36,40 +36,24 @@ module.exports = (args, cbk) => {
     dir = args.dir;
   }
 
+
   switch (args.daemon) {
   case 'bcash':
   case 'bcoin':
     daemon = bcoinTypeDaemon({dir, network: args.network}, cbk);
-    break;
-  case 'btcdrpc':
-    daemon = btcsuiteTypeDaemon({
-        dir,
-        daemon: 'btcd',
-        mining_public_key: args.mining_public_key,
-        network: args.network,
-        simnet: true,
-        tls: false,
-      },
-      cbk);
-    break;
-  case 'btcdbackend':
-    daemon = btcsuiteTypeDaemon({
-        dir,
-        daemon: 'btcd',
-        noMine: true,
-        network: args.network,
-        simnet: true,
-        tls: true,
-      },
-      cbk);
     break;
   case 'btcd':
   case 'ltcd':
     daemon = btcsuiteTypeDaemon({
         dir,
         daemon: args.daemon,
+        noMine: args.noMine,
+        port: args.port,
         mining_public_key: args.mining_public_key,
+        finished_mining_public_key: args.finished_mining_public_key,
         network: args.network,
+        simnet: args.simnet,
+        tls: args.tls,
       },
       cbk);
     break;
