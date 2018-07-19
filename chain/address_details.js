@@ -34,27 +34,21 @@ module.exports = (args) => {
     throw new Error('ExpectedNetworkForAddress');
   }
 
-  let normalAddress = args.address;
-
-  switch (args.network) {
-  case 'bchtestnet':
-    if (isCashAddress(args.address)) {
-      normalAddress = toLegacyAddress(args.address);
-    }
-    break;
-
-  default:
-    break;
-  }
-
   let base58Address;
   let bech32Address;
+  const isCashNet = !!networks[args.network].is_cash_address_network;
 
-  try { base58Address = address.fromBase58Check(normalAddress); } catch (e) {
+  // Determine if the address is a weird cash type address
+  const isCashAddr = isCashNet ? isCashAddress(args.address) : false;
+
+  // Normalize address so that cash type addresses become normal ones
+  const addr = isCashAddr ? toLegacyAddress(args.address) : args.address;
+
+  try { base58Address = address.fromBase58Check(addr); } catch (e) {
     base58Address = null;
   }
 
-  try { bech32Address = address.fromBech32(normalAddress); } catch (e) {
+  try { bech32Address = address.fromBech32(addr); } catch (e) {
     bech32Address = null;
   }
 

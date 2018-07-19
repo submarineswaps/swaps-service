@@ -1,0 +1,18 @@
+{
+  "// BCH testnet": "",
+
+  "fork_id": "40",
+  "is_cash_address_network": true,
+  "is_segwit_absent": true,
+  "ms_per_block": 600000,
+  "prefix": {
+    "bech32": "bchtest",
+    "bip32_private_key": "04358394",
+    "bip32_public_key": "043587CF",
+    "message_prefix": "\\x18Bitcoin Signed Message:\n",
+    "p2pkh": "6F",
+    "p2sh": "C4",
+    "wif": "EF"
+  }
+}
+

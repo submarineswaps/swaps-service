@@ -16,9 +16,6 @@ const {setJsonInCache} = require('./../cache');
 const {swapScriptInTransaction} = require('./../swaps');
 
 const paymentTimeoutMs = 1000 * 60;
-const {SSS_CLAIM_BCHTESTNET_ADDRESS} = process.env;
-const {SSS_CLAIM_LTCTESTNET_ADDRESS} = process.env;
-const {SSS_CLAIM_TESTNET_ADDRESS} = process.env;
 const swapSuccessCacheMs = 1000 * 60 * 60 * 3;
 
 /** Complete a swap transaction
@@ -158,23 +155,15 @@ module.exports = (args, cbk) => {
       'lnd',
       ({lnd}, cbk) =>
     {
-      switch (args.network) {
-      case 'bchtestnet':
-        return cbk(null, {address: SSS_CLAIM_BCHTESTNET_ADDRESS});
+      const net = args.network;
 
-      case 'ltctestnet':
-        return cbk(null, {address: SSS_CLAIM_LTCTESTNET_ADDRESS});
+      const address = process.env[`SSS_CLAIM_${net.toUpperCase()}_ADDRESS`];
 
-      case 'testnet':
-        if (!!SSS_CLAIM_TESTNET_ADDRESS) {
-          return cbk(null, {address: SSS_CLAIM_TESTNET_ADDRESS});
-        }
-
-        return createAddress({lnd}, cbk);
-
-      default:
-        return cbk([500, 'UnexpectedNetworkToSweepOutTo', args.network]);
+      if (!!address) {
+        return cbk(null, {address});
       }
+
+      return createAddress({lnd}, cbk);
     }],
 
     // Pay the invoice

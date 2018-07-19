@@ -2,9 +2,10 @@ const asyncAuto = require('async/auto');
 
 const {getBlockHeader} = require('./../chain');
 const {getCurrentHash} = require('./../chain');
+const {networks} = require('./../tokenslib');
 const {returnResult} = require('./../async-util');
 
-const staleBlockMs = 1000 * 60 * 60 * 6;
+const staleBlockVariance = 30;
 
 /** Confirm that a chain backend is connected
 
@@ -49,7 +50,7 @@ module.exports = ({network}, cbk) => {
       // Roughly how long has it been since this block was created?
       const delayMs = Date.now() - Date.parse(getHeaderInfo.median_created_at);
 
-      if (delayMs > staleBlockMs) {
+      if (delayMs > networks[network].ms_per_block * staleBlockVariance) {
         return cbk([503, 'StaleRemoteBlockTime', delayMs]);
       }
 

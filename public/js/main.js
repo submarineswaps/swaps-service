@@ -661,6 +661,8 @@ App.init = args => {
   $('#use-paper-wallet').change(App.changedRefundPreference);
   $('.pay-to-lightning-invoice').prop('readonly', false);
 
+  App.initActiveChains({}, err => console.log);
+
   App.initExchangeRates({}, (err, res) => {
     if (!!err) {
       return console.log(err);
@@ -676,6 +678,26 @@ App.init = args => {
   });
 
   App.initFromQueryParams({});
+
+  return;
+};
+
+/** Initialize active chains
+
+  {}
+*/
+App.initActiveChains = ({}, cbk) => {
+  App.makeRequest({api: 'networks/'})
+    .then(res => {
+      if (!res || !Array.isArray(res.networks)) {
+        throw new Error('ExpectedActiveNetworks');
+      }
+
+      res.networks.forEach(n => $(`.${n}-chain`).prop('hidden', false));
+
+      return cbk();
+    })
+    .catch(err => cbk(err));
 
   return;
 };

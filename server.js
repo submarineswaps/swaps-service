@@ -15,7 +15,9 @@ require('dotenv').config();
 
 const {addSwapToPool} = require('./pool');
 const apiRouter = require('./routers/api');
+const {isConfigured} = require('./service');
 const {confirmChainBackend} = require('./blocks');
+const {networks} = require('./tokenslib');
 const {swapScanner} = require('./scan');
 
 const {NODE_ENV} = process.env;
@@ -26,13 +28,16 @@ const browserifyPath = `${__dirname}/public/browserify/index.js`;
 const cache = 'redis';
 const isProduction = NODE_ENV === 'production';
 const morganLogLevel = 'dev';
-const networks = ['bchtestnet', 'ltctestnet', 'testnet'];
 const port = PORT || SSS_PORT || 9889;
 
 const app = express();
 const logOnErr = err => !!err ? log(err) : null;
 
-const scanners = networks.map(network => {
+const scanners = Object.keys(networks).map(network => {
+  if (!isConfigured({network})) {
+    return null;
+  }
+
   const scanner = swapScanner({cache, network});
 
   scanner.on('claim', swap => addSwapToPool({cache, swap}, logOnErr));

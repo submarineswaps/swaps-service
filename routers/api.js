@@ -5,13 +5,16 @@ const {broadcastTransaction} = require('./../service');
 const {checkSwapStatus} = require('./../service');
 const {createSwap} = require('./../service');
 const {findSwapOutpoint} = require('./../service');
+const {getActiveNetworks} = require('./../service');
 const {getAddressDetails} = require('./../service');
 const {getExchangeRates} = require('./../service');
 const {getInvoiceDetails} = require('./../service');
+const {isConfigured} = require('./../service');
+const {networks} = require('./../tokenslib');
 const {returnJson} = require('./../async-util');
 
 const cache = 'redis';
-const swapNetworks = ['bchtestnet', 'ltctestnet', 'testnet'];
+const knownNetworks = Object.keys(networks);
 
 /** Make an api router
 
@@ -39,7 +42,7 @@ module.exports = ({log}) => {
   router.get('/exchange_rates/', ({}, res) => {
     return getExchangeRates({
       cache,
-      networks: swapNetworks,
+      networks: knownNetworks.filter(network => isConfigured({network})),
     },
     returnJson({log, res}));
   });
@@ -52,6 +55,11 @@ module.exports = ({log}) => {
       network: params.network,
     },
     returnJson({log, res}));
+  });
+
+  // Get list of supported networks to pay on-chain
+  router.get('/networks/', ({}, res) => {
+    return getActiveNetworks({cache}, returnJson({log, res}));
   });
 
   // POST a swap output find details request

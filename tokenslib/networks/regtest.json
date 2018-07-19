@@ -1,0 +1,15 @@
+{
+  "// BTC Regtest": "",
+
+  "ms_per_block": 600000,
+  "prefix": {
+    "bech32": "tb",
+    "bip32_private_key": "04358394",
+    "bip32_public_key": "043587CF",
+    "message_prefix": "\\x18Bitcoin Signed Message:\n",
+    "p2pkh": "6F",
+    "p2sh": "C4",
+    "wif": "EF"
+  }
+}
+

@@ -1,0 +1,15 @@
+{
+  "// LTC regtest": "",
+
+  "ms_per_block": 150000,
+  "prefix": {
+    "bech32": "tltc",
+    "bip32_private_key": "019D9CFE",
+    "bip32_public_key": "019DA462",
+    "message_prefix": "\\x19Litecoin Signed Message:\n",
+    "p2pkh": "6F",
+    "p2sh": "3A",
+    "wif": "EF"
+  }
+}
+
