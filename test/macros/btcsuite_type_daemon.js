@@ -95,7 +95,6 @@ module.exports = (args, cbk) => {
   } else {
     params = [...params, '--regtest']
   }
-console.log(params)
   const daemon = spawn(args.daemon, params);
   daemon.stdout.on('data', data => {
     if (unableToStartServer.test(`${data}`)) {
