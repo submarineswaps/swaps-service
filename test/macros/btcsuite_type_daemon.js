@@ -57,13 +57,13 @@ module.exports = (args, cbk) => {
   }
   let params = [
     '--datadir', args.dir,
+    '--debuglevel=debug',
     '--logdir', args.dir,
     '--relaynonstd',
-    '--rpcpass', credentials.pass,
-    '--txindex',
     '--rpclisten', `${credentials.host}:${credentials.port}`,
+    '--rpcpass', credentials.pass,
     '--rpcuser', credentials.user,
-    '--debuglevel=trace'];
+    '--txindex',];
   if (!args.noMine) {
     const miningKey = Buffer.from(args.mining_public_key, 'hex');
     params = [...params, '--miningaddr', fromPublicKeyBuffer(miningKey, network).getAddress()];
