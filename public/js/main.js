@@ -719,6 +719,10 @@ App.initFromQueryParams = ({}) => {
     invoice = new URL(location.href).searchParams.get('invoice');
     network = new URL(location.href).searchParams.get('network');
 
+    if (!invoice) {
+      return;
+    }
+
     history.replaceState({}, 'some title', '/');
   } catch (err) {
     return;
