@@ -60,6 +60,8 @@ module.exports = (args, cbk) => {
     '--logdir', args.dir,
     '--relaynonstd',
     '--rpcpass', credentials.pass,
+    '--txindex',
+    '--rpclisten', `${credentials.host}:${credentials.port}`,
     '--rpcuser', credentials.user,
     '--debuglevel=trace'];
   if (!args.noMine) {
