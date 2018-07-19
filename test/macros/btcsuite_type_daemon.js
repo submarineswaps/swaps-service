@@ -30,8 +30,7 @@ const unableToStartServer = /Unable.to.start.server/;
  }
  */
 module.exports = (args, cbk) => {
-  console.log(args)
-  if (knownDaemons.indexOf(args.daemon) === notFoundIndex) {
+   if (knownDaemons.indexOf(args.daemon) === notFoundIndex) {
     return cbk([400, 'ExpectedBtcsuiteDaemonName', args.daemon]);
   }
 
@@ -46,7 +45,6 @@ module.exports = (args, cbk) => {
   if (!args.network) {
     return cbk([400, 'ExpectedNetworkNameForDaemon']);
   }
-
 
   let credentials;
 
@@ -70,20 +68,15 @@ module.exports = (args, cbk) => {
     '--rpcuser', credentials.user,
     '--txindex',];
   if (!args.noMine) {
-    console.log(args);
     let miningKey;
     if (args.finished_mining_public_key) {
       miningKey = args.finished_mining_public_key
     } else {
       miningKey = fromPublicKeyBuffer(Buffer.from(args.mining_public_key, 'hex'), network).getAddress();
     }
-    // console.log(miningKey);
-    // console.log(network);
-
     params = [...params, '--miningaddr', miningKey];
-    // console.log(miningKey);
-    // console.log(fromPublicKeyBuffer(miningKey, network).getAddress());
   }
+
   if (args.tls) {
     params = [...params,
       `--rpccert=${path.join(args.dir, 'rpc.cert')}`,
@@ -91,16 +84,18 @@ module.exports = (args, cbk) => {
   } else {
     params = [...params, '--notls',]
   }
+
   if (args.peer) {
     params = [...params,
       '--addpeer', args.peer];
   }
+
   if (args.simnet) {
     params = [...params, '--simnet']
   } else {
     params = [...params, '--regtest']
   }
-  console.log(params);
+console.log(params)
   const daemon = spawn(args.daemon, params);
   daemon.stdout.on('data', data => {
     if (unableToStartServer.test(`${data}`)) {
@@ -110,7 +105,6 @@ module.exports = (args, cbk) => {
     if (rpcServerReady.test(`${data}`)) {
       return cbk(null, {is_ready: true});
     }
-
     return;
   });
 

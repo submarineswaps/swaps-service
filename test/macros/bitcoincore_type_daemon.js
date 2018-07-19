@@ -58,7 +58,6 @@ module.exports = ({dir, network}, cbk) => {
   ]);
 
   daemon.stdout.on('data', data => {
-    console.log(data.toString());
     if (rpcServerReady.test(`${data}`)) {
       return cbk(null, {is_ready: true});
     }
