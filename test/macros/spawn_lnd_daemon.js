@@ -63,14 +63,16 @@ module.exports = (args, cbk) => {
         chainPass: credentials.pass,
         chainUser: credentials.user,
         baseChainPort: credentials.port,
-        lndChainPort: credentials.port - 1,
+        lndChainPort: credentials.port - 1, // Uses 1 port under notls chain daemon for lightning backend chain
       });
     },
 
     copyCerts: ['validateCredentials', ({validateCredentials}, cbk) => {
       fs.mkdirSync(validateCredentials.lndChainDir);
-      fs.copyFile(resolve(__dirname, '../swap_regtest', 'dummyrpc.cert'), join(validateCredentials.lndChainDir, 'rpc.cert'), copyFail);
-      fs.copyFile(resolve(__dirname, '../swap_regtest', 'dummyrpc.key'), join(validateCredentials.lndChainDir, 'rpc.key'), copyFail);
+      fs.copyFile(resolve(__dirname, '../swap_regtest', 'dummyrpc.cert'),
+        join(validateCredentials.lndChainDir, 'rpc.cert'), copyFail);
+      fs.copyFile(resolve(__dirname, '../swap_regtest', 'dummyrpc.key'),
+        join(validateCredentials.lndChainDir, 'rpc.key'), copyFail);
       return cbk(null, {});
 
     }],
@@ -92,12 +94,18 @@ module.exports = (args, cbk) => {
     spawnLND: ['spawnTLSBTCD', 'validateCredentials', ({validateCredentials}, cbk) => {
       const lndDir = join('/tmp', uuidv4());
       fs.mkdirSync(lndDir);
-      fs.copyFile(resolve(__dirname, '../swap_regtest', 'dummymacaroons.db'), join(lndDir, 'macaroons.db'), copyFail);
-      fs.copyFile(resolve(__dirname, '../swap_regtest', 'dummyadmin.macaroon'), join(lndDir, 'admin.macaroon'), copyFail);
-      fs.copyFile(resolve(__dirname, '../swap_regtest', 'dummyinvoice.macaroon'), join(lndDir, 'invoice.macaroon'), copyFail);
-      fs.copyFile(resolve(__dirname, '../swap_regtest', 'dummyreadonly.macaroon'), join(lndDir, 'readonly.macaroon'), copyFail);
-      fs.copyFile(resolve(__dirname, '../swap_regtest', 'lndtls.cert'), join(lndDir, 'tls.cert'), copyFail);
-      fs.copyFile(resolve(__dirname, '../swap_regtest', 'lndtls.key'), join(lndDir, 'tls.key'), copyFail);
+      fs.copyFile(resolve(__dirname, '../swap_regtest', 'dummymacaroons.db'),
+        join(lndDir, 'macaroons.db'), copyFail);
+      fs.copyFile(resolve(__dirname, '../swap_regtest', 'dummyadmin.macaroon'),
+        join(lndDir, 'admin.macaroon'), copyFail);
+      fs.copyFile(resolve(__dirname, '../swap_regtest', 'dummyinvoice.macaroon'),
+        join(lndDir, 'invoice.macaroon'), copyFail);
+      fs.copyFile(resolve(__dirname, '../swap_regtest', 'dummyreadonly.macaroon'),
+        join(lndDir, 'readonly.macaroon'), copyFail);
+      fs.copyFile(resolve(__dirname, '../swap_regtest', 'lndtls.cert'),
+        join(lndDir, 'tls.cert'), copyFail);
+      fs.copyFile(resolve(__dirname, '../swap_regtest', 'lndtls.key'),
+        join(lndDir, 'tls.key'), copyFail);
 
       let lndParams = [
         `--configfile=""`,
