@@ -1,7 +1,0 @@
-{
-  "// Network specific chain values": "",
-
-  "bchtestnet": {"ms_per_block": 600000},
-  "ltctestnet": {"ms_per_block": 150000},
-  "testnet": {"ms_per_block": 600000}
-}

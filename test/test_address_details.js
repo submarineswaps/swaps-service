@@ -1,8 +1,30 @@
-const {equal} = require('tap');
+const {test} = require('tap');
 
 const {addressDetails} = require('./../chain');
 
 const fixtures = {
+  bchtestnet_p2sh: {
+    address: 'bchtest:pphntt8phcw52vq280l5zadhx8dzvzn6t5v9c0kuad',
+    expected: {
+      data: null,
+      hash: '6f35ace1be1d45300a3bff4175b731da260a7a5d',
+      type: 'p2sh',
+      version: 196,
+    },
+    network: 'bchtestnet',
+  },
+
+  ltctestnet_p2sh: {
+    address: 'QQo8HhGPwuyFt3ek2zgPiF9ppTRs5zf83p',
+    expected: {
+      data: null,
+      hash: '2dfbe80a173e1ded99eae497f611086a865b0a72',
+      type: 'p2sh',
+      version: 58,
+    },
+    network: 'ltctestnet',
+  },
+
   testnet_p2sh: {
     address: '2MzQwSSnBHWHqSAqtTVQ6v47XtaisrJa1Vc',
     expected: {
@@ -65,11 +87,15 @@ const tests = Object.keys(fixtures).map(n => fixtures[n]);
 tests.forEach(({address, expected, network}) => {
   const details = addressDetails({address, network});
 
-  equal(details.data, expected.data);
-  equal(details.hash, expected.hash);
-  equal(details.prefix, expected.prefix);
-  equal(details.type, expected.type);
-  equal(details.version, expected.version);
+  test(`${network} ${address}`, t => {
+    t.equal(details.data, expected.data, 'DataMatches');
+    t.equal(details.hash, expected.hash, 'HashMatches');
+    t.equal(details.prefix, expected.prefix, 'PrefixMatches');
+    t.equal(details.type, expected.type, 'TypeMatches');
+    t.equal(details.version, expected.version, 'VersionMatches');
+
+    return t.end();
+  });
 
   return;
 });

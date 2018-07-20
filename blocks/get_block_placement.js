@@ -3,10 +3,11 @@ const asyncAuto = require('async/auto');
 const {getBlockHeader} = require('./../chain');
 const {getJsonFromCache} = require('./../cache');
 const getRecentChainTip = require('./get_recent_chain_tip');
+const {networks} = require('./../tokenslib');
 const {returnResult} = require('./../async-util');
 const {setJsonInCache} = require('./../cache');
 
-const previousBlockCacheMs = 1000 * 60 * 60 * 3;
+const blockCacheMultiplier = 10;
 
 /** Get the placement of a block within the chain
 
@@ -57,8 +58,11 @@ module.exports = ({block, cache, network}, cbk) => {
 
     // Pull the fresh block details
     getFresh: ['getCached', ({getCached}, cbk) => {
+      const hasPrevBlock = !!getCached && !!getCached.previous_block;
+      const hasConfCount = !!getCached && !!getCached.confirmation_count;
+
       // Exit early when cache contains the confirmation info
-      if (!!getCached && !!getCached.previous_block && !!getCached.current_confirmation_count) {
+      if (!!hasPrevBlock && hasConfCount) {
         return cbk();
       }
 
@@ -74,7 +78,7 @@ module.exports = ({block, cache, network}, cbk) => {
       return setJsonInCache({
         cache,
         key: [getChainTip.hash, block].join('/'),
-        ms: previousBlockCacheMs,
+        ms: networks[network].ms_per_block * blockCacheMultiplier,
         type: 'block_placement',
         value: {
           current_confirmation_count: getFresh.current_confirmation_count,

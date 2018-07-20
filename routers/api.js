@@ -41,10 +41,10 @@ module.exports = ({log}) => {
   // GET exchange rate information
   router.get('/exchange_rates/', ({}, res) => {
     return getExchangeRates({
-        cache,
-        networks: knownNetworks.filter(network => isConfigured({network})),
-      },
-      returnJson({log, res}));
+      cache,
+      networks: knownNetworks.filter(network => isConfigured({network})),
+    },
+    returnJson({log, res}));
   });
 
   // GET details about an invoice
@@ -55,6 +55,11 @@ module.exports = ({log}) => {
         network: params.network,
       },
       returnJson({log, res}));
+  });
+
+  // Get list of supported networks to pay on-chain
+  router.get('/networks/', ({}, res) => {
+    return getActiveNetworks({cache}, returnJson({log, res}));
   });
 
   // Get list of supported networks to pay on-chain

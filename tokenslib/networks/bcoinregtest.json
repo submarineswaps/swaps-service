@@ -1,0 +1,15 @@
+{
+  "// bcoin-org bcoin daemon regtest": "",
+
+  "ms_per_block": 600000,
+  "prefix": {
+    "bech32": "rb",
+    "bip32_private_key": "eab404c7",
+    "bip32_public_key": "eab4fa05",
+    "message_prefix": "\\x18Bitcoin Signed Message:\n",
+    "p2pkh": "3C",
+    "p2sh": "26",
+    "wif": "5A"
+  }
+}
+

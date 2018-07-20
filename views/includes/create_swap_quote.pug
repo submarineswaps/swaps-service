@@ -28,11 +28,11 @@ form.collapse.create-swap-quote.mb-4.show
             i.coin-icon.fab.fa-bitcoin.fa-fw.icon-testnet
             i.coin-icon.fas.fa-coins.fa-fw.icon-bchtestnet(hidden)
         select.custom-select.form-control.select-currency(disabled)
-          option(value="bchtestnet")
+          option.bchtestnet-chain(hidden, value="bchtestnet")
             | Testnet BCash
-          option(selected, value="testnet")
+          option.testnet-chain(selected, value="testnet")
             | Testnet Bitcoin
-          option(value="ltctestnet")
+          option.ltctestnet-chain(hidden, value="ltctestnet")
             | Testnet Litecoin
         .input-group-append
           label.input-group-text

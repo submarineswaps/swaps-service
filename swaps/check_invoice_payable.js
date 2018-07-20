@@ -4,7 +4,7 @@ const {max} = Math;
 const {min} = Math;
 const {now} = Date;
 
-const {networkParameters} = require('./../chain');
+const {networks} = require('./../tokenslib');
 
 const channelMinMargin = 1.01;
 
@@ -81,7 +81,7 @@ module.exports = args => {
     throw new Error('ExpectedNetworkNameForInvoicePayableCheck');
   }
 
-  if (!networkParameters[args.network]) {
+  if (!networks[args.network].ms_per_block) {
     throw new Error('ExpectedKnownNetworkBlockTimeValue');
   }
 
@@ -124,8 +124,8 @@ module.exports = args => {
   const hasConfirmations = !!args.funded_height;
   const maxRoutingFee = max(...args.routes.map(({fee}) => fee));
   const minRouteTimeout = min(...args.routes.map(({timeout}) => timeout));
-  const msPerBlock = networkParameters[args.network].ms_per_block;
-  const msPerDestBlock = networkParameters[args.invoice_network].ms_per_block;
+  const msPerBlock = networks[args.network].ms_per_block;
+  const msPerDestBlock = networks[args.invoice_network].ms_per_block;
 
   const blocksUntilRefund = args.refund_height - chainHeight;
   const fundedConfs = !hasConfirmations ? 0 : chainHeight - args.funded_height;

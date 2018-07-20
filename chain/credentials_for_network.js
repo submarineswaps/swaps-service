@@ -1,13 +1,10 @@
 const {URL} = require('url');
 
-const chains = require('./conf/chains');
 const chainServer = require('./conf/chain_server_defaults');
 
 const decBase = 10;
-const {SSS_CHAIN_BCHTESTNET_RPC_API} = process.env;
-const {SSS_CHAIN_LTCTESTNET_RPC_API} = process.env;
-const {SSS_CHAIN_TESTNET_RPC_API} = process.env;
-const {SSS_CHAIN_SIMNET_RPC_API} = process.env;
+const dummyScheme = 'http';
+
 /** Get credentials for a given network's chain daemon
 
   {
@@ -36,33 +33,26 @@ module.exports = ({network}) => {
     throw new Error('CredentialsUnknownForUnknownNetwork');
   }
 
-  let api;
-
-  switch (network) {
-  case (chains.bcash_testnet):
-    api = SSS_CHAIN_BCHTESTNET_RPC_API || service.rpc_api;
-    break;
-
-  case (chains.bitcoin_testnet):
-    api = SSS_CHAIN_TESTNET_RPC_API || service.rpc_api;
-    break;
-
-  case (chains.litecoin_testnet):
-    api = SSS_CHAIN_LTCTESTNET_RPC_API || service.rpc_api;
-    break;
-  case (chains.bitcoin_simnet):
-    api = SSS_CHAIN_SIMNET_RPC_API || service.rpc_api;
-    break;
-  default:
-    api = service.rpc_api;
-    break;
-  }
+  // Configured API
+  const api = process.env[`SSS_CHAIN_${network.toUpperCase()}_RPC_API`];
 
   // For parsing purposes, construct a dummy URL from the API value
-  const url = new URL(`http://${api}`);
+  const url = new URL(`${dummyScheme}://${api || service.rpc_api}`);
+
+  if (!url.hostname) {
+    throw new Error('MissingHostForChainApi');
+  }
+
+  if (!url.password) {
+    throw new Error('MissingPassForChainApi');
+  }
 
   if (!url.port) {
     throw new Error('MissingPortForChainApi');
+  }
+
+  if (!url.username) {
+    throw new Error('MissingUserForChainApi');
   }
 
   return {
