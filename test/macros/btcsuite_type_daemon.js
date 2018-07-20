@@ -19,6 +19,10 @@ const unableToStartServer = /Unable.to.start.server/;
     dir: <Data Directory String>
     mining_public_key: <Mining Public Key Hex String>
     network: <Network Name String>
+    no_mine: <Disable mining boolean>
+    peer: <Peer daemon address string>
+    simnet: <Simnet enable boolean>
+    tls: <Enable TLS boolean>
   }
 
   @returns
@@ -38,7 +42,7 @@ module.exports = (args, cbk) => {
     return cbk([400, 'ExpectedDirectoryForDaemon']);
   }
 
-  if (!args.noMine && !args.mining_public_key && !args.finished_mining_public_key) {
+  if (!args.no_mine && !args.mining_public_key && !args.finished_mining_public_key) {
     return cbk([400, 'ExpectedMiningPublicKeyForDaemon']);
   }
 
@@ -67,7 +71,7 @@ module.exports = (args, cbk) => {
     '--rpcpass', credentials.pass,
     '--rpcuser', credentials.user,
     '--txindex',];
-  if (!args.noMine) {
+  if (!args.no_mine) {
     let miningKey;
     if (args.finished_mining_public_key) {
       miningKey = args.finished_mining_public_key
