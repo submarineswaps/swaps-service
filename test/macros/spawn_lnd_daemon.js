@@ -1,29 +1,20 @@
-const removeDir = require('rimraf');
 const {spawn} = require('child_process');
-const uuidv4 = require('uuid/v4');
-const asyncAuto = require('async/auto');
-const rpcServerReady = /password RPC server listening on|Finished rescan for 0 addresses/;
-const namespaceFail = /Shutdown complete|Done generating TLS certificates/;
-
-const exec = require('child_process').exec;
-const path = require('path');
-const fs = require('fs');
+const {join} = require('path');
+const {resolve} = require('path');
 const {createAddress} = require('ln-service');
-
-process.env.GRPC_SSL_CIPHER_SUITES = "HIGH+ECDSA";
 const {lightningDaemon} = require('ln-service');
-const {unlockWallet} = require('ln-service');
-const {getPeers} = require('ln-service');
 const {signMessage} = require('ln-service');
-const returnResult = require('./../../async-util/return_result');
+const removeDir = require('rimraf');
+const uuidv4 = require('uuid/v4');
+const fs = require('fs');
 
-// const {createAddress} = require('ln-service');
-const {generateKeyPair} = require('./../../chain');
-const {stopChainDaemon} = require('./../../chain');
-const {clearCache} = require('./../../cache');
+const asyncAuto = require('async/auto');
+const returnResult = require('./../../async-util/return_result');
 const spawnChainDaemon = require('./../macros/spawn_chain_daemon');
 const credentialsForNetwork = require('./../../chain/credentials_for_network');
 
+const rpcServerReady = /password RPC server listening on|Finished rescan for 0 addresses/;
+const namespaceFail = /Shutdown complete|Done generating TLS certificates/;
 
 /** Spawn an LND daemon for testing on regtest
 
@@ -63,8 +54,8 @@ module.exports = (args, cbk) => {
       } catch (e) {
         return cbk([500, 'CredentialsLookupFailure', e]);
       }
-      const baseChainDir = path.join('/tmp', uuidv4());
-      const lndChainDir = path.join('/tmp', uuidv4());
+      const baseChainDir = join('/tmp', uuidv4());
+      const lndChainDir = join('/tmp', uuidv4());
 
       return cbk(null, {
         lndChainDir,
@@ -78,8 +69,8 @@ module.exports = (args, cbk) => {
 
     copyCerts: ['validateCredentials', ({validateCredentials}, cbk) => {
       fs.mkdirSync(validateCredentials.lndChainDir);
-      fs.copyFile(path.resolve(__dirname, '../swap_regtest', 'dummyrpc.cert'), path.join(validateCredentials.lndChainDir, 'rpc.cert'), copyFail);
-      fs.copyFile(path.resolve(__dirname, '../swap_regtest', 'dummyrpc.key'), path.join(validateCredentials.lndChainDir, 'rpc.key'), copyFail);
+      fs.copyFile(resolve(__dirname, '../swap_regtest', 'dummyrpc.cert'), join(validateCredentials.lndChainDir, 'rpc.cert'), copyFail);
+      fs.copyFile(resolve(__dirname, '../swap_regtest', 'dummyrpc.key'), join(validateCredentials.lndChainDir, 'rpc.key'), copyFail);
       return cbk(null, {});
 
     }],
@@ -99,21 +90,21 @@ module.exports = (args, cbk) => {
       });
     }],
     spawnLND: ['spawnTLSBTCD', 'validateCredentials', ({validateCredentials}, cbk) => {
-      const lndDir = path.join('/tmp', uuidv4());
+      const lndDir = join('/tmp', uuidv4());
       fs.mkdirSync(lndDir);
-      fs.copyFile(path.resolve(__dirname, '../swap_regtest', 'dummymacaroons.db'), path.join(lndDir, 'macaroons.db'), copyFail);
-      fs.copyFile(path.resolve(__dirname, '../swap_regtest', 'dummyadmin.macaroon'), path.join(lndDir, 'admin.macaroon'), copyFail);
-      fs.copyFile(path.resolve(__dirname, '../swap_regtest', 'dummyinvoice.macaroon'), path.join(lndDir, 'invoice.macaroon'), copyFail);
-      fs.copyFile(path.resolve(__dirname, '../swap_regtest', 'dummyreadonly.macaroon'), path.join(lndDir, 'readonly.macaroon'), copyFail);
-      fs.copyFile(path.resolve(__dirname, '../swap_regtest', 'lndtls.cert'), path.join(lndDir, 'tls.cert'), copyFail);
-      fs.copyFile(path.resolve(__dirname, '../swap_regtest', 'lndtls.key'), path.join(lndDir, 'tls.key'), copyFail);
+      fs.copyFile(resolve(__dirname, '../swap_regtest', 'dummymacaroons.db'), join(lndDir, 'macaroons.db'), copyFail);
+      fs.copyFile(resolve(__dirname, '../swap_regtest', 'dummyadmin.macaroon'), join(lndDir, 'admin.macaroon'), copyFail);
+      fs.copyFile(resolve(__dirname, '../swap_regtest', 'dummyinvoice.macaroon'), join(lndDir, 'invoice.macaroon'), copyFail);
+      fs.copyFile(resolve(__dirname, '../swap_regtest', 'dummyreadonly.macaroon'), join(lndDir, 'readonly.macaroon'), copyFail);
+      fs.copyFile(resolve(__dirname, '../swap_regtest', 'lndtls.cert'), join(lndDir, 'tls.cert'), copyFail);
+      fs.copyFile(resolve(__dirname, '../swap_regtest', 'lndtls.key'), join(lndDir, 'tls.key'), copyFail);
 
       let lndParams = [
         `--configfile=""`,
         `--datadir="${lndDir}"`,
-        `--adminmacaroonpath=${path.join(lndDir, 'admin.macaroon')}`,
-        `--tlscertpath=${path.join(lndDir, 'tls.cert')}`,
-        `--tlskeypath=${path.join(lndDir, 'tls.key')}`,
+        `--adminmacaroonpath=${join(lndDir, 'admin.macaroon')}`,
+        `--tlscertpath=${join(lndDir, 'tls.cert')}`,
+        `--tlskeypath=${join(lndDir, 'tls.key')}`,
         `--logdir="${lndDir}/logs/"`,
         '--noencryptwallet',
         '--debuglevel=trace',
@@ -134,7 +125,7 @@ module.exports = (args, cbk) => {
           `--bitcoin.feerate=2500`,
           `--bitcoin.node=btcd`,
           `--bitcoin.simnet`,
-          `--btcd.rpccert=${path.join(validateCredentials.lndChainDir, 'rpc.cert')}`,
+          `--btcd.rpccert=${join(validateCredentials.lndChainDir, 'rpc.cert')}`,
         ];
         break;
       default:
@@ -190,8 +181,8 @@ module.exports = (args, cbk) => {
       if (!spawnLND.is_ready) {
         return cbk([0, "LNDaemon failed to ready"]);
       }
-      const cert = new Buffer(fs.readFileSync(path.join(spawnLND.lndDir, 'tls.cert'))).toString('base64');
-      const macaroon = new Buffer(fs.readFileSync(path.join(spawnLND.lndDir, 'admin.macaroon'))).toString('base64');
+      const cert = new Buffer(fs.readFileSync(join(spawnLND.lndDir, 'tls.cert'))).toString('base64');
+      const macaroon = new Buffer(fs.readFileSync(join(spawnLND.lndDir, 'admin.macaroon'))).toString('base64');
       const host = '127.0.0.1:10009';
       const lnd = lightningDaemon({cert, host, macaroon});
       return cbk(null, {lnd});
