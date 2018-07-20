@@ -21,9 +21,10 @@ const {swapScanner} = require('./scan');
 const {NODE_ENV} = process.env;
 const {SSS_PORT} = process.env;
 const {PORT} = process.env;
+const {CACHE} = process.env;
 
 const browserifyPath = `${__dirname}/public/browserify/index.js`;
-const cache = 'redis';
+const cache = CACHE || 'redis';
 const isProduction = NODE_ENV === 'production';
 const morganLogLevel = 'dev';
 const networks = ['bchtestnet', 'ltctestnet', 'testnet'];
