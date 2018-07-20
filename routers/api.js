@@ -13,7 +13,6 @@ const {isConfigured} = require('./../service');
 const {networks} = require('./../tokenslib');
 const {returnJson} = require('./../async-util');
 
-const cache = 'redis';
 const knownNetworks = Object.keys(networks);
 
 /** Make an api router
@@ -25,7 +24,9 @@ const knownNetworks = Object.keys(networks);
  @returns
    <Router Object>
  */
-module.exports = ({log}) => {
+module.exports = ({log, cache}) => {
+  console.log(log);
+
   const router = Router({caseSensitive: true});
 
   router.use(bodyParser.json());
@@ -39,12 +40,16 @@ module.exports = ({log}) => {
   });
 
   // GET exchange rate information
-  router.get('/exchange_rates/', ({}, res) => {
+  router.get('/exchange_rates/', ({query}, res) => {
+    // console.log(headers)
+    console.log(query);
+    console.log("queryend");
+    let networks = query.networkOverrides || knownNetworks.filter(network => isConfigured({network}));
     return getExchangeRates({
-      cache,
-      networks: knownNetworks.filter(network => isConfigured({network})),
-    },
-    returnJson({log, res}));
+        cache,
+        networks: networks,
+      },
+      returnJson({log, res}));
   });
 
   // GET details about an invoice
