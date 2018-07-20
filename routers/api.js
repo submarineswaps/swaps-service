@@ -41,9 +41,6 @@ module.exports = ({log, cache}) => {
 
   // GET exchange rate information
   router.get('/exchange_rates/', ({query}, res) => {
-    // console.log(headers)
-    console.log(query);
-    console.log("queryend");
     let networks = query.networkOverrides || knownNetworks.filter(network => isConfigured({network}));
     return getExchangeRates({
         cache,
