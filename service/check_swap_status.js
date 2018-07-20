@@ -56,21 +56,25 @@ module.exports = ({cache, invoice, network, script}, cbk) => {
       return cbk();
     },
 
-    // Invoice id
-    id: ['validate', ({}, cbk) => {
+    parseInvoice: ['validate', ({}, cbk) => {
       try {
-        return cbk(null, parseInvoice({invoice}).id);
+        return cbk(null, parseInvoice({invoice}));
       } catch (e) {
         return cbk([400, 'FailedToParseSwapInvoice', e]);
       }
     }],
 
+    // Invoice id
+    id: ['parseInvoice', ({parseInvoice}, cbk) => {
+      return cbk([400, 'FailedToParseSwapInvoice', e]);
+    }],
+
     // Get swap attempt in progress
-    getSwapAttempt: ['id', ({id}, cbk) => {
+    getSwapAttempt: ['id', 'parseInvoice', ({id, parseInvoice}, cbk) => {
       let lnd;
 
       try {
-        lnd = lightningDaemon({});
+        lnd = lightningDaemon({network: parseInvoice.network});
       } catch (e) {
         return cbk(null, [500, 'FailedToCreateLndConnection']);
       }

@@ -4,6 +4,7 @@ const {SSS_LND_GRPC_HOST} = process.env;
 const {SSS_LND_MACAROON} = process.env;
 const {SSS_LND_TLS_CERT} = process.env;
 
+
 /** Get the Lightning Network Daemon connection
 
   {}
@@ -14,14 +15,15 @@ const {SSS_LND_TLS_CERT} = process.env;
   @returns
   <LND GRPC API Object>
 */
-module.exports = ({}) => {
-  try {
+module.exports = ({network}) => {
+  switch (network) {
+  case 'testnet':
     return lightningDaemon({
       cert: SSS_LND_TLS_CERT,
       host: SSS_LND_GRPC_HOST,
       macaroon: SSS_LND_MACAROON,
     });
-  } catch (e) {
+  default:
     throw new Error('FailedToInitializedLightningGrpcApi');
   }
 };

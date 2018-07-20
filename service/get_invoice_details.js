@@ -94,9 +94,9 @@ module.exports = ({cache, invoice, network}, cbk) => {
     }],
 
     // LND connection
-    lnd: ['validate', ({}, cbk) => {
+    lnd: ['validate', 'parsedInvoice', ({parsedInvoice}, cbk) => {
       try {
-        return cbk(null, lightningDaemon({}));
+        return cbk(null, lightningDaemon({network: parsedInvoice.network}));
       } catch (e) {
         return cbk([500, 'FailedToInstantiateLndConnection']);
       }
