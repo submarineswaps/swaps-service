@@ -91,7 +91,7 @@ module.exports = (args, cbk) => {
         dir: validateCredentials.lndChainDir,
         noTLS: false,
         tls: true,
-        noMine: true,
+        no_mine: true,
         simnet: true,
         port: validateCredentials.lndChainPort
       }, (err, res) => {
