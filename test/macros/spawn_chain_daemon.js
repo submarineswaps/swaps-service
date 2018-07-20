@@ -47,7 +47,7 @@ module.exports = (args, cbk) => {
     daemon = btcsuiteTypeDaemon({
         dir,
         daemon: args.daemon,
-        noMine: args.noMine,
+        no_mine: args.no_mine,
         port: args.port,
         mining_public_key: args.mining_public_key,
         finished_mining_public_key: args.finished_mining_public_key,
