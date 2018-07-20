@@ -28,14 +28,9 @@ module.exports = (args, cbk) => {
   if (!args.network) {
     return cbk([400, 'ExpectedNetworkTypeForChainDaemon']);
   }
-  let dir;
-  let daemon;
-  if (!args.dir) {
-    dir = `/tmp/${uuidv4()}`;
-  } else {
-    dir = args.dir;
-  }
 
+  let daemon;
+  const dir = !args.dir ? `/tmp/${uuidv4()}` : args.dir;
 
   switch (args.daemon) {
   case 'bcash':
