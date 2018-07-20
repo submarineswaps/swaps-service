@@ -91,7 +91,7 @@ module.exports = (args, cbk) => {
         return cbk(err, res);
       });
     }],
-    spawnLND: ['spawnTLSBTCD', 'validateCredentials', ({validateCredentials}, cbk) => {
+    spawnLnd: ['spawnTLSBTCD', 'validateCredentials', ({validateCredentials}, cbk) => {
       const lndDir = join('/tmp', uuidv4());
       fs.mkdirSync(lndDir);
       fs.copyFile(resolve(__dirname, '../swap_regtest', 'dummymacaroons.db'),
@@ -185,32 +185,32 @@ module.exports = (args, cbk) => {
 
     }],
 
-    spawnLNDInterface: ['spawnLND', ({spawnLND}, cbk) => {
-      if (!spawnLND.is_ready) {
+    spawnLndInterface: ['spawnLnd', ({spawnLnd}, cbk) => {
+      if (!spawnLnd.is_ready) {
         return cbk([0, "LNDaemon failed to ready"]);
       }
-      const cert = new Buffer(fs.readFileSync(join(spawnLND.lndDir, 'tls.cert'))).toString('base64');
-      const macaroon = new Buffer(fs.readFileSync(join(spawnLND.lndDir, 'admin.macaroon'))).toString('base64');
+      const cert = new Buffer(fs.readFileSync(join(spawnLnd.lndDir, 'tls.cert'))).toString('base64');
+      const macaroon = new Buffer(fs.readFileSync(join(spawnLnd.lndDir, 'admin.macaroon'))).toString('base64');
       const host = '127.0.0.1:10009';
       const lnd = lightningDaemon({cert, host, macaroon});
       return cbk(null, {lnd});
 
     }],
 
-    verifyLNDInterface: ['spawnLNDInterface', ({spawnLNDInterface}, cbk) => {
-      signMessage({lnd: spawnLNDInterface.lnd, message: " "}, (err, res) => {
+    verifyLndInterface: ['spawnLndInterface', ({spawnLndInterface}, cbk) => {
+      signMessage({lnd: spawnLndInterface.lnd, message: " "}, (err, res) => {
         if (!res.signature) {
           return cbk([0, 'ExpectedValidLNDSignedMessage']);
         } else {
           setTimeout(() => {
-            return cbk(null, {lnd: spawnLNDInterface.lnd});
+            return cbk(null, {lnd: spawnLndInterface.lnd});
           }, 5000);
         }
       });
     }],
 
-    genAddress: ['verifyLNDInterface', ({verifyLNDInterface}, cbk) => {
-      return createAddress({lnd: verifyLNDInterface.lnd}, cbk);
+    genAddress: ['verifyLndInterface', ({verifyLndInterface}, cbk) => {
+      return createAddress({lnd: verifyLndInterface.lnd}, cbk);
     }],
 
     startNoTLSBTCD: ['genAddress', 'validateCredentials', ({genAddress, validateCredentials}, cbk) => {
@@ -224,9 +224,8 @@ module.exports = (args, cbk) => {
       }, (err, res) => {
         if (err) {
           return cbk(err);
-        } else {
-          return cbk(null, {lnd: genAddress.lnd});
         }
+        return cbk(null, {lnd: genAddress.lnd});
       });
     }],
 
