@@ -9,7 +9,6 @@ const scanForSwap = require('./scan_for_swap');
 const sendChainTokensTransaction = require('./send_chain_tokens_tx');
 const spawnChainDaemon = require('./spawn_chain_daemon');
 const spawnLNDDaemon = require('./spawn_lnd_daemon');
-const mockAPI = require('./mock_api');
 module.exports = {
   addressForPublicKey,
   claimSuccess,
@@ -21,7 +20,6 @@ module.exports = {
   scanForSwap,
   sendChainTokensTransaction,
   spawnChainDaemon,
-  spawnLNDDaemon,
-  mockAPI,
+  spawnLndDaemon: spawnLNDDaemon,
 };
 
