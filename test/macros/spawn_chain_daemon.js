@@ -74,8 +74,6 @@ module.exports = (args, cbk) => {
     }
   });
 
-  // daemon.on('close', code => removeDir(dir, () => {}));
-
   process.on('uncaughtException', err => {
     daemon.kill();
     process.exit(1);
