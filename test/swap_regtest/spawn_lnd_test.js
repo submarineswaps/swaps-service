@@ -1,10 +1,10 @@
 process.env.GRPC_SSL_CIPHER_SUITES = "HIGH+ECDSA";
 const {test} = require('tap');
-const {spawnLNDDaemon} = require('./../macros');
+const {spawnLndDaemon} = require('./../macros');
 
 test(`spawn lnd + chaindaemon`, t => {
 
-  return spawnLNDDaemon({
+  return spawnLndDaemon({
       daemon: 'btcd',
       network: 'simnet',
     },
