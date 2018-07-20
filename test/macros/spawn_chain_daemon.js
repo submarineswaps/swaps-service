@@ -6,19 +6,19 @@ const bitcoincoreTypeDaemon = require('./bitcoincore_type_daemon')
 const btcsuiteTypeDaemon = require('./btcsuite_type_daemon');
 /** Spawn a chain daemon for testing on regtest
 
- This method will also listen for uncaught exceptions and stop the daemon
- before the process dies.
+  This method will also listen for uncaught exceptions and stop the daemon
+  before the process dies.
 
- {
-   daemon: <Daemon Type String>
-   mining_public_key: <Mining Public Key Hex String>
-   network: <Network Name String>
- }
+  {
+    daemon: <Daemon Type String>
+    mining_public_key: <Mining Public Key Hex String>
+    network: <Network Name String>
+  }
 
- @returns via cbk
- {
-   is_ready: <Chain Daemon is Ready Bool>
- }
+  @returns via cbk
+  {
+    is_ready: <Chain Daemon is Ready Bool>
+  }
  */
 module.exports = (args, cbk) => {
   if (!args.daemon) {
