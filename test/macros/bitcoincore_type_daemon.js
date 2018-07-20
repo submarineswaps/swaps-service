@@ -43,10 +43,10 @@ module.exports = ({dir, network}, cbk) => {
   const daemon = spawn('bitcoind', [
     '-blockmintxfee=0',
     '-conf=""',
+    '-debug=1',
     '-debuglogfile=debug.log',
     '-minrelaytxfee=0',
     '-printtoconsole=1',
-    '-debug=1',
     '-regtest',
     '-txindex=1',
     `-datadir=${dir}`,
