@@ -66,11 +66,7 @@ module.exports = ({cache, invoice, network, script}, cbk) => {
 
     // Invoice id
     id: ['parseInvoice', ({parseInvoice}, cbk) => {
-      if (!invoice.id){
-        return cbk([400, 'FailedToParseSwapInvoice', e]);
-      } else {
-        return cbk(null, invoice.id)
-      }
+      return cbk([400, 'FailedToParseSwapInvoice', e]);
     }],
 
     // Get swap attempt in progress
@@ -78,7 +74,7 @@ module.exports = ({cache, invoice, network, script}, cbk) => {
       let lnd;
 
       try {
-        lnd = lightningDaemon({'network': parseInvoice.network});
+        lnd = lightningDaemon({network: parseInvoice.network});
       } catch (e) {
         return cbk(null, [500, 'FailedToCreateLndConnection']);
       }
