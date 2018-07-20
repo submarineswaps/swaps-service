@@ -7,30 +7,30 @@ const {ECPair} = require('./../../tokenslib');
 const {networks} = require('./../../tokenslib');
 
 const {fromPublicKeyBuffer} = ECPair;
-const knownDaemons = ['btcd', 'ltcd', 'btcdbackend'];
+const knownDaemons = ['btcd', 'ltcd'];
 const notFoundIndex = -1;
 const rpcServerReady = /RPC.server.listening/;
 const unableToStartServer = /Unable.to.start.server/;
 
 /** Start a BTCSuite Type Daemon
 
- {
-   daemon: <Daemon Name String>
-   dir: <Data Directory String>
-   mining_public_key: <Mining Public Key Hex String>
-   network: <Network Name String>
- }
+  {
+    daemon: <Daemon Name String>
+    dir: <Data Directory String>
+    mining_public_key: <Mining Public Key Hex String>
+    network: <Network Name String>
+  }
 
- @returns
-   <Daemon Object>
+  @returns
+    <Daemon Object>
 
- @returns via cbk
- {
-   is_ready: <Chain Daemon is Ready Bool>
- }
- */
+  @returns via cbk
+  {
+    is_ready: <Chain Daemon is Ready Bool>
+  }
+  */
 module.exports = (args, cbk) => {
-   if (knownDaemons.indexOf(args.daemon) === notFoundIndex) {
+  if (knownDaemons.indexOf(args.daemon) === notFoundIndex) {
     return cbk([400, 'ExpectedBtcsuiteDaemonName', args.daemon]);
   }
 
