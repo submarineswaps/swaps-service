@@ -40,13 +40,13 @@ module.exports = (args, cbk) => {
   case 'btcd':
   case 'ltcd':
     daemon = btcsuiteTypeDaemon({
-        dir,
         daemon: args.daemon,
+        dir,
+        finished_mining_public_key: args.finished_mining_public_key,
+        mining_public_key: args.mining_public_key,
+        network: args.network,
         no_mine: args.no_mine,
         port: args.port,
-        mining_public_key: args.mining_public_key,
-        finished_mining_public_key: args.finished_mining_public_key,
-        network: args.network,
         simnet: args.simnet,
         tls: args.tls,
       },
