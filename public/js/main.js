@@ -13,6 +13,7 @@ const App = {
 /** Changed the currency
 */
 App.changedCurrencySelection = function({}) {
+  let fiatCode;
   const swap = $(this).closest('.create-swap-quote');
 
   if (!swap) {
@@ -28,6 +29,25 @@ App.changedCurrencySelection = function({}) {
   swap.find(iconToShow).removeAttr('hidden');
 
   App.updateInvoiceDetails({swap});
+
+  switch (network) {
+  case 'bch':
+  case 'bitcoin':
+  case 'litecoin':
+    fiatCode = 'USD';
+    break;
+
+  case 'bchtestnet':
+  case 'ltctestnet':
+  case 'testnet':
+    fiatCode = 'tUSD';
+    break;
+
+  default:
+    return console.log([400, 'UnexpectedNetworkSelected']);
+  }
+
+  swap.find('.chain-fiat-code').text(fiatCode);
 
   return;
 };
@@ -237,12 +257,24 @@ App.checkSwap = ({button, id, quote}) => {
     App.swaps[id].transaction_output_index = res.output_index;
 
     switch (network) {
+    case 'bch':
+      txUrl = `https://www.blocktrail.com/BCC/tx/${res.transaction_id}`;
+      break;
+
     case 'bchtestnet':
       txUrl = `https://www.blocktrail.com/tBCC/tx/${res.transaction_id}`;
       break;
 
+    case 'bitcoin':
+      txUrl = `https://smartbit.com.au/tx/${res.transaction_id}`;
+      break;
+
     case 'testnet':
       txUrl = `https://testnet.smartbit.com.au/tx/${res.transaction_id}`;
+      break;
+
+    case 'ltc':
+      txUrl = `https://chain.so/tx/LTC/${res.transaction_id}`;
       break;
 
     case 'ltctestnet':
@@ -576,8 +608,13 @@ App.getInvoiceDetails = ({invoice, network}, cbk) => {
         throw new Error('ExpectedUnexpiredInvoice');
       }
 
-      if (details.network !== 'testnet') {
-        throw new Error('ExpectedIsTestnet');
+      switch (details.network) {
+      case 'bitcoin':
+      case 'testnet':
+        break;
+
+      default:
+        throw new Error('UnrecognizedDestinationNetwork');
       }
 
       if (!details.tokens) {
@@ -810,14 +847,29 @@ App.presentCompletedSwap = args => {
   swap.addClass('presented').removeClass('template');
 
   switch (args.network) {
+  case 'bch':
+    href = `https://www.blocktrail.com/BCC/tx/${args.transaction_id}`;
+    onChainCurrency = 'BCH';
+    break;
+
   case 'bchtestnet':
     href = `https://www.blocktrail.com/tBCC/tx/${args.transaction_id}`;
     onChainCurrency = 'tBCH';
     break;
 
+  case 'bitcoin':
+    href = `https://smartbit.com.au/tx/${args.transaction_id}`;
+    onChainCurrency = 'BTC';
+    break;
+
   case 'testnet':
     href = `https://testnet.smartbit.com.au/tx/${args.transaction_id}`;
     onChainCurrency = 'tBTC';
+    break;
+
+  case 'ltc':
+    href = `https://chain.so/tx/LTC/${args.transaction_id}`;
+    onChainCurrency = 'LTC';
     break;
 
   case 'ltctestnet':
@@ -897,18 +949,18 @@ App.showInvoice = args => {
   let symbolForNetwork;
 
   switch (invoice.network) {
-  case 'ltctestnet':
-    symbolForFiat = 'tUSD';
-    symbolForNetwork = 'Lightning tLTC';
+  case 'bitcoin':
+    symbolForFiat = 'USD';
+    symbolForNetwork = 'Lightning BTC';
+    break;
+
+  case 'ltc':
+    symbolForFiat = 'USD';
+    symbolForNetwork = 'Lightning LTC';
 
   case 'testnet':
     symbolForFiat = 'tUSD';
     symbolForNetwork = 'Lightning tBTC';
-    break;
-
-  case 'bitcoin':
-    symbolForFiat = 'USD';
-    symbolForNetwork = 'Lightning BTC';
     break;
 
   default:
@@ -1011,17 +1063,20 @@ App.submitCreateSwapQuote = function(event) {
     let scheme;
 
     switch (network) {
+    case 'bch':
     case 'bchtestnet':
       scheme = 'bitcoincash';
       swapAddress = details.swap_p2sh_address;
       break;
 
-    case 'ltctestnet':
-      scheme = 'litecoin';
-      break;
-
+    case 'bitcoin':
     case 'testnet':
       scheme = 'bitcoin';
+      break;
+
+    case 'ltc':
+    case 'ltctestnet':
+      scheme = 'litecoin';
       break;
 
     default:
@@ -1380,12 +1435,24 @@ App.submitSignWithRefundDetails = function(e) {
     let txUrl;
 
     switch (network) {
+    case 'bch':
+      txUrl = `https://www.blocktrail.com/BCC/tx/${details.id}`;
+      break;
+
     case 'bchtestnet':
       txUrl = `https://www.blocktrail.com/tBCC/tx/${details.id}`;
       break;
 
+    case 'bitcoin':
+      txUrl = `https://smartbit.com.au/tx/${details.id}`;
+      break;
+
     case 'testnet':
       txUrl = `https://testnet.smartbit.com.au/tx/${details.id}`;
+      break;
+
+    case 'ltc':
+      txUrl = `https://chain.so/tx/LTC/${details.id}`;
       break;
 
     case 'ltctestnet':
@@ -1456,6 +1523,18 @@ App.updatedSwapDetails = ({swap}) => {
   let conversionRate = 1;
 
   switch (network) {
+  case 'bch':
+    if (!App.rates['bch']) {
+      break;
+    }
+
+    baseFee = App.rates['bch'].fees[0].base;
+    conversionRate = App.rates['bitcoin'].cents / App.rates['bch'].cents;
+    feePercentage = App.rates['bch'].fees[0].rate / 1e6 * 100;
+    fiatPrice = (App.rates['bch'].cents) * 1e8 / 100;
+    networkAddressName = 'Bcash';
+    break;
+
   case 'bchtestnet':
     if (!App.rates['bchtestnet']) {
       break;
@@ -1465,7 +1544,30 @@ App.updatedSwapDetails = ({swap}) => {
     conversionRate = App.rates['testnet'].cents / App.rates['bchtestnet'].cents;
     feePercentage = App.rates['bchtestnet'].fees[0].rate / 1e6 * 100;
     fiatPrice = (App.rates['bchtestnet'].cents) * 1e8 / 100;
-    networkAddressName = 'BCash testnet';
+    networkAddressName = 'Bcash testnet';
+    break;
+
+  case 'bitcoin':
+    if (!App.rates['bitcoin']) {
+      break;
+    }
+
+    baseFee = App.rates['bitcoin'].fees[0].base;
+    feePercentage = App.rates['bitcoin'].fees[0].rate / 1e6 * 100;
+    fiatPrice = (App.rates['bitcoin'].cents) * 1e8 / 100;
+    networkAddressName = 'Bitcoin';
+    break;
+
+  case 'ltc':
+    if (!App.rates['ltc']) {
+      break;
+    }
+
+    baseFee = App.rates['ltc'].fees[0].base;
+    conversionRate = App.rates['bitcoin'].cents / App.rates['ltc'].cents;
+    feePercentage = App.rates['ltc'].fees[0].rate / 1e6 * 100;
+    fiatPrice = (App.rates['ltc'].cents) * 1e8 / 100;
+    networkAddressName = 'Litecoin';
 
     break;
 

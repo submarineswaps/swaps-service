@@ -1,0 +1,15 @@
+{
+  "// BCH mainnet": "",
+
+  "ms_per_block": 600000,
+  "prefix": {
+    "bech32": "",
+    "bip32_private_key": "0488ADE4",
+    "bip32_public_key": "0488B21E",
+    "message_prefix": "\\x18Bitecoin Signed Message:\n",
+    "p2pkh": "00",
+    "p2sh": "05",
+    "wif": "80"
+  }
+}
+

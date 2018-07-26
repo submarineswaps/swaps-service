@@ -62,15 +62,6 @@ module.exports = (args, cbk) => {
       }
     },
 
-    // Initialize the LN daemon connection
-    lnd: cbk => {
-      try {
-        return cbk(null, lightningDaemon({}));
-      } catch (e) {
-        return cbk([500, 'FailedToInitLightningDaemonConnection']);
-      }
-    },
-
     // Check completion arguments
     validate: cbk => {
       if (!args.cache) {
@@ -99,6 +90,15 @@ module.exports = (args, cbk) => {
 
       return cbk();
     },
+
+    // Initialize the LN daemon connection
+    lnd: ['invoice', ({invoice}, cbk) => {
+      try {
+        return cbk(null, lightningDaemon({network: invoice.network}));
+      } catch (e) {
+        return cbk([500, 'FailedToInitLightningDaemonConnection']);
+      }
+    }],
 
     // Funding UTXOs from the transaction
     fundingUtxos: ['validate', ({}, cbk) => {

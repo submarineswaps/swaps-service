@@ -32,9 +32,9 @@ Configure environment variables as necessary.
     export SSS_CLAIM_BCHTESTNET_ADDRESS="bchtestnet addr" // Claim to address
     export SSS_CLAIM_LTCTESTNET_ADDRESS="ltctestnet addr" // Claim to address
     export SSS_CLAIM_TESTNET_ADDRESS="testnet addr" // Override LND claiming
-    export SSS_LND_GRPC_HOST="host:port" // LND GRPC API
-    export SSS_LND_MACAROON="base64 exported lnd macaroon file" // LND macaroon
-    export SSS_LND_TLS_CERT="base64 exported TLS cert" // LND TLS cert
+    export SSS_LND_TESTNET_GRPC_HOST="host:port" // LND GRPC API
+    export SSS_LND_TESTNET_MACAROON="base64 exported lnd macaroon file"
+    export SSS_LND_TESTNET_TLS_CERT="base64 exported TLS cert" // LND TLS cert
 
 ## Testing
 

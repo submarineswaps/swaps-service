@@ -5,6 +5,10 @@
     "executable": "bcash",
     "rpc_api": "x:pass@127.0.0.1:18335"
   },
+  "bch": {
+    "executable": "bcash",
+    "rpc_api": "x:pass@127.0.0.1:8339"
+  },
   "bchtestnet": {
     "executable": "bcash",
     "rpc_api": "x:pass@127.0.0.1:18335"
@@ -12,6 +16,14 @@
   "bcoinregtest": {
     "executable": "bcoin",
     "rpc_api": "x:pass@127.0.0.1:18335"
+  },
+  "bitcoin": {
+    "executable": "btcd",
+    "rpc_api": "x:pass@127.0.0.1:8335"
+  },
+  "ltc": {
+    "executable": "ltcd",
+    "rpc_api": "user:pass@127.0.0.1:9332"
   },
   "ltcregtest": {
     "executable": "ltcd",

@@ -1,0 +1,15 @@
+{
+  "// LTC mainnet": "",
+
+  "ms_per_block": 150000,
+  "prefix": {
+    "bech32": "ltc",
+    "bip32_private_key": "019D9CFE",
+    "bip32_public_key": "019DA462",
+    "message_prefix": "\\x19Litecoin Signed Message:\n",
+    "p2pkh": "30",
+    "p2sh": "32",
+    "wif": "B0"
+  }
+}
+

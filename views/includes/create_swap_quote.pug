@@ -6,7 +6,7 @@ form.collapse.create-swap-quote.mb-4.show
       .input-group.input-group-lg.mb-3
         .input-group-prepend
           label.input-group-text
-            span.coin-icon.icon-ltctestnet(hidden)
+            span.coin-icon.icon-ltc.icon-ltctestnet(hidden)
               svg.svg-litecoin(
                 aria-hidden="true",
                 role="img",
@@ -25,13 +25,19 @@ form.collapse.create-swap-quote.mb-4.show
                   d="M155.854 209.482l10.693-40.264 25.316-9.249 6.297-23.663-.215-.587-24.92 9.104 17.955-67.608h-50.921l-23.481 88.23-19.605 7.162-6.478 24.395 19.59-7.156-13.839 51.998h135.521l8.688-32.362h-84.601",
                   fill="#e4e7eb",
                 )
-            i.coin-icon.fab.fa-bitcoin.fa-fw.icon-testnet
-            i.coin-icon.fas.fa-coins.fa-fw.icon-bchtestnet(hidden)
+            i.coin-icon.fab.fa-bitcoin.fa-fw.icon-bitcoin.icon-testnet
+            i.coin-icon.fas.fa-coins.fa-fw.icon-bch.icon-bchtestnet(hidden)
         select.custom-select.form-control.select-currency(disabled)
+          option.bch-chain(hidden, value="bch")
+            | Bcash
           option.bchtestnet-chain(hidden, value="bchtestnet")
-            | Testnet BCash
+            | Testnet Bcash
+          option.bitcoin-chain(selected, value="bitcoin")
+            | Bitcoin
           option.testnet-chain(selected, value="testnet")
             | Testnet Bitcoin
+          option.ltc-chain(hidden, value="ltc")
+            | Litecoin
           option.ltctestnet-chain(hidden, value="ltctestnet")
             | Testnet Litecoin
         .input-group-append
@@ -39,7 +45,7 @@ form.collapse.create-swap-quote.mb-4.show
             span $
             span.current-fiat-price.mr-2
             span #{' '}
-            span tUSD
+            span.chain-fiat-code
     .form-group
       label
         h4.text-primary To pay a Lightning invoice:
@@ -130,6 +136,6 @@ form.collapse.create-swap-quote.mb-4.show
         span $
         span.fiat-fee-total
         span #{' '}
-        span tUSD
+        span.fiat-currency-code
       span #{' '}
       i.fa-chevron-circle-right.fas

@@ -76,8 +76,14 @@ block content
                       | Chain:
                     .col-sm-10
                       select.custom-select.form-control.select-currency
+                        option(value="bch")
+                          | BCH
                         option(value="bchtestnet")
                           | Testnet BCH
+                        option(value="bitcoin")
+                          | BTC
+                        option(value="ltc")
+                          | LTC
                         option(value="ltctestnet")
                           | Testnet LTC
                         option(selected, value="testnet")
