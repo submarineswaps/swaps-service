@@ -24,7 +24,7 @@ module.exports = ({dir, network}, cbk) => {
     return cbk([400, 'ExpectedDirectoryForDaemon']);
   }
 
-  if (!fs.existsSync(dir)){
+  if (!fs.existsSync(dir)) {
     fs.mkdirSync(dir);
   }
 
@@ -43,15 +43,18 @@ module.exports = ({dir, network}, cbk) => {
   const daemon = spawn('bitcoind', [
     '-blockmintxfee=0',
     '-conf=""',
+    '-debug=1',
     '-debuglogfile=debug.log',
     '-minrelaytxfee=0',
     '-printtoconsole=1',
-    '-regtest=1',
+    '-regtest',
     '-txindex=1',
     `-datadir=${dir}`,
     `-rpcpassword=${credentials.pass}`,
     `-rpcport=${credentials.port}`,
     `-rpcuser=${credentials.user}`,
+    `-zmqpubrawblock=tcp://127.0.0.1:28332`,
+    `-zmqpubrawtx=tcp://127.0.0.1:28332`,
   ]);
 
   daemon.stdout.on('data', data => {
@@ -64,4 +67,5 @@ module.exports = ({dir, network}, cbk) => {
 
   return daemon;
 };
+
 

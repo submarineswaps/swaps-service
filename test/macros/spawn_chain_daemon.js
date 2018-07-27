@@ -19,7 +19,7 @@ const btcsuiteTypeDaemon = require('./btcsuite_type_daemon');
   {
     is_ready: <Chain Daemon is Ready Bool>
   }
-*/
+ */
 module.exports = (args, cbk) => {
   if (!args.daemon) {
     return cbk([400, 'ExpectedDaemonTypeToSpawn']);
@@ -30,7 +30,7 @@ module.exports = (args, cbk) => {
   }
 
   let daemon;
-  const dir = `/tmp/${uuidv4()}`;
+  const dir = !args.dir ? `/tmp/${uuidv4()}` : args.dir;
 
   switch (args.daemon) {
   case 'bcash':
@@ -40,10 +40,15 @@ module.exports = (args, cbk) => {
   case 'btcd':
   case 'ltcd':
     daemon = btcsuiteTypeDaemon({
-        dir,
         daemon: args.daemon,
+        dir,
+        finished_mining_public_key: args.finished_mining_public_key,
         mining_public_key: args.mining_public_key,
         network: args.network,
+        no_mine: args.no_mine,
+        port: args.port,
+        simnet: args.simnet,
+        tls: args.tls,
       },
       cbk);
     break;
@@ -60,23 +65,18 @@ module.exports = (args, cbk) => {
   }
 
   daemon.stderr.on('data', data => {
-    if (/mandatory.script.verify.flag/gim.test(data+'')) {
+    if (/mandatory.script.verify.flag/gim.test(data + '')) {
       return;
     }
 
-    if (/txn.already.in.mempool/gim.test(data+'')) {
+    if (/txn.already.in.mempool/gim.test(data + '')) {
       return;
     }
-
-    console.log(`${data}`)
   });
 
-  daemon.on('close', code => removeDir(dir, () => {}));
-
   process.on('uncaughtException', err => {
-    console.log('CHAIN ERROR', err);
     daemon.kill();
-    process.exit(1)
+    process.exit(1);
   });
 
   return;
