@@ -53,7 +53,7 @@ module.exports = (args, cbk) => {
     // See if we have a cached result to this query
     getCachedTransaction: ['validate', ({}, cbk) => {
       return getJsonFromCache({
-        cache: args.cache,
+        cache: 'memory',
         key: args.transaction_id,
         type: 'transaction',
       },
@@ -88,7 +88,7 @@ module.exports = (args, cbk) => {
       }
 
       return setJsonInCache({
-        cache: args.cache,
+        cache: 'memory',
         key: args.transaction_id,
         ms: cacheTxMs,
         type: 'transaction',

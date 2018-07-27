@@ -20,6 +20,10 @@ module.exports = ({network}) => {
     throw new Error('ExpectedNetworkForLightningDaemon');
   }
 
+  if (daemons[network] && daemons[network].lnd) {
+    return daemons[network].lnd;
+  }
+
   let lnd;
   const networkName = network.toUpperCase();
 

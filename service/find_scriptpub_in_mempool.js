@@ -6,7 +6,7 @@ const {returnResult} = require('./../async-util');
 const transactionHasScriptPub = require('./transaction_has_scriptpub');
 
 const cacheMs = 5000;
-const checkFanOutLimit = 10;
+const checkFanOutLimit = 5;
 
 let cachedMempool = {};
 

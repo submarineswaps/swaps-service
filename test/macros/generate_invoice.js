@@ -42,7 +42,8 @@ module.exports = (args, cbk) => {
 
   // The invoice requires a payment hash and is signed with a private key.
   const payHash = createHash('sha256').update(preimage).digest('hex');
-  const privKey = keyPair.d.toBuffer(privKeySize).toString('hex');
+
+  const privKey = keyPair.privateKey.toString('hex');
 
   const invoice = encode({tags: [{tagName: 'payment_hash', data: payHash}]});
 

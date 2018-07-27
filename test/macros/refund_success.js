@@ -11,6 +11,7 @@ const {generateKeyPair} = require('./../../chain');
 const {getCurrentHeight} = require('./../../chain');
 const mineTransaction = require('./mine_transaction');
 const {networks} = require('./../../tokenslib');
+const {payments} = require('./../../tokenslib');
 const {refundTransaction} = require('./../../swaps');
 const sendChainTokensTransaction = require('./send_chain_tokens_tx');
 const spawnChainDaemon = require('./spawn_chain_daemon');
@@ -18,8 +19,9 @@ const {stopChainDaemon} = require('./../../chain');
 const {swapAddress} = require('./../../swaps');
 const {swapScriptInTransaction} = require('./../../swaps');
 
-const {fromPublicKeyBuffer} = ECPair;
+const {fromPublicKey} = ECPair;
 const generateDelayMs = 2;
+const {p2pkh} = payments;
 const staticFeePerVirtualByte = 100;
 const swapTimeoutBlocks = 25;
 
@@ -66,7 +68,9 @@ module.exports = (args, cbk) => {
         const aliceKey = Buffer.from(generateAliceKeyPair.public_key, 'hex');
         const network = networks[args.network];
 
-        return cbk(null, fromPublicKeyBuffer(aliceKey, network).getAddress());
+        const pubkey = fromPublicKey(aliceKey, network).publicKey;
+
+        return cbk(null, p2pkh({network, pubkey}).address);
 
       case 'btcd':
       case 'ltcd':

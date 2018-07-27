@@ -12,6 +12,7 @@ const generateInvoice = require('./generate_invoice');
 const {generateKeyPair} = require('./../../chain');
 const {getCurrentHeight} = require('./../../chain'); 
 const mineTransaction = require('./mine_transaction');
+const {payments} = require('./../../tokenslib');
 const {networks} = require('./../../tokenslib');
 const sendChainTokensTransaction = require('./send_chain_tokens_tx');
 const spawnChainDaemon = require('./spawn_chain_daemon');
@@ -21,8 +22,9 @@ const {swapScriptInTransaction} = require('./../../swaps');
 
 const blockSearchDepth = 9;
 const coinbaseIndex = chainConstants.coinbase_tx_index;
-const {fromPublicKeyBuffer} = ECPair;
+const {fromPublicKey} = ECPair;
 const maturityBlockCount = chainConstants.maturity_block_count;
+const {p2pkh} = payments;
 const staticFeePerVirtualByte = 100;
 const swapTimeoutBlockCount = 200;
 
@@ -88,7 +90,10 @@ module.exports = (args, cbk) => {
         const bobKey = Buffer.from(generateBobKeyPair.public_key, 'hex');
         const network = networks[args.network];
 
-        return cbk(null, fromPublicKeyBuffer(bobKey, network).getAddress());
+        const pubkey = fromPublicKey(bobKey, network).publicKey;
+
+        return cbk(null, p2pkh({network, pubkey}).address);
+
       case 'btcd':
       case 'ltcd':
         return cbk();

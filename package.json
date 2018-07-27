@@ -3,10 +3,12 @@
   "dependencies": {
     "async": "2.6.1",
     "bchaddrjs": "0.2.1",
+    "bip32": "1.0.2",
     "bip39": "2.5.0",
     "bip65": "1.0.3",
+    "bip66": "1.1.5",
     "bitcoin-ops": "1.4.1",
-    "bitcoinjs-lib": "3.3.2",
+    "bitcoinjs-lib": "4.0.1",
     "body-parser": "1.18.3",
     "browserify-middleware": "8.1.1",
     "compression": "1.7.3",

@@ -4,10 +4,12 @@ const chainServer = require('./../../chain/conf/chain_server_defaults');
 const credentialsForNetwork = require('./../../chain/credentials_for_network');
 const {ECPair} = require('./../../tokenslib');
 const {networks} = require('./../../tokenslib');
+const {payments} = require('./../../tokenslib');
 
-const {fromPublicKeyBuffer} = ECPair;
+const {fromPublicKey} = ECPair;
 const knownDaemons = ['btcd', 'ltcd'];
 const notFoundIndex = -1;
+const {p2pkh} = payments;
 const rpcServerReady = /RPC.server.listening/;
 const unableToStartServer = /Unable.to.start.server/;
 
@@ -49,6 +51,8 @@ module.exports = (args, cbk) => {
   const miningKey = Buffer.from(args.mining_public_key, 'hex');
   const network = networks[args.network];
 
+  const pubkey = fromPublicKey(miningKey, network).publicKey;
+
   try {
     credentials = credentialsForNetwork({network: args.network});
   } catch (e) {
@@ -58,7 +62,7 @@ module.exports = (args, cbk) => {
   const daemon = spawn(args.daemon, [
     '--datadir', args.dir,
     '--logdir', args.dir,
-    '--miningaddr', fromPublicKeyBuffer(miningKey, network).getAddress(),
+    '--miningaddr', p2pkh({network, pubkey}).address,
     '--notls',
     '--regtest',
     '--relaynonstd',

@@ -2,12 +2,12 @@ const {encode} = require('varuint-bitcoin');
 const {OP_PUSHDATA1} = require('bitcoin-ops');
 
 const {ECPair} = require('./../tokenslib');
+const {encodeSignature} = require('./../script');
 const {networks} = require('./../tokenslib');
 const scriptBuffersAsScript = require('./script_buffers_as_script');
 const {Transaction} = require('./../tokenslib');
 
 const {fromHex} = Transaction;
-const {fromWIF} = ECPair;
 const hexBase = 16;
 const {SIGHASH_ALL} = Transaction;
 
@@ -57,26 +57,24 @@ module.exports = ({key, network, transaction, unlock, utxos}) => {
   const forkModifier = parseInt(networks[network].fork_id || 0, hexBase);
   const tx = fromHex(transaction);
   const sigHashAll = parseInt(SIGHASH_ALL, hexBase);
-  const signingKey = fromWIF(key, networks[network]);
+  const signingKey = ECPair.fromWIF(key, networks[network]);
 
   return utxos.map(({redeem, script, tokens, vin}) => {
     const redeemScript = Buffer.from(redeem, 'hex');
-    const sigFlag = !forkModifier ? sigHashAll : forkModifier | sigHashAll;
+    const flag = !forkModifier ? sigHashAll : forkModifier | sigHashAll;
 
     let sigHash;
 
     if (!!forkModifier) {
-      sigHash = tx.hashForWitnessV0(vin, redeemScript, tokens, sigFlag);
+      sigHash = tx.hashForWitnessV0(vin, redeemScript, tokens, flag);
     } else {
-      sigHash = tx.hashForSignature(vin, redeemScript, sigFlag);
+      sigHash = tx.hashForSignature(vin, redeemScript, flag);
     }
 
-    const sig = signingKey.sign(sigHash);
-
-    const signature = Buffer.concat([sig.toDER(), Buffer.from([sigFlag])]);
+    const signature = signingKey.sign(sigHash).toString('hex');
 
     const inputScriptElements = [
-      signature,
+      encodeSignature({flag, signature}),
       Buffer.from(unlock, 'hex'),
       OP_PUSHDATA1,
       redeemScript,

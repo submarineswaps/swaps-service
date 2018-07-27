@@ -2,11 +2,13 @@ const {address} = require('./../tokenslib');
 const {crypto} = require('./../tokenslib');
 const {ECPair} = require('./../tokenslib');
 const {networks} = require('./../tokenslib');
+const {payments} = require('./../tokenslib');
 const {script} = require('./../tokenslib');
 
-const {fromOutputScript} = address;
 const {hash160} = crypto;
 const notFound = -1;
+const {p2pkh} = payments;
+const {p2wpkh} = payments;
 
 /** Generate a keypair
 
@@ -33,21 +35,15 @@ module.exports = ({network}) => {
 
   const keyPair = ECPair.makeRandom({network: networks[network]});
 
-  // For pay to public key hash, we need the RIPE160 hash of the pubKey
-  const publicKeyHash = hash160(keyPair.getPublicKeyBuffer());
-
-  // A witness output script will include the pkhash and a version byte
-  const witnessOutput = script.witnessPubKeyHash.output.encode(publicKeyHash);
-
-  // A p2wpkh address is a bech32 encoded address
-  const p2wpkhAddress = fromOutputScript(witnessOutput, networks[network]);
+  const net = networks[network];
+  const pubkey = keyPair.publicKey;
 
   return {
-    p2pkh_address: keyPair.getAddress(),
-    p2wpkh_address: p2wpkhAddress,
-    pk_hash: publicKeyHash.toString('hex'),
+    p2pkh_address: p2pkh({pubkey, network: net}).address,
+    p2wpkh_address: p2wpkh({pubkey, network: net}).address,
+    pk_hash: hash160(pubkey).toString('hex'),
     private_key: keyPair.toWIF(),
-    public_key: keyPair.getPublicKeyBuffer().toString('hex'),
+    public_key: pubkey.toString('hex'),
   };
 };
 

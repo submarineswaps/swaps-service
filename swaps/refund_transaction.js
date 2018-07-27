@@ -117,7 +117,7 @@ module.exports = args => {
 
   // The public key buffer is stubbed all zeros when there is no private key
   if (!!args.private_key) {
-    pubKey = ECPair.fromWIF(args.private_key, network).getPublicKeyBuffer();
+    pubKey = ECPair.fromWIF(args.private_key, network).publicKey;
   } else {
     pubKey = Buffer.alloc(compressedPubKeySize);
   }

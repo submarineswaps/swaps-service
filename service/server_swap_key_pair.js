@@ -1,17 +1,20 @@
+const {fromSeed} = require('bip32');
 const {generateMnemonic} = require('bip39');
 const {mnemonicToSeed} = require('bip39');
 const {validateMnemonic} = require('bip39');
 
 const {address} = require('./../tokenslib');
 const {crypto} = require('./../tokenslib');
-const {HDNode} = require('./../tokenslib');
 const {networks} = require('./../tokenslib');
+const {payments} = require('./../tokenslib');
 const {script} = require('./../tokenslib');
 
 const {fromOutputScript} = address;
 const {hash160} = crypto;
 const minIndex = 0;
 const maxIndex = 4294967295;
+const {p2pkh} = payments;
+const {p2wpkh} = payments;
 const {SSS_CLAIM_BIP39_SEED} = process.env;
 
 /** Server swap key pair
@@ -47,25 +50,19 @@ module.exports = ({index, network}) => {
     throw new Error('ExpectedValidNetwork');
   }
 
+  const net = networks[network];
   const seed = mnemonicToSeed(SSS_CLAIM_BIP39_SEED);
 
-  const root = HDNode.fromSeedBuffer(seed, networks[network]);
+  const root = fromSeed(seed, networks[network]);
 
-  const {keyPair} = root.derivePath(`m/0'/0/${index}`);
-
-  const publicKeyHash = hash160(keyPair.getPublicKeyBuffer());
-
-  // SegWit P2PWKH Output Script
-  const witnessOutput = script.witnessPubKeyHash.output.encode(publicKeyHash);
-
-  const p2wpkhAddress = fromOutputScript(witnessOutput, networks[network]);
+  const keyPair = root.derivePath(`m/0'/0/${index}`);
 
   return {
-    p2pkh_address: keyPair.getAddress(),
-    p2wpkh_address: p2wpkhAddress,
-    pk_hash: publicKeyHash.toString('hex'),
+    p2pkh_address: p2pkh({network: net, pubkey: keyPair.publicKey}).address,
+    p2wpkh_address: p2wpkh({network: net, pubkey: keyPair.publicKey}).address,
+    pk_hash: hash160(keyPair.publicKey).toString('hex'),
     private_key: keyPair.toWIF(),
-    public_key: keyPair.getPublicKeyBuffer().toString('hex'),
+    public_key: keyPair.publicKey.toString('hex'),
   };
 };
 

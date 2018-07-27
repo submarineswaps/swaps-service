@@ -1,9 +1,10 @@
 const {ECPair} = require('./../tokenslib');
 const {networks} = require('./../tokenslib');
+const {script} = require('./../tokenslib');
 const {Transaction} = require('./../tokenslib');
 
+const encodeSig = script.signature.encode;
 const {fromHex} = Transaction;
-const {fromWIF} = ECPair;
 const {SIGHASH_ALL} = Transaction;
 
 /** Generate signed witnesses for a SegWit claim transaction
@@ -50,7 +51,7 @@ module.exports = ({key, network, transaction, unlock, utxos}) => {
     throw new Error('ExpectedWitnessUtxosForClaimWitnesses');
   }
 
-  const signingKey = fromWIF(key, networks[network]);
+  const signingKey = ECPair.fromWIF(key, networks[network]);
   const tx = fromHex(transaction);
 
   return utxos.map(({redeem, tokens, vin}) => {
@@ -58,7 +59,7 @@ module.exports = ({key, network, transaction, unlock, utxos}) => {
 
     const sigHash = tx.hashForWitnessV0(vin, script, tokens, SIGHASH_ALL);
 
-    const signature = signingKey.sign(sigHash).toScriptSignature(SIGHASH_ALL);
+    const signature = encodeSig(signingKey.sign(sigHash), SIGHASH_ALL);
 
     return {vin, witness: [signature.toString('hex'), unlock, redeem]};
   });

@@ -3,16 +3,20 @@ const {toCashAddress} = require('bchaddrjs');
 const {address} = require('./../tokenslib');
 const {crypto} = require('./../tokenslib');
 const {networks} = require('./../tokenslib');
+const {payments} = require('./../tokenslib');
+const {p2pkhOutputScript} = require('./../script');
+const {p2shOutputScript} = require('./../script');
+const {p2shP2wshOutputScript} = require('./../script');
+const {p2wpkhOutputScript} = require('./../script');
+const {p2wshOutputScript} = require('./../script');
 const {script} = require('./../tokenslib');
 
+const {decompile} = script;
 const {fromOutputScript} = address;
 const {hash160} = crypto;
-const {scriptHash} = script;
-const {sha256} = crypto;
+const {p2pkh} = payments;
+const {p2wpkh} = payments;
 const {toASM} = script;
-const {witnessScriptHash} = script;
-
-const encodeScriptHash = scriptHash.output.encode;
 
 /** Given a pkhash swap script, its details.
 
@@ -63,7 +67,7 @@ module.exports = (args) => {
   let refundPublicKeyHash;
   let type;
 
-  const scriptAssembly = toASM(script.decompile(redeemScript)).split(' ');
+  const scriptAssembly = toASM(decompile(redeemScript)).split(' ');
 
   switch (scriptAssembly.length) {
   case 12: // Public key swap script
@@ -240,22 +244,18 @@ module.exports = (args) => {
     break;
   }
 
-  // Legacy P2SH output script
-  const p2shLegacyOutput = encodeScriptHash(hash160(redeemScript));
+  const refundHash = Buffer.from(refundPublicKeyHash, 'hex');
 
-  const witnessProgram = witnessScriptHash.output.encode(sha256(redeemScript));
-
-  const p2shWrappedWitnessProg = encodeScriptHash(hash160(witnessProgram));
+  const p2shLegacyOutput = p2shOutputScript({script: args.script});
+  const p2shWrappedWitnessProg = p2shP2wshOutputScript({script: args.script});
+  const refundP2pkh = p2pkh({network, hash: refundHash});
+  const refundP2wpkh = p2wpkh({network, hash: refundHash});
+  const witnessProgram = p2wshOutputScript({script: args.script});
 
   const p2shNestedAddr = fromOutputScript(p2shWrappedWitnessProg, network);
 
-  const refundHash = Buffer.from(refundPublicKeyHash, 'hex');
-
-  const p2pkhScriptPub = script.pubKeyHash.output.encode(refundHash);
-  const p2wpkhScriptPub = script.witnessPubKeyHash.output.encode(refundHash);
-
-  const refundP2pkhAddress = fromOutputScript(p2pkhScriptPub, network);
-  const refundP2wpkhAddress = fromOutputScript(p2wpkhScriptPub, network);
+  const p2pkhScriptPub = p2pkhOutputScript({hash: refundPublicKeyHash});
+  const p2wpkhScriptPub = p2wpkhOutputScript({hash: refundPublicKeyHash});
 
   const lockHeight = Buffer.from(cltv, 'hex').readUIntLE(0, cltv.length / 2);
   const p2shAddress = fromOutputScript(p2shLegacyOutput, network);
@@ -284,7 +284,7 @@ module.exports = (args) => {
       p2sh_address: p2shAddress,
       p2sh_output_script: p2shLegacyOutput.toString('hex'),
       payment_hash: paymentHash,
-      refund_p2pkh_address: refundP2pkhAddress,
+      refund_p2pkh_address: refundP2pkh.address,
       refund_public_key_hash: refundPublicKeyHash,
       timelock_block_height: lockHeight,
     };
@@ -298,7 +298,7 @@ module.exports = (args) => {
       p2sh_p2wsh_output_script: p2shWrappedWitnessProg.toString('hex'),
       p2wsh_address: address.fromOutputScript(witnessProgram, network),
       payment_hash: paymentHash,
-      refund_p2wpkh_address: refundP2wpkhAddress,
+      refund_p2wpkh_address: refundP2wpkh.address,
       refund_public_key_hash: refundPublicKeyHash,
       timelock_block_height: lockHeight,
       witness_output_script: witnessProgram.toString('hex'),

@@ -15,9 +15,10 @@ const {getCurrentHeight} = require('./../../chain');
 const {getDetectedSwaps} = require('./../../pool');
 const mineTransaction = require('./mine_transaction');
 const {networks} = require('./../../tokenslib');
+const {payments} = require('./../../tokenslib');
 const {refundTransaction} = require('./../../swaps');
 const sendChainTokensTransaction = require('./send_chain_tokens_tx');
-const serverSwapKeyPair= require('./../../service/server_swap_key_pair');
+const serverSwapKeyPair = require('./../../service/server_swap_key_pair');
 const spawnChainDaemon = require('./spawn_chain_daemon');
 const {swapAddress} = require('./../../swaps');
 const {swapScanner} = require('./../../scan');
@@ -27,10 +28,11 @@ const {watchSwapOutput} = require('./../../scan');
 
 const coinbaseIndex = chainConstants.coinbase_tx_index;
 const fee = 1e3;
-const {fromPublicKeyBuffer} = ECPair;
+const {fromPublicKey} = ECPair;
 const maturityBlockCount = chainConstants.maturity_block_count;
 const maxKeyIndex = 4e8;
 const minKeyIndex = 0;
+const {p2pkh} = payments;
 const relayFeeTokensPerVirtualByte = 1;
 const swapTimeoutBlockCount = 2;
 
@@ -94,7 +96,9 @@ module.exports = ({cache, daemon, network, type}, cbk) => {
         const key = Buffer.from(generateKeyPair.public_key, 'hex');
         const net = networks[network];
 
-        return cbk(null, fromPublicKeyBuffer(key, net).getAddress());
+        const pubkey = fromPublicKey(key, net).publicKey;
+
+        return cbk(null, p2pkh({pubkey, network: net}).address);
 
       case 'btcd':
       case 'ltcd':

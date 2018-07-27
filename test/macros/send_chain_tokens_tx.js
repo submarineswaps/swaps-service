@@ -3,13 +3,16 @@ const {encode} = require('varuint-bitcoin');
 const {address} = require('./../../tokenslib');
 const {crypto} = require('./../../tokenslib');
 const {ECPair} = require('./../../tokenslib');
+const {encodeSignature} = require('./../../script');
 const {networks} = require('./../../tokenslib');
+const {payments} = require('./../../tokenslib');
 const {script} = require('./../../tokenslib');
 const scriptBufAsScript = require('./../../swaps/script_buffers_as_script');
 const {Transaction} = require('./../../tokenslib');
 const {TransactionBuilder} = require('./../../tokenslib');
 
 const hexBase = 16;
+const {p2pkh} = payments;
 const {SIGHASH_ALL} = Transaction;
 
 /** Send some tokens to an address
@@ -76,27 +79,23 @@ module.exports = (args, cbk) => {
   const tx = Transaction.fromHex(transaction);
 
   [keyPair].forEach((signingKey, vin) => {
-    const sigHashFlag = !forkModifier ? sigHashAll : sigHashAll | forkModifier;
-
-    const publicKey = signingKey.getPublicKeyBuffer();
-
-    const hash = crypto.hash160(publicKey);
-
-    const scriptPub = script.pubKeyHash.output.encode(hash);
-
+    const flag = !forkModifier ? sigHashAll : sigHashAll | forkModifier;
+    const {publicKey} = signingKey;
     let sigHash;
 
+    const scriptPub = p2pkh({network, pubkey: publicKey}).output;
+
     if (!!forkModifier) {
-      sigHash = tx.hashForWitnessV0(vin, scriptPub, args.tokens, sigHashFlag);
+      sigHash = tx.hashForWitnessV0(vin, scriptPub, args.tokens, flag);
     } else {
-      sigHash = tx.hashForSignature(vin, scriptPub, sigHashFlag);
+      sigHash = tx.hashForSignature(vin, scriptPub, flag);
     }
 
-    const sig = signingKey.sign(sigHash);
+    const signature = signingKey.sign(sigHash).toString('hex');
 
-    const signature = Buffer.concat([sig.toDER(), Buffer.from([sigHashFlag])]);
+    const sig = encodeSignature({flag, signature});
 
-    const sigPush = Buffer.concat([encode(signature.length), signature]);
+    const sigPush = Buffer.concat([encode(sig.length), sig]);
     const pubKeyPush = Buffer.concat([encode(publicKey.length), publicKey]);
 
     const scriptSig = Buffer.concat([sigPush, pubKeyPush]);

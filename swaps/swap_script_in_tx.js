@@ -1,14 +1,13 @@
 const {crypto} = require('./../tokenslib');
-const {script} = require('./../tokenslib');
+const {p2shOutputScript} = require('./../script');
+const {p2shP2wshOutputScript} = require('./../script');
+const {p2wshOutputScript} = require('./../script');
 const swapScriptDetails = require('./swap_script_details');
 const {Transaction} = require('./../tokenslib');
 
-const encodeScriptHash = script.scriptHash.output.encode;
 const {hash160} = crypto;
-const {sha256} = crypto;
-const {witnessScriptHash} = script;
-
 const notFound = -1;
+const {sha256} = crypto;
 
 /** Find outputs with matching script in transaction
 
@@ -40,18 +39,15 @@ module.exports = args => {
     throw new Error('ExpectedTransaction');
   }
 
+  const p2sh = p2shOutputScript({script: args.redeem_script});
+  const p2shP2wsh = p2shP2wshOutputScript({script: args.redeem_script});
+  const p2wsh = p2wshOutputScript({script: args.redeem_script});
   const redeem = Buffer.from(args.redeem_script, 'hex');
   const transaction = Transaction.fromHex(args.transaction);
 
   const txId = transaction.getId();
-  const p2wshScript = witnessScriptHash.output.encode(sha256(redeem));
 
-  const outputScripts = [
-    encodeScriptHash(hash160(redeem)),
-    encodeScriptHash(hash160(p2wshScript)),
-    p2wshScript,
-  ]
-    .map(n => n.toString('hex'));
+  const outputScripts = [p2sh, p2shP2wsh, p2wsh].map(n => n.toString('hex'));
 
   const matchingOutputs = transaction.outs
     .map(({script, value}, vout) => {
