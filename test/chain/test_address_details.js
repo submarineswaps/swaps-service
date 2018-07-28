@@ -1,6 +1,6 @@
 const {test} = require('tap');
 
-const {addressDetails} = require('./../chain');
+const {addressDetails} = require('./../../chain');
 
 const fixtures = {
   bchtestnet_p2sh: {

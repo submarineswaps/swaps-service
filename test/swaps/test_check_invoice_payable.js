@@ -3,7 +3,7 @@ const {ceil} = Math;
 const {doesNotThrow} = require('tap');
 const {throws} = require('tap');
 
-const {checkInvoicePayable} = require('./../swaps');
+const {checkInvoicePayable} = require('./../../swaps');
 
 const fixtures = {
   chain_height: 500000,

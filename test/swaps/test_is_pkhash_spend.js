@@ -1,7 +1,7 @@
 const {equal} = require('tap');
 
-const isPublicKeyHashSpend = require('./../swaps/is_pkhash_spend');
-const {Transaction} = require('./../tokenslib');
+const isPublicKeyHashSpend = require('./../../swaps/is_pkhash_spend');
+const {Transaction} = require('./../../tokenslib');
 
 const {fromHex} = Transaction;
 

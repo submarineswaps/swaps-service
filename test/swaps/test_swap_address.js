@@ -1,7 +1,7 @@
 const {equal} = require('tap');
 const {throws} = require('tap');
 
-const {swapAddress} = require('./../swaps');
+const {swapAddress} = require('./../../swaps');
 
 const fixtures = {
   destination_public_key: '03f8109578aae1e5cfc497e466cf6ae6625497cd31886e87b2f4f54f3f0f46b539',

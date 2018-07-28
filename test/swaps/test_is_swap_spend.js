@@ -1,7 +1,7 @@
 const {equal} = require('tap');
 
-const isSwapSpend = require('./../swaps/is_swap_spend');
-const {Transaction} = require('./../tokenslib');
+const isSwapSpend = require('./../../swaps/is_swap_spend');
+const {Transaction} = require('./../../tokenslib');
 
 const {fromHex} = Transaction;
 

@@ -1,6 +1,6 @@
-const zero = Buffer.alloc(1, 0);
+const zero = Buffer.from('00', 'hex');
 
-/** DER Encode
+/** DER encode bytes to eliminate sign confusion in a big-endian number.
 
   {
     point: <Point Hex String>
@@ -24,7 +24,7 @@ module.exports = ({point}) => {
   x = x.slice(i);
 
   if (x[0] & 0x80) {
-    return Buffer.concat([zero, x], 1 + x.length);
+    return Buffer.concat([zero, x], x.length + 1);
   } else {
     return x;
   }

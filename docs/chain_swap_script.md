@@ -12,8 +12,7 @@ that are only redeemable by Alice if she makes the off-chain payment.
 As a failsafe, we want Bob's tokens to return back to him after a while if
 Alice fails to make the payment.
 
-It would also be nice if Alice can help Bob by refunding his tokens before the
-timeout. It would also be nice if Bob can use a pkhash instead of his public
+It would also be nice if Bob can use a pkhash instead of his public
 key for his refund.
 
 ### Simple Case
@@ -128,7 +127,7 @@ All cases:
 
 What if we wanted to have a pkhash check instead of a pubkey check? This is
 potentially nice because when Bob hands over his invoice to pay and refund info
-he can hand over a normal Bitcoin address, as long as it is a p2pkh.
+he can hand over a normal Bitcoin address, as long as it is a p2pkh/p2wpkh.
 
 The altered script for a pkhash looks like:
 

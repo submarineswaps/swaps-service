@@ -1,6 +1,6 @@
 const {equal} = require('tap');
 
-const swapResolutions = require('./../swaps/swap_resolutions');
+const swapResolutions = require('./../../swaps/swap_resolutions');
 
 const fixtures = {
   np2wsh_claim_transaction: {

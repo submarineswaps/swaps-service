@@ -1,6 +1,6 @@
 const {equal} = require('tap');
 
-const {feeForSwap} = require('./../swaps');
+const {feeForSwap} = require('./../../swaps');
 
 const tests = {
   // When there is a very small send, the fee increases to compensate for dust

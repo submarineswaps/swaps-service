@@ -12,6 +12,7 @@ const getCurrentHash = require('./get_current_hash');
 const getCurrentHeight = require('./get_current_height');
 const getMempool = require('./get_mempool');
 const getTransaction = require('./get_transaction');
+const parseTokenValue = require('./parse_token_value');
 const stopChainDaemon = require('./stop_chain_daemon');
 
 module.exports = {
@@ -29,6 +30,7 @@ module.exports = {
   getCurrentHeight,
   getMempool,
   getTransaction,
+  parseTokenValue,
   stopChainDaemon,
 };
 

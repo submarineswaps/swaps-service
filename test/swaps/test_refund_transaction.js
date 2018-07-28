@@ -1,7 +1,7 @@
 const {test} = require('tap');
 
-const {refundTransaction} = require('./../swaps');
-const {Transaction} = require('./../tokenslib');
+const {refundTransaction} = require('./../../swaps');
+const {Transaction} = require('./../../tokenslib');
 
 // Test values
 const fixtures = {

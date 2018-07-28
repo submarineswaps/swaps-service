@@ -1,6 +1,6 @@
 const {equal} = require('tap');
 
-const scriptElements = require('./../swaps/script_elements');
+const scriptElements = require('./../../swaps/script_elements');
 
 const fixtures = {
   preimage: 'ed72f47ae4414781bfe049427d078e23c3afc689cddc4ed89e1e14b51e4ef032',

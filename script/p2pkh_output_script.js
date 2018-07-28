@@ -20,7 +20,7 @@ module.exports = ({hash}) => {
   return compile([
     OP_DUP,
     OP_HASH160, Buffer.from(hash, 'hex'), OP_EQUALVERIFY,
-    OP_CHECKSIG
+    OP_CHECKSIG,
   ]);
 };
 
