@@ -27,18 +27,23 @@ module.exports = ({blocks, network}, cbk) => {
       return cbk(err);
     }
 
+    let fee;
     let parsedValue;
 
     // Exit early when fee is not defined
-    if (res.fee === -1) {
+    if (!!res && res.fee === -1) {
       return cbk(null, {fee_tokens_per_vbyte: defaultFee});
     }
 
-    if (!res || !res.feerate) {
-      return cbk([500, 'ExpectedFeeRate']);
+    if (!!res && !!res.fee) {
+      fee = res.fee;
+    } else if (!!res && !!res.feerate) {
+      fee = res.feerate;
+    } else {
+      return cbk([500, 'ExpectedFeeRate', res]);
     }
 
-    const value = (res.feerate / bytesPerKb).toString();
+    const value = (fee / bytesPerKb).toString();
 
     try {
       parsedValue = parseTokenValue({value});

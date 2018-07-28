@@ -157,11 +157,13 @@ module.exports = ({cache, swap}, cbk) => {
         return cbk();
       }
 
+      const {block} = funding;
+      const {id} = funding;
       const {invoice} = funding;
       const {network} = funding;
       const {script} = funding;
 
-      return getSwapStatus({cache, invoice, network, script}, cbk);
+      return getSwapStatus({block, cache, id, invoice, network, script}, cbk);
     }],
   },
   returnResult({}, cbk));

@@ -4,7 +4,6 @@ const {Router} = require('express');
 const {broadcastTransaction} = require('./../service');
 const {checkSwapStatus} = require('./../service');
 const {createSwap} = require('./../service');
-const {findSwapOutpoint} = require('./../service');
 const {getActiveNetworks} = require('./../service');
 const {getAddressDetails} = require('./../service');
 const {getExchangeRates} = require('./../service');
@@ -60,15 +59,6 @@ module.exports = ({log}) => {
   // Get list of supported networks to pay on-chain
   router.get('/networks/', ({}, res) => {
     return getActiveNetworks({cache}, returnJson({log, res}));
-  });
-
-  // POST a swap output find details request
-  router.post('/swap_outputs/', ({body}, res) => {
-    return findSwapOutpoint({
-      network: body.network,
-      redeem_script: body.redeem_script,
-    },
-    returnJson({log, res}));
   });
 
   // POST a new swap

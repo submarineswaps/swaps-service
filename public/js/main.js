@@ -1077,6 +1077,7 @@ App.submitCreateSwapQuote = function(event) {
     case 'ltc':
     case 'ltctestnet':
       scheme = 'litecoin';
+      swapAddress = details.swap_p2sh_address;
       break;
 
     default:
