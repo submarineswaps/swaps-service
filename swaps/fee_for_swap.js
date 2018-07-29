@@ -1,7 +1,7 @@
 const {max} = Math;
 const {round} = Math;
 
-const dustRatio = 1 / 4;
+const dustFactor = 6;
 const estimatedClaimTxVSize = 200;
 const swapRateDivisor = 1e6;
 
@@ -54,7 +54,8 @@ module.exports = args => {
 
   const baseFee = args.base_rate + claimChainFee;
   const feePercentage = args.swap_rate / swapRateDivisor;
-  const minChainVal = claimChainFee / dustRatio;
+  const minChainVal = (claimChainFee * dustFactor);
+
   const convertedTokens = round(args.send_tokens * conversionRate);
 
   const feeValue = round(baseFee + (convertedTokens * feePercentage));

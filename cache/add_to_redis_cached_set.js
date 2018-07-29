@@ -57,7 +57,7 @@ module.exports = ({key, ms, sort, value}, cbk) => {
 
     // Expire set at timeout
     updateSetExpiry: ['cache', 'pushIntoSet', ({cache}, cbk) => {
-      return cache.expire(key, ms * msPerSec, err => {
+      return cache.expire(key, ms / msPerSec, err => {
         if (!!err) {
           return cbk([503, 'CacheSetExpiryFailure', err]);
         }

@@ -25,7 +25,7 @@ module.exports = ({key, ms, type, value}, cbk) => {
 
   const cache = memoryCache({});
 
-  cache.set(key, value, ms * msPerSec, (err, isSuccess) => {
+  cache.set(key, value, ms / msPerSec, (err, isSuccess) => {
     if (!!err) {
       return cbk([500, 'UnexpectedSetMemoryCacheError', err]);
     }

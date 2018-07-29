@@ -445,8 +445,8 @@ module.exports = ({cache, daemon, network, type}, cbk) => {
           if (swap.id !== expectedId) {
             throw new Error('ExpectedResolutionTransaction');
           }
-        } catch (e) {
-          return cbk([0, 'MempoolClaimAnnounceFailure', e]);
+        } catch (err) {
+          return cbk([0, 'MempoolClaimAnnounceFailure', err]);
         }
 
         return cbk(null, swap);

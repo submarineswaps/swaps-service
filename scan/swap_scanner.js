@@ -1,8 +1,12 @@
+const asyncPriorityQueue = require('async/priorityQueue');
 const EventEmitter = require('events');
 
 const blockListener = require('./block_listener');
 const detectSwaps = require('./detect_swaps');
 const mempoolListener = require('./mempool_listener');
+
+const maxChecksCount = 3;
+const {MIN_SAFE_INTEGER} = Number;
 
 /** The swap output scanner is an event emitter for swap outputs
 
@@ -80,12 +84,74 @@ module.exports = ({cache, network}) => {
     throw new Error('ExpectedNetworkName');
   }
 
+  const scanner = new EventEmitter();
+
   const listeners = [
     blockListener({cache, network}),
     mempoolListener({network}),
   ];
 
-  const scanner = new EventEmitter();
+  const detectJobs = asyncPriorityQueue(({block, cache, id, network}, cbk) => {
+    return detectSwaps({block, cache, id, network}, (err, detected) => {
+      if (!!err) {
+        return scanner.emit('error', err);
+      }
+
+      // Notify on all found swaps
+      detected.swaps.forEach(swap => {
+        switch (swap.type) {
+        case 'claim':
+          scanner.emit(swap.type, {
+            block,
+            id,
+            network,
+            index: swap.index,
+            invoice: swap.invoice,
+            outpoint: swap.outpoint,
+            preimage: swap.preimage,
+            script: swap.script,
+            type: swap.type,
+          });
+          break;
+
+        case 'funding':
+          scanner.emit(swap.type, {
+            block,
+            id,
+            network,
+            index: swap.index,
+            invoice: swap.invoice,
+            output: swap.output,
+            script: swap.script,
+            tokens: swap.tokens,
+            type: swap.type,
+            vout: swap.vout
+          });
+          break;
+
+        case 'refund':
+          scanner.emit(swap.type, {
+            block,
+            id,
+            network,
+            index: swap.index,
+            invoice: swap.invoice,
+            outpoint: swap.outpoint,
+            script: swap.script,
+            type: swap.type,
+          });
+          break;
+
+        default:
+          scanner.emit('error', [500, 'UnknownSwapType']);
+          break;
+        }
+      });
+
+      return cbk();
+    });
+  },
+  maxChecksCount);
 
   // Both block listeners and mempool listeners emit transaction ids when they
   // detect new transactions.
@@ -93,62 +159,11 @@ module.exports = ({cache, network}) => {
     listener.on('error', err => scanner.emit('error', err));
 
     listener.on('transaction', ({block, id}) => {
-      return detectSwaps({cache, id, network}, (err, detected) => {
-        if (!!err) {
-          return scanner.emit('error', err);
-        }
+      // Newer transactions are more likely to be hits, newer gets priority
+      // Block transactions are fast to lookup, they get ultimate priority
+      const priority = !!block ? MIN_SAFE_INTEGER : -detectJobs.length();
 
-        // Notify on all found swaps
-        return detected.swaps.forEach(swap => {
-          switch (swap.type) {
-          case 'claim':
-            scanner.emit(swap.type, {
-              block,
-              id,
-              network,
-              index: swap.index,
-              invoice: swap.invoice,
-              outpoint: swap.outpoint,
-              preimage: swap.preimage,
-              script: swap.script,
-              type: swap.type,
-            });
-            break;
-
-          case 'funding':
-            scanner.emit(swap.type, {
-              block,
-              id,
-              network,
-              index: swap.index,
-              invoice: swap.invoice,
-              output: swap.output,
-              script: swap.script,
-              tokens: swap.tokens,
-              type: swap.type,
-              vout: swap.vout
-            });
-            break;
-
-          case 'refund':
-            scanner.emit(swap.type, {
-              block,
-              id,
-              network,
-              index: swap.index,
-              invoice: swap.invoice,
-              outpoint: swap.outpoint,
-              script: swap.script,
-              type: swap.type,
-            });
-            break;
-
-          default:
-            scanner.emit('error', [500, 'UnknownSwapType']);
-            break;
-          }
-        });
-      });
+      return detectJobs.push({block, cache, id, network}, priority);
     });
 
     return;

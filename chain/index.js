@@ -10,6 +10,7 @@ const getBlockHeader = require('./get_block_header');
 const getChainFeeRate = require('./get_chain_fee_rate');
 const getCurrentHash = require('./get_current_hash');
 const getCurrentHeight = require('./get_current_height');
+const getFullBlock = require('./get_full_block');
 const getMempool = require('./get_mempool');
 const getTransaction = require('./get_transaction');
 const parseTokenValue = require('./parse_token_value');
@@ -28,6 +29,7 @@ module.exports = {
   getChainFeeRate,
   getCurrentHash,
   getCurrentHeight,
+  getFullBlock,
   getMempool,
   getTransaction,
   parseTokenValue,

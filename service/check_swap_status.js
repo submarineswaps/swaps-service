@@ -92,19 +92,6 @@ module.exports = ({cache, invoice, network, script}, cbk) => {
       });
     }],
 
-    // Check for swap attempt failure
-    checkSwapAttempt: ['getSwapAttempt', ({getSwapAttempt}, cbk) => {
-      if (!getSwapAttempt) {
-        return cbk();
-      }
-
-      if (new Date().toISOString() > getSwapAttempt) {
-        return cbk([410, 'PaymentFailed']);
-      }
-
-      return cbk();
-    }],
-
     // See if the swap is in the swap pool
     getSwapFromPool: ['id', ({id}, cbk) => getDetectedSwaps({cache, id}, cbk)],
 
@@ -138,6 +125,27 @@ module.exports = ({cache, invoice, network, script}, cbk) => {
           output_tokens: unconfirmed.tokens,
           transaction_id: unconfirmed.id,
         });
+      }
+
+      return cbk();
+    }],
+
+    // Check for swap attempt failure
+    checkSwapAttempt: [
+      'getSwapAttempt',
+      'swapElement',
+      ({getSwapAttempt, swapElement}, cbk) =>
+    {
+      if (!getSwapAttempt) {
+        return cbk();
+      }
+
+      if (!!swapElement && !!swapElement.payment_secret) {
+        return cbk();
+      }
+
+      if (new Date().toISOString() > getSwapAttempt) {
+        return cbk([410, 'PaymentFailed']);
       }
 
       return cbk();

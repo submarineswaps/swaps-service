@@ -13,7 +13,7 @@ const tests = {
       send_tokens: 1000,
       swap_rate: 2500,
     },
-    expected: {fee: 8000, tokens: 9000},
+    expected: {fee: 12000, tokens: 13000},
   },
 
   // Predictable fee rate is charged against a normal swap

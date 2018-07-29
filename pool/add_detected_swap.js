@@ -26,7 +26,7 @@ const elementCount = 1; // Number of elements that can be added per call
       id: <Transaction Id Hex String>
       invoice: <BOLT 11 Invoice String>
       network: <Network Name String>
-      outpoint: <Outpoint String>
+      outpoint: <Spent Outpoint String>
       preimage: <Preimage Hex String>
       script: <Redeem Script Hex String>
     },

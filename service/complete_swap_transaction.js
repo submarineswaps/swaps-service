@@ -5,6 +5,7 @@ const {getRoutes} = require('ln-service');
 const {parseInvoice} = require('ln-service');
 const {payInvoice} = require('ln-service');
 
+const addDetectedSwap = require('./../pool/add_detected_swap');
 const {broadcastTransaction} = require('./../chain');
 const {claimTransaction} = require('./../swaps');
 const {getFee} = require('./../chain');
@@ -15,8 +16,10 @@ const {returnResult} = require('./../async-util');
 const {setJsonInCache} = require('./../cache');
 const {swapScriptInTransaction} = require('./../swaps');
 
+const dummyLockingInvoiceValue = 1;
+const dummyPreimage = '0000000000000000000000000000000000000000000000000000000000000000';
 const paymentTimeoutMs = 1000 * 60;
-const swapSuccessCacheMs = 1000 * 60 * 60 * 3;
+const swapSuccessCacheMs = 1000 * 60 * 60;
 
 /** Complete a swap transaction
 
@@ -107,8 +110,8 @@ module.exports = (args, cbk) => {
           redeem_script: args.redeem_script,
           transaction: args.transaction,
         }));
-      } catch (e) {
-        return cbk([0, e.message, e]);
+      } catch (err) {
+        return cbk([0, e.message, err]);
       }
     }],
 
@@ -143,7 +146,7 @@ module.exports = (args, cbk) => {
         lnd,
         expires_at: new Date(Date.now() + paymentTimeoutMs).toISOString(),
         payment_secret: id,
-        tokens: 1,
+        tokens: dummyLockingInvoiceValue,
       },
       cbk);
     }],
@@ -166,8 +169,31 @@ module.exports = (args, cbk) => {
       return createAddress({lnd}, cbk);
     }],
 
+    // Do a sanity check to see if the invoice can be claimed
+    canClaim: [
+      'fundingUtxos',
+      'getChainTip',
+      'getFee',
+      'getSweepAddress',
+      ({fundingUtxos, getChainTip, getFee, getSweepAddress}, cbk) =>
+    {
+      try {
+        return cbk(null, claimTransaction({
+          current_block_height: getChainTip.height,
+          destination: getSweepAddress.address,
+          fee_tokens_per_vbyte: getFee.fee_tokens_per_vbyte,
+          network: args.network,
+          preimage: dummyPreimage,
+          private_key: args.private_key,
+          utxos: fundingUtxos.matching_outputs,
+        }));
+      } catch (err) {
+        return cbk([500, 'ExpectedDummyClaimTransaction', err]);
+      }
+    }],
+
     // Pay the invoice
-    payInvoice: ['createLockingInvoice', 'lnd', ({lnd}, cbk) => {
+    payInvoice: ['canClaim', 'createLockingInvoice', 'lnd', ({lnd}, cbk) => {
       return payInvoice({lnd, invoice: args.invoice}, cbk);
     }],
 
@@ -200,6 +226,35 @@ module.exports = (args, cbk) => {
       const {transaction} = claimTransaction;
 
       return broadcastTransaction({transaction, network: args.network}, cbk);
+    }],
+
+    // Add the swap to the pool
+    addSwap: [
+      'broadcastTransaction',
+      'fundingUtxos',
+      'invoice',
+      'payInvoice',
+      ({broadcastTransaction, fundingUtxos, invoice, payInvoice}, cbk) =>
+    {
+      if (fundingUtxos.matching_outputs.length !== 1) {
+        return cbk();
+      }
+
+      const [utxo] = fundingUtxos.matching_outputs;
+
+      return addDetectedSwap({
+        cache: args.cache,
+        claim: {
+          id: broadcastTransaction.id,
+          invoice: args.invoice,
+          network: args.network,
+          outpoint: `${utxo.transaction_id}:${utxo.vout}`,
+          preimage: payInvoice.payment_secret,
+          script: args.redeem_script,
+        },
+        id: invoice.id,
+      },
+      cbk);
     }],
 
     // Return the details of the completed swap

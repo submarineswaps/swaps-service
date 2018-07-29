@@ -31,7 +31,7 @@ module.exports = ({network}) => {
     throw new Error('ExpectedNetworkName');
   }
 
-  let ids = [];
+  let ids;
   const listener = new EventEmitter();
 
   asyncForever(cbk => {
@@ -42,6 +42,13 @@ module.exports = ({network}) => {
       // Compare the mempool's transaction against the cache
       differentIds: ['getMempool', ({getMempool}, cbk) => {
         const freshIds = getMempool.transaction_ids;
+
+        // Exit early when this is the first mempool load
+        if (!ids) {
+          ids = freshIds;
+
+          return cbk();
+        }
 
         difference(freshIds, ids).forEach(id => {
           return listener.emit('transaction', {id});

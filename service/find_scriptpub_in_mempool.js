@@ -60,6 +60,7 @@ module.exports = (args, cbk) => {
       return cbk();
     },
 
+    // Set mempool cache
     setMempoolCache: ['getMempool', ({getMempool}, cbk) => {
       if (!!getMempool.is_cached_result) {
         return cbk();

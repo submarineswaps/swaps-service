@@ -103,6 +103,7 @@ module.exports = (args, cbk) => {
         checkFanOutLimit,
         (id, cbk) => {
           return transactionHasScriptPub({
+            block: args.block_hash,
             cache: args.cache,
             is_ignoring_tokens: args.is_ignoring_tokens,
             network: args.network,

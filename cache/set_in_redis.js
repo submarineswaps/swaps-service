@@ -29,7 +29,7 @@ module.exports = ({key, ms, value}, cbk) => {
 
   const cache = redisCache({});
 
-  cache.setex(key, ms * msPerSec, value, err => {
+  cache.setex(key, ms / msPerSec, value, err => {
     if (!!err) {
       return cbk([500, 'UnexpectedSetRedisError', err]);
     }

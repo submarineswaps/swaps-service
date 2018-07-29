@@ -151,7 +151,11 @@ module.exports = (args, cbk) => {
             return cbk(null, {});
           }
 
-          return cbk(null, {confirmation_count: count, transaction_id: txId});
+          return cbk(null, {
+            block: cursor,
+            confirmation_count: count,
+            transaction_id: txId,
+          });
         }
       );
     }],
@@ -163,6 +167,7 @@ module.exports = (args, cbk) => {
       }
 
       return getTransaction({
+        block: scanBlocks.block,
         id: scanBlocks.transaction_id,
         network: args.network,
       },

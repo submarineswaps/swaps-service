@@ -1,7 +1,7 @@
 const asyncAuto = require('async/auto');
 
 const {getJsonFromCache} = require('./../cache');
-const {getTransaction} = require('./../chain');
+const {getTransaction} = require('./../blocks');
 const {returnResult} = require('./../async-util');
 const {setJsonInCache} = require('./../cache');
 const swapsFromInputs = require('./swaps_from_inputs');
@@ -12,6 +12,7 @@ const cacheSwapsMs = 1000 * 60 * 60 * 2;
 /** Check a transaction to see if there are any associated swaps.
 
   {
+    [block]: <Block Id Hex String>
     cache: <Cache Type String> 'dynamodb|memory|redis'
     id: <Transaction Id Hex String>
     network: <Network Name String>
@@ -32,7 +33,7 @@ const cacheSwapsMs = 1000 * 60 * 60 * 2;
     }]
   }
 */
-module.exports = ({cache, id, network}, cbk) => {
+module.exports = ({block, cache, id, network}, cbk) => {
   return asyncAuto({
     // Check arguments
     validate: cbk => {
@@ -63,9 +64,15 @@ module.exports = ({cache, id, network}, cbk) => {
         return cbk();
       }
 
-      // This will get the transaction from the chain. There's no need to cache
-      // it because we are caching the end result of our analysis.
-      return getTransaction({id, network}, cbk);
+      // This will get the transaction from the chain. Avoid caching mempool
+      // transactions as they could be pretty numerous.
+      return getTransaction({
+        block,
+        id,
+        network,
+        cache: !block ? null : cache,
+      },
+      cbk);
     }],
 
     // Determine if the inputs have swaps. (Claim or refund type)

@@ -153,6 +153,7 @@ module.exports = ({cache, swap}, cbk) => {
         return cbk();
       }
 
+      // Exit early when the swap is already being claimed
       if (!!getDetectedSwaps.claim.length) {
         return cbk();
       }

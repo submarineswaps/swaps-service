@@ -74,7 +74,7 @@ module.exports = (args, cbk) => {
 
   daemon.stdout.on('data', data => {
     if (unableToStartServer.test(`${data}`)) {
-      return cbk([errCode.local_err, 'SpawnDaemonFailure']);
+      return cbk([500, 'SpawnDaemonFailure']);
     }
 
     if (rpcServerReady.test(`${data}`)) {

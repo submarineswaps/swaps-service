@@ -12,6 +12,7 @@ const notFoundIndex = -1;
 /** Determine if a transaction has a script pub output
 
   {
+    [block]: <Block Hash Hex String>
     cache: <Cache Type String>
     is_ignoring_tokens: <Is Ignoring Tokens Value Bool>
     output_scripts: [<Output Script Hex String>]
@@ -70,6 +71,7 @@ module.exports = (args, cbk) => {
       }
 
       return getTransaction({
+        block: args.block,
         id: args.transaction_id,
         network: args.network,
       },

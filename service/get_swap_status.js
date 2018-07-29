@@ -103,7 +103,7 @@ module.exports = ({block, cache, id, invoice, network, script}, cbk) => {
 
     // Get the raw transaction
     getTransaction: ['validate', ({}, cbk) => {
-      return getTransaction({cache, id, network}, cbk);
+      return getTransaction({block, cache, id, network}, cbk);
     }],
 
     // Pull out the swap keypair from the HD seed
