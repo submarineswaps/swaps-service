@@ -18,7 +18,8 @@ Requirements:
 - BIP 39 seed: running the service without a seed will generate one
 - LND: execute Lighting payments
 
-Configure environment variables as necessary.
+Configure environment variables as necessary. You can also create a .env file
+with KEY=VALUE instead.
 
     export GRPC_SSL_CIPHER_SUITES="HIGH+ECDSA"
     export NODE_ENV="production" // Add this when running in production

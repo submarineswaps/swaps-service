@@ -6,13 +6,12 @@ const {getJsonFromCache} = require('./../cache');
 const {setJsonInCache} = require('./../cache');
 const {returnResult} = require('./../async-util');
 
-const blockExpirationMs = 1000 * 60 * 60;
+const blockExpirationMs = 1000 * 60 * 20;
 const fetchBlocksCount = 3;
 
 /** Get past blocks
 
   {
-    cache: <Cache Type String> 'dynamodb|memory|redis'
     current: <Current Block Hash Hex String>
     network: <Network Name String>
   }
@@ -27,10 +26,6 @@ const fetchBlocksCount = 3;
   }
 */
 module.exports = ({cache, current, network}, cbk) => {
-  if (!cache) {
-    return cbk([400, 'ExpectedCacheToCheckAgainst']);
-  }
-
   if (!current) {
     return cbk([400, 'ExpectedCurrentBlockHash']);
   }
@@ -48,7 +43,12 @@ module.exports = ({cache, current, network}, cbk) => {
       return asyncAuto({
         // See if we have a cached block
         getCachedBlock: cbk => {
-          return getJsonFromCache({cache, key: cursor, type: 'block-i'}, cbk);
+          return getJsonFromCache({
+            cache: 'memory',
+            key: cursor,
+            type: 'block-i',
+          },
+          cbk);
         },
 
         // Get the block
@@ -82,7 +82,7 @@ module.exports = ({cache, current, network}, cbk) => {
           }
 
           return setJsonInCache({
-            cache,
+            cache: 'memory',
             key: cursor,
             ms: blockExpirationMs,
             type: 'block-i',

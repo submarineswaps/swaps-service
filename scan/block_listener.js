@@ -64,7 +64,7 @@ module.exports = ({cache, network}) => {
           return cbk(null, []);
         }
 
-        return getPastBlocks({cache, current, network}, cbk);
+        return getPastBlocks({current, network}, cbk);
       }],
 
       // Tell subscribers about the recent transaction ids
