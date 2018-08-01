@@ -59,7 +59,7 @@ module.exports = (args, cbk) => {
       return getJsonFromCache({
         cache: args.cache,
         key: args.block_hash,
-        type: 'block',
+        type: 'block-i',
       },
       cbk);
     }],
@@ -87,7 +87,7 @@ module.exports = (args, cbk) => {
         cache: args.cache,
         key: args.block_hash,
         ms: cacheBlockMs,
-        type: 'block',
+        type: 'block-i',
         value: {
           previous_block_hash: getBlock.previous_block_hash,
           transaction_ids: getBlock.transaction_ids,

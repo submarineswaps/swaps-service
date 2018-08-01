@@ -7,7 +7,7 @@ const {setJsonInCache} = require('./../cache');
 const {returnResult} = require('./../async-util');
 
 const blockExpirationMs = 1000 * 60 * 60;
-const fetchBlocksCount = 2;
+const fetchBlocksCount = 3;
 
 /** Get past blocks
 
@@ -48,7 +48,7 @@ module.exports = ({cache, current, network}, cbk) => {
       return asyncAuto({
         // See if we have a cached block
         getCachedBlock: cbk => {
-          return getJsonFromCache({cache, key: cursor, type: 'block'}, cbk);
+          return getJsonFromCache({cache, key: cursor, type: 'block-i'}, cbk);
         },
 
         // Get the block
@@ -85,7 +85,7 @@ module.exports = ({cache, current, network}, cbk) => {
             cache,
             key: cursor,
             ms: blockExpirationMs,
-            type: 'block',
+            type: 'block-i',
             value: {
               id: getBlock.id,
               previous_block_hash: getBlock.previous_block_hash,
