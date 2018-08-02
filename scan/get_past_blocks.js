@@ -1,12 +1,9 @@
 const asyncAuto = require('async/auto');
 const asyncWhilst = require('async/whilst');
 
-const {getBlock} = require('./../chain');
-const {getJsonFromCache} = require('./../cache');
-const {setJsonInCache} = require('./../cache');
+const {getBlockMetadata} = require('./../blocks');
 const {returnResult} = require('./../async-util');
 
-const blockExpirationMs = 1000 * 60 * 20;
 const fetchBlocksCount = 3;
 
 /** Get past blocks
@@ -25,7 +22,7 @@ const fetchBlocksCount = 3;
     }]
   }
 */
-module.exports = ({cache, current, network}, cbk) => {
+module.exports = ({current, network}, cbk) => {
   if (!current) {
     return cbk([400, 'ExpectedCurrentBlockHash']);
   }
@@ -41,65 +38,13 @@ module.exports = ({cache, current, network}, cbk) => {
     () => blocks.length < fetchBlocksCount && cursor,
     cbk => {
       return asyncAuto({
-        // See if we have a cached block
-        getCachedBlock: cbk => {
-          return getJsonFromCache({
-            cache: 'memory',
-            key: cursor,
-            type: 'block-i',
-          },
-          cbk);
-        },
-
-        // Get the block
-        getBlock: ['getCachedBlock', ({getCachedBlock}, cbk) => {
-          if (!!getCachedBlock && !!getCachedBlock.previous_block_hash) {
-            return cbk(null, {
-              id: cursor,
-              is_cached: true,
-              previous_block_hash: getCachedBlock.previous_block_hash,
-              transaction_ids: getCachedBlock.transaction_ids,
-            });
-          }
-
-          return getBlock({network, id: cursor}, (err, res) => {
-            if (!!err) {
-              return cbk(err);
-            }
-
-            return cbk(null, {
-              id: cursor,
-              previous_block_hash: res.previous_block_hash,
-              transaction_ids: res.transaction_ids,
-            });
-          });
-        }],
-
-        // Add the block to the cache
-        setCachedBlock: ['getBlock', ({getBlock}, cbk) => {
-          if (!!getBlock.is_cached) {
-            return cbk();
-          }
-
-          return setJsonInCache({
-            cache: 'memory',
-            key: cursor,
-            ms: blockExpirationMs,
-            type: 'block-i',
-            value: {
-              id: getBlock.id,
-              previous_block_hash: getBlock.previous_block_hash,
-              transaction_ids: getBlock.transaction_ids,
-            },
-          },
-          cbk);
-        }],
+        // Get block metadata
+        getBlock: cbk => getBlockMetadata({network, id: cursor}, cbk),
 
         // Final blocks result
         blocks: ['getBlock', ({getBlock}, cbk) => {
-          cursor = getBlock.previous_block_hash;
-
           blocks.push(getBlock);
+          cursor = getBlock.previous_block_hash;
 
           return cbk(null, {blocks});
         }],

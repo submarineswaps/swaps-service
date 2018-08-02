@@ -8,6 +8,7 @@ const {returnResult} = require('./../async-util');
 const {setJsonInCache} = require('./../cache');
 
 const blockCacheMultiplier = 10;
+const type = 'get_block_placement';
 
 /** Get the placement of a block within the chain
 
@@ -51,7 +52,6 @@ module.exports = ({block, cache, network}, cbk) => {
     // See if the previous block hash value is cached
     getCached: ['getChainTip', ({getChainTip}, cbk) => {
       const key = [getChainTip.hash, block].join('/');
-      const type = 'block_placement';
 
       return getJsonFromCache({cache, key, type}, cbk);
     }],
@@ -77,9 +77,9 @@ module.exports = ({block, cache, network}, cbk) => {
 
       return setJsonInCache({
         cache,
+        type,
         key: [getChainTip.hash, block].join('/'),
         ms: networks[network].ms_per_block * blockCacheMultiplier,
-        type: 'block_placement',
         value: {
           current_confirmation_count: getFresh.current_confirmation_count,
           median_created_at: getFresh.median_created_at,

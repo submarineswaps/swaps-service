@@ -6,6 +6,7 @@ const {returnResult} = require('./../async-util');
 const {setJsonInCache} = require('./../cache');
 
 const cacheResultMs = 1000 * 60;
+const type = 'get_recent_fee_rate';
 
 /** Get recent fee rate value
 
@@ -36,7 +37,7 @@ module.exports = ({cache, network}, cbk) => {
 
     // Get the cached result
     getCached: ['validate', ({}, cbk) => {
-      return getJsonFromCache({cache, key: network, type: 'fee_rate'}, cbk);
+      return getJsonFromCache({cache, type, key: network}, cbk);
     }],
 
     // Get a fresh result
@@ -57,9 +58,9 @@ module.exports = ({cache, network}, cbk) => {
 
       return setJsonInCache({
         cache,
+        type,
         key: network,
         ms: cacheResultMs,
-        type: 'fee_rate',
         value: {fee_tokens_per_vbyte: getFresh.fee_tokens_per_vbyte},
       },
       cbk);

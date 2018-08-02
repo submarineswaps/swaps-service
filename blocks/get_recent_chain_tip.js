@@ -7,6 +7,7 @@ const {returnResult} = require('./../async-util');
 const {setJsonInCache} = require('./../cache');
 
 const cacheChainTipMs = 1000 * 5;
+const type = 'get_recent_chain_tip';
 
 /** Get recent-ish chain tip values
 
@@ -38,7 +39,7 @@ module.exports = ({cache, network}, cbk) => {
 
     // Get the cached chain tip value
     getCached: ['validate', ({}, cbk) => {
-      return getJsonFromCache({cache, key: network, type: 'chain_tip'}, cbk);
+      return getJsonFromCache({cache, type, key: network}, cbk);
     }],
 
     // Get the fresh chain tip hash value as necessary
@@ -67,9 +68,9 @@ module.exports = ({cache, network}, cbk) => {
 
       return setJsonInCache({
         cache,
+        type,
         key: network,
         ms: cacheChainTipMs,
-        type: 'chain_tip',
         value: {hash: chainTip.hash, height: chainTip.height},
       },
       cbk);

@@ -9,6 +9,8 @@ const {setJsonInCache} = require('./../cache');
 
 const cacheResultMs = 1000 * 60 * 10;
 const lastBlock = {};
+const typeBlock = 'get_transaction_block'
+const typeTx = 'get_transaction_tx';
 
 /** Get a raw transaction, with an optional cached result
 
@@ -46,7 +48,7 @@ module.exports = ({block, cache, id, network}, cbk) => {
         return cbk();
       }
 
-      return getJsonFromCache({cache, key: id, type: 'tx'}, cbk);
+      return getJsonFromCache({cache, key: id, type: typeTx}, cbk);
     }],
 
     // Get the cached block
@@ -65,7 +67,7 @@ module.exports = ({block, cache, id, network}, cbk) => {
         return cbk(null, {block: lastBlock[network].block});
       }
 
-      return getJsonFromCache({cache, key: block, type: 'block'}, cbk);
+      return getJsonFromCache({cache, key: block, type: typeBlock}, cbk);
     }],
 
     // Get a fresh block
@@ -109,7 +111,7 @@ module.exports = ({block, cache, id, network}, cbk) => {
         cache,
         key: block,
         ms: cacheResultMs,
-        type: 'block',
+        type: typeBlock,
         value: {block: getFreshBlock.block},
       },
       cbk);
@@ -139,7 +141,7 @@ module.exports = ({block, cache, id, network}, cbk) => {
         cache,
         key: id,
         ms: cacheResultMs,
-        type: 'tx',
+        type: typeTx,
         value: {transaction: getFreshTx.transaction},
       },
       cbk);

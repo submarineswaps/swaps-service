@@ -8,6 +8,7 @@ const swapsFromInputs = require('./swaps_from_inputs');
 const swapsFromOutputs = require('./swaps_from_outputs');
 
 const cacheSwapsMs = 1000 * 60 * 60 * 2;
+const type = 'detect_swaps';
 
 /** Check a transaction to see if there are any associated swaps.
 
@@ -54,7 +55,7 @@ module.exports = ({block, cache, id, network}, cbk) => {
 
     // See if we already know swaps related to this transaction
     getCachedSwaps: ['validate', ({}, cbk) => {
-      return getJsonFromCache({cache, key: id, type: 'swaps_for_tx'}, cbk);
+      return getJsonFromCache({cache, type, key: id}, cbk);
     }],
 
     // Get the raw transaction to look for swaps
@@ -133,9 +134,9 @@ module.exports = ({block, cache, id, network}, cbk) => {
 
       return setJsonInCache({
         cache,
+        type,
         key: id,
         ms: cacheSwapsMs,
-        type: 'swaps_for_tx',
         value: res.swaps,
       },
       cbk);

@@ -15,6 +15,7 @@ const interval = retryCount => 50 * Math.pow(2, retryCount); // Retry backoff
 const rateCacheTimeMs = 1000 * 60 * 10;
 const remoteServiceTimeoutMs = 1000 * 20;
 const times = 10; // Retry times
+const type = 'get_exchange_rate';
 
 /** Get the number of cents for a network's tokens
 
@@ -65,7 +66,7 @@ module.exports = ({cache, network}, cbk) => {
 
     // Get the cached exchange rate
     getCached: ['validate', ({}, cbk) => {
-      return getJsonFromCache({cache, key: network, type: 'fiat_rate'}, cbk);
+      return getJsonFromCache({cache, type, key: network}, cbk);
     }],
 
     // Get the fresh exchange rate
@@ -116,9 +117,9 @@ module.exports = ({cache, network}, cbk) => {
 
       return setJsonInCache({
         cache,
+        type,
         key: network,
         ms: rateCacheTimeMs,
-        type: 'fiat_rate',
         value: {cents: getFresh.cents, time: getFresh.time},
       },
       cbk);
