@@ -50,8 +50,8 @@ module.exports = ({cache, networks}, cbk) => {
         });
 
         return cbk(null, rates);
-      } catch (e) {
-        return cbk([500, 'FailedToGetNetworkRates', e]);
+      } catch (err) {
+        return cbk([500, 'FailedToGetNetworkRates', err]);
       }
     }],
 

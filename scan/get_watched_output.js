@@ -74,7 +74,7 @@ module.exports = ({address, cache, network}, cbk) => {
         const scriptDetails = swapScriptDetails({network, script});
 
         return cbk(null, scriptDetails.destination_public_key);
-      } catch (e) {
+      } catch (err) {
         // Exit early and do not pass along errors.
         return cbk();
       }
@@ -147,7 +147,7 @@ module.exports = ({address, cache, network}, cbk) => {
           script: getCachedAddress.script,
           tokens: getCachedAddress.tokens,
           type: 'funding',
-        }
+        },
       });
     }],
   },

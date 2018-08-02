@@ -35,7 +35,7 @@ module.exports = ({current, network}, cbk) => {
   let cursor = current;
 
   return asyncWhilst(
-    () => blocks.length < fetchBlocksCount && cursor,
+    () => (blocks.length < fetchBlocksCount) && cursor,
     cbk => {
       return asyncAuto({
         // Get block metadata

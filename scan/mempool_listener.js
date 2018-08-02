@@ -6,6 +6,7 @@ const difference = require('lodash/difference');
 
 const {getMempool} = require('./../chain');
 
+const event = 'transaction';
 const pollingDelayMs = 1000;
 
 /** Poll the mempool for transactions. When we find a transaction in the
@@ -50,9 +51,8 @@ module.exports = ({network}) => {
           return cbk();
         }
 
-        difference(freshIds, ids).forEach(id => {
-          return listener.emit('transaction', {id});
-        });
+        // Emit all transactions new to the mempool
+        difference(freshIds, ids).forEach(id => listener.emit(event, {id}));
 
         ids = freshIds;
 
@@ -60,9 +60,7 @@ module.exports = ({network}) => {
       }],
 
       // Delay for the next poll
-      delayForNextPoll: ['differentIds', ({}, cbk) => {
-        return setTimeout(cbk, pollingDelayMs);
-      }],
+      delay: ['differentIds', ({}, cbk) => setTimeout(cbk, pollingDelayMs)],
     },
     cbk);
   },

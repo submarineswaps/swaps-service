@@ -42,7 +42,8 @@ module.exports = args => {
     throw new Error('ExpectedValidTransactionHex');
   }
 
-  const outputIndex = transaction.outs.map(n => n.script.toString('hex'))
+  const outputIndex = transaction.outs
+    .map(n => n.script.toString('hex'))
     .findIndex(script => scriptPubs.find(n => script === n));
 
   if (outputIndex === notFoundIndex) {
@@ -54,6 +55,12 @@ module.exports = args => {
   if (!output.value) {
     throw new Error('ExpectedOutputValue');
   }
+
+  console.log('FINALLY', {
+    output_index: outputIndex,
+    output_tokens: output.value,
+    transaction_id: transaction.getId(),
+  });
 
   return {
     output_index: outputIndex,

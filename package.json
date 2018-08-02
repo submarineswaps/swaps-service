@@ -55,7 +55,7 @@
     "bitcoind_regtest": "tap test/bitcoind_regtest/*.js",
     "btcd_regtest": "tap test/btcd_regtest/*.js",
     "ltcd_ltcregtest": "tap test/ltcd_ltcregtest/*.js",
-    "test": "tap test/*.js test/async-util/*.js test/chain/*.js  test/script/*.js test/swaps/*.js"
+    "test": "tap test/*.js test/async-util/*.js test/chain/*.js test/script/*.js test/swaps/*.js"
   },
   "version": "1.0.0"
 }

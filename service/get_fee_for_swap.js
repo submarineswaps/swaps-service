@@ -96,8 +96,8 @@ module.exports = ({cache, network, to, tokens}, cbk) => {
         });
 
         return cbk(null, {fee: fees.fee, tokens: fees.tokens});
-      } catch (e) {
-        return cbk([500, 'FailedToCalculateFeeForSwap', e]);
+      } catch (err) {
+        return cbk([500, 'FailedToCalculateFeeForSwap', err]);
       }
     }],
   },

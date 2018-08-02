@@ -4,10 +4,10 @@ const asyncUntil = require('async/until');
 
 const findScriptPubInBlock = require('./find_scriptpub_in_block');
 const findScriptPubInMempool = require('./find_scriptpub_in_mempool');
-const {getCurrentHash} = require('./../chain');
-const {getTransaction} = require('./../chain');
-const {returnResult} = require('./../async-util');
-const {swapAddress} = require('./../swaps');
+const {getCurrentHash} = require('./../../chain');
+const {getTransaction} = require('./../../chain');
+const {returnResult} = require('./../../async-util');
+const {swapAddress} = require('./../../swaps');
 
 const blockSearchRateLimit = 300;
 

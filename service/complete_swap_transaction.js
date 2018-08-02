@@ -216,8 +216,8 @@ module.exports = (args, cbk) => {
           private_key: args.private_key,
           utxos: res.fundingUtxos.matching_outputs,
         }));
-      } catch (e) {
-        return cbk([500, 'ExpectedClaimTransaction', e]);
+      } catch (err) {
+        return cbk([500, 'ExpectedClaimTransaction', err]);
       }
     }],
 
@@ -228,7 +228,7 @@ module.exports = (args, cbk) => {
       return broadcastTransaction({transaction, network: args.network}, cbk);
     }],
 
-    // Add the swap to the pool
+    // Add the completed swap to the pool
     addSwap: [
       'broadcastTransaction',
       'fundingUtxos',

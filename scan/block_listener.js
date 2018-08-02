@@ -38,7 +38,7 @@ const pollingDelayMs = 1000;
   }
 */
 module.exports = ({cache, network}) => {
-  if (!cache || ['dynamodb', 'memory', 'redis'].indexOf(cache) === notFound) {
+  if (!cache || ['memory', 'redis'].indexOf(cache) === notFound) {
     throw new Error('ExpectedCacheStrategy');
   }
 

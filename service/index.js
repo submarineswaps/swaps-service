@@ -1,7 +1,6 @@
 const broadcastTransaction = require('./broadcast_transaction');
 const checkSwapStatus = require('./check_swap_status');
 const createSwap = require('./create_swap');
-const findSwapTransaction = require('./find_swap_transaction');
 const getActiveNetworks = require('./get_active_networks');
 const getAddressDetails = require('./get_address_details');
 const getExchangeRates = require('./get_exchange_rates');
@@ -15,7 +14,6 @@ module.exports = {
   broadcastTransaction,
   checkSwapStatus,
   createSwap,
-  findSwapTransaction,
   getActiveNetworks,
   getAddressDetails,
   getExchangeRates,

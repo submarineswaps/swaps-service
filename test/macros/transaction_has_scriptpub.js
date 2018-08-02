@@ -1,14 +1,13 @@
 const asyncAuto = require('async/auto');
 
-const {getJsonFromCache} = require('./../cache');
-const {getTransaction} = require('./../chain');
-const {returnResult} = require('./../async-util');
-const {setJsonInCache} = require('./../cache');
-const {Transaction} = require('./../tokenslib');
+const {getJsonFromCache} = require('./../../cache');
+const {getTransaction} = require('./../../chain');
+const {returnResult} = require('./../../async-util');
+const {setJsonInCache} = require('./../../cache');
+const {Transaction} = require('./../../tokenslib');
 
 const cacheTxMs = 60 * 60 * 1000;
 const notFoundIndex = -1;
-const type = 'transaction_has_scriptpub';
 
 /** Determine if a transaction has a script pub output
 
@@ -55,9 +54,9 @@ module.exports = (args, cbk) => {
     // See if we have a cached result to this query
     getCachedTransaction: ['validate', ({}, cbk) => {
       return getJsonFromCache({
-        type,
         cache: 'memory',
         key: args.transaction_id,
+        type: 'transaction',
       },
       cbk);
     }],
@@ -91,10 +90,10 @@ module.exports = (args, cbk) => {
       }
 
       return setJsonInCache({
-        type,
         cache: 'memory',
         key: args.transaction_id,
         ms: cacheTxMs,
+        type: 'transaction',
         value: getTransaction.transaction,
       },
       cbk);

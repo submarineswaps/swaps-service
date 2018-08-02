@@ -3,7 +3,7 @@ const {subscribeToInvoices} = require('ln-service');
 
 const daemons = {};
 
-/** Get the Lightning Network Daemon connection
+/** Get the Lightning Network Daemon connection.
 
   {
     network: <Network Name String>
@@ -54,6 +54,7 @@ module.exports = ({network}) => {
   daemons[network] = {lnd, sub};
 
   // Clear daemon cache on errors or end of subscription
+  // This subscription allows opportunistic reconnecting on remote restarts.
   daemons[network].sub.on('end', () => daemons[network] = null);
   daemons[network].sub.on('error', ({}) => daemons[network] = null);
 

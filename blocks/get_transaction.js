@@ -117,12 +117,13 @@ module.exports = ({block, cache, id, network}, cbk) => {
       cbk);
     }],
 
-    // Set the fresh result into the cache
+    // Set the fresh transaction result into the cache
     setCachedTx: [
       'getCachedTx',
       'getFreshTx',
       ({getCachedTx, getFreshTx}, cbk) =>
     {
+      // Exit early when this is an in-block lookup or there's no cache set
       if (!!block || !cache) {
         return cbk();
       }
@@ -153,13 +154,10 @@ module.exports = ({block, cache, id, network}, cbk) => {
       'getFreshBlock',
       ({getCachedBlock, getFreshBlock}, cbk) =>
     {
-      if (!block) {
-        return cbk();
-      }
-
       const result = getFreshBlock || getCachedBlock;
 
-      if (!result || !result.block) {
+      // Exit early when there's no block result to look for a tx in
+      if (!block || !result || !result.block) {
         return cbk();
       }
 
@@ -187,11 +185,11 @@ module.exports = ({block, cache, id, network}, cbk) => {
     {
       if (!!txInBlock) {
         return cbk(null, {transaction: txInBlock});
+      } else {
+        const {transaction} = getFreshTx || getCachedTx;
+
+        return cbk(null, {transaction});
       }
-
-      const {transaction} = getFreshTx || getCachedTx;
-
-      return cbk(null, {transaction});
     }],
   },
   returnResult({of: 'result'}, cbk));

@@ -4,7 +4,6 @@ const chainRpc = require('node-bitcoin-rpc');
 const credentialsForNetwork = require('./credentials_for_network');
 
 const chainTimeoutMs = 3000;
-let pauseOnErrorDate;
 
 /** Execute Chain RPC command
 

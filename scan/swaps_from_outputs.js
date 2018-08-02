@@ -53,23 +53,20 @@ module.exports = ({cache, network, transaction}, cbk) => {
       return cbk();
     },
 
-    // Transaction id
-    id: ['validate', ({}, cbk) => {
+    // Transaction
+    tx: ['validate', ({}, cbk) => {
       try {
-        return cbk(null, Transaction.fromHex(transaction).getId());
+        return cbk(null, Transaction.fromHex(transaction));
       } catch (e) {
         return cbk([400, 'ExpectedValidTransaction']);
       }
     }],
 
+    // Transaction id
+    id: ['tx', ({tx}, cbk) => cbk(null, tx.getId())],
+
     // Derive transaction outputs
-    outputs: ['validate', ({}, cbk) => {
-      try {
-        return cbk(null, Transaction.fromHex(transaction).outs);
-      } catch (e) {
-        return cbk([400, 'ExpectedValidTransaction']);
-      }
-    }],
+    outputs: ['tx', ({tx}, cbk) => cbk(null, tx.outs)],
 
     // Addresses associated with outputs, if any
     addresses: ['outputs', ({outputs}, cbk) => {
@@ -88,7 +85,7 @@ module.exports = ({cache, network, transaction}, cbk) => {
             tokens: value,
             type: addressDetails({address, network}).type,
           };
-        } catch (e) {
+        } catch (err) {
           return null;
         }
       });

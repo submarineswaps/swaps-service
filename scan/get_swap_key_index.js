@@ -37,8 +37,8 @@ module.exports = ({cache, network, script}, cbk) => {
     swapDetails: ['validate', ({}, cbk) => {
       try {
         return cbk(null, swapScriptDetails({network, script}));
-      } catch (e) {
-        return cbk([500, 'FailedToDeriveSwapDetailsForKeyIndex', e]);
+      } catch (err) {
+        return cbk([500, 'FailedToDeriveSwapDetailsForKeyIndex', err]);
       }
     }],
 

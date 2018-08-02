@@ -161,7 +161,7 @@ module.exports = ({cache, network}) => {
     listener.on('transaction', ({block, id}) => {
       // Newer transactions are more likely to be hits, newer gets priority
       // Block transactions are fast to lookup, they get ultimate priority
-      const priority = !!block ? MIN_SAFE_INTEGER : -detectJobs.length();
+      const priority = !!block ? MIN_SAFE_INTEGER : 1e8 - detectJobs.length();
 
       return detectJobs.push({block, cache, id, network}, priority);
     });

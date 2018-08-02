@@ -1,10 +1,13 @@
 const asyncAuto = require('async/auto');
 const asyncDetectLimit = require('async/detectLimit');
 
-const {getBlockMetadata} = require('./../blocks');
-const {returnResult} = require('./../async-util');
+const {getBlock} = require('./../../chain');
+const {getJsonFromCache} = require('./../../cache');
+const {returnResult} = require('./../../async-util');
+const {setJsonInCache} = require('./../../cache');
 const transactionHasScriptPub = require('./transaction_has_scriptpub');
 
+const cacheBlockMs = 30 * 1000;
 const checkFanOutLimit = 2;
 
 /** Scan a block to find a transaction that matches script-pubs
@@ -51,11 +54,44 @@ module.exports = (args, cbk) => {
       return cbk();
     },
 
+    // Get a block out of the cache
+    getCachedBlock: ['validate', ({}, cbk) => {
+      return getJsonFromCache({
+        cache: args.cache,
+        key: args.block_hash,
+        type: 'block',
+      },
+      cbk);
+    }],
+
     // Get the transaction ids in the referenced block hash
-    getBlock: ['validate', ({}, cbk) => {
-      return getBlockMetadata({
-        id: args.block_hash,
-        network: args.network,
+    getBlock: ['getCachedBlock', ({getCachedBlock}, cbk) => {
+      if (!!getCachedBlock && Array.isArray(getCachedBlock.transaction_ids)) {
+        return cbk(null, {
+          is_cached_result: true,
+          previous_block_hash: getCachedBlock.previous_block_hash,
+          transaction_ids: getCachedBlock.transaction_ids,
+        });
+      }
+
+      return getBlock({id: args.block_hash, network: args.network}, cbk);
+    }],
+
+    // Add the block to the cache
+    setCachedBlock: ['getBlock', ({getBlock}, cbk) => {
+      if (!!getBlock.is_cached_result) {
+        return cbk();
+      }
+
+      return setJsonInCache({
+        cache: args.cache,
+        key: args.block_hash,
+        ms: cacheBlockMs,
+        type: 'block',
+        value: {
+          previous_block_hash: getBlock.previous_block_hash,
+          transaction_ids: getBlock.transaction_ids,
+        },
       },
       cbk);
     }],

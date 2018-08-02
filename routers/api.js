@@ -12,19 +12,19 @@ const {isConfigured} = require('./../service');
 const {networks} = require('./../tokenslib');
 const {returnJson} = require('./../async-util');
 
-const cache = 'redis';
 const knownNetworks = Object.keys(networks);
 
 /** Make an api router
 
   {
+    cache: <Cache Type String>
     log: <Log Function>
   }
 
   @returns
   <Router Object>
 */
-module.exports = ({log}) => {
+module.exports = ({cache, log}) => {
   const router = Router({caseSensitive: true});
 
   router.use(bodyParser.json());
