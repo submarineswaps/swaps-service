@@ -1205,8 +1205,40 @@ App.submitRefundRecovery = function(event) {
     const address = details.swap_address;
 
     switch (details.network) {
+    case 'bch':
+    case 'bchtestnet':
+      const bchNet = details.network === 'bch' ? 'bch' : 'test-bch';
+
+      fetch(`https://${bchNet}-insight.bitpay.com/api/addrs/${address}/utxo`)
+        .then(r => r.json())
+        .then(transactions => {
+          if (!Array.isArray(transactions) || !transactions.length) {
+            return $('.no-balance').collapse('show');
+          }
+
+          const [tx] = transactions;
+
+          if (!!tx && !!tx.txid && !$('.refund-transaction-id').val()) {
+            $('.refund-transaction-id').val(tx.txid);
+          }
+
+          if (!!tx && tx.vout !== undefined && !$('.refund-tx-vout').val()) {
+            $('.refund-tx-vout').val(tx.vout);
+          }
+
+          return;
+        })
+        .catch(err => {
+          console.log([503, 'FailedToFetchAddressDetails']);
+          return;
+        });
+      break;
+
+    case 'bitcoin':
     case 'testnet':
-      fetch(`https://api.blockcypher.com/v1/btc/test3/addrs/${address}/full`)
+      const bNet = details.network === 'bitcoin' ? 'main' : 'test3';
+
+      fetch(`https://api.blockcypher.com/v1/btc/${bNet}/addrs/${address}/full`)
         .then(r => r.json())
         .then(details => {
           if (!details || !Array.isArray(details.txs) || !details.txs.length) {
@@ -1243,34 +1275,11 @@ App.submitRefundRecovery = function(event) {
         });
       break;
 
-    case 'bchtestnet':
-      fetch(`https://test-bch-insight.bitpay.com/api/addrs/${address}/utxo`)
-        .then(r => r.json())
-        .then(transactions => {
-          if (!Array.isArray(transactions) || !transactions.length) {
-            return $('.no-balance').collapse('show');
-          }
-
-          const [tx] = transactions;
-
-          if (!!tx && !!tx.txid && !$('.refund-transaction-id').val()) {
-            $('.refund-transaction-id').val(tx.txid);
-          }
-
-          if (!!tx && tx.vout !== undefined && !$('.refund-tx-vout').val()) {
-            $('.refund-tx-vout').val(tx.vout);
-          }
-
-          return;
-        })
-        .catch(err => {
-          console.log([503, 'FailedToFetchAddressDetails']);
-          return;
-        });
-      break;
-
+    case 'ltc':
     case 'ltctestnet':
-      fetch(`https://chain.so/api/v2/get_tx_received/LTCTEST/${address}`)
+      const lNet = details.network === 'ltc' ? 'LTC' : 'LTCTEST';
+
+      fetch(`https://chain.so/api/v2/get_tx_received/${lNet}/${address}`)
         .then(r => r.json())
         .then(details => {
           if (!details || !details.data || !Array.isArray(details.data.txs)) {
