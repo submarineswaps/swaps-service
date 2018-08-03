@@ -67,6 +67,9 @@ module.exports = ({block, cache, id, network}, cbk) => {
         return cbk(null, {block: lastBlock[network].block});
       }
 
+      // Last block doesn't match the block we're looking at, wipe "lastBlock"
+      lastBlock[network] = {};
+
       return getJsonFromCache({cache, key: block, type: typeBlock}, cbk);
     }],
 
@@ -103,9 +106,6 @@ module.exports = ({block, cache, id, network}, cbk) => {
       if (!cache || !getFreshBlock || !getFreshBlock.block) {
         return cbk();
       }
-
-      lastBlock[network].block = getFreshBlock.block;
-      lastBlock[network].id = block;
 
       return setJsonInCache({
         cache,
@@ -164,7 +164,18 @@ module.exports = ({block, cache, id, network}, cbk) => {
       const hexBlock = result.block;
 
       try {
-        const tx = Block.fromHex(hexBlock).transactions.find(t => t.getId());
+        const cachedTx = lastBlock[network].transactions;
+
+        const transactions = cachedTx || Block.fromHex(hexBlock).transactions;
+
+        lastBlock[network].block = result.block;
+        lastBlock[network].id = block;
+
+        if (!cachedTx) {
+          lastBlock[network].transactions = transactions;
+        }
+
+        const tx = transactions.find(t => t.getId());
 
         if (!tx) {
           return cbk([400, 'TransactionNotFoundInBlock']);

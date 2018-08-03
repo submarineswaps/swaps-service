@@ -14,11 +14,22 @@ const swapScriptDetails = require('./swap_script_details');
   <Is Swap Spend Bool>
 */
 module.exports = ({network, script, witness}) => {
-  const [redeemScript] = scriptElements({script, witness}).reverse();
+  const elements = scriptElements({script, witness});
+
+  if (!Array.isArray(elements)) {
+    return false;
+  }
+
+  const redeem = !!witness && !witness.length ? elements[2] : elements[0];
+  const secret = elements[1];
+
+  if (!secret) {
+    return false;
+  }
 
   try {
-    return !!swapScriptDetails({network, script: redeemScript});
-  } catch (e) {
+    return !!swapScriptDetails({network, script: redeem});
+  } catch (err) {
     return false;
   }
 };

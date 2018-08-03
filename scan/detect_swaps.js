@@ -7,7 +7,8 @@ const {setJsonInCache} = require('./../cache');
 const swapsFromInputs = require('./swaps_from_inputs');
 const swapsFromOutputs = require('./swaps_from_outputs');
 
-const cacheSwapsMs = 1000 * 60 * 60 * 2;
+const cacheKeySize = 16;
+const cacheSwapsMs = 1000 * 60 * 10;
 const type = 'detect_swaps';
 
 /** Check a transaction to see if there are any associated swaps.
@@ -53,9 +54,12 @@ module.exports = ({block, cache, id, network}, cbk) => {
       return cbk();
     },
 
+    // Cache key
+    key: ['validate', ({}, cbk) => cbk(null, id.substring(0, cacheKeySize))],
+
     // See if we already know swaps related to this transaction
-    getCachedSwaps: ['validate', ({}, cbk) => {
-      return getJsonFromCache({cache, type, key: id}, cbk);
+    getCachedSwaps: ['key', ({key}, cbk) => {
+      return getJsonFromCache({cache: 'memory', key, type}, cbk);
     }],
 
     // Get the raw transaction to look for swaps
@@ -79,7 +83,7 @@ module.exports = ({block, cache, id, network}, cbk) => {
     // Determine if the inputs have swaps. (Claim or refund type)
     swapsFromInputs: ['getTransaction', ({getTransaction}, cbk) => {
       // Exit early when there's no transaction to lookup
-      if (!getTransaction) {
+      if (!getTransaction || !getTransaction.transaction) {
         return cbk();
       }
 
@@ -91,7 +95,7 @@ module.exports = ({block, cache, id, network}, cbk) => {
     // Determine if the outputs have swap output scripts (funding type)
     swapsFromOutputs: ['getTransaction', ({getTransaction}, cbk) => {
       // Exit early when there's no transaction to lookup
-      if (!getTransaction) {
+      if (!getTransaction || !getTransaction.transaction) {
         return cbk();
       }
 
@@ -126,18 +130,23 @@ module.exports = ({block, cache, id, network}, cbk) => {
     }],
 
     // Set cached swap status
-    setCachedSwaps: ['getCachedSwaps', 'swaps', (res, cbk) => {
+    setCachedSwaps: [
+      'getCachedSwaps',
+      'key',
+      'swaps',
+      ({getCachedSwaps, key, swaps}, cbk) =>
+    {
       // Exit early without caching when the swaps are a cached result
-      if (!!res.getCachedSwaps) {
+      if (!!getCachedSwaps) {
         return cbk();
       }
 
       return setJsonInCache({
-        cache,
+        key,
         type,
-        key: id,
+        cache: 'memory',
         ms: cacheSwapsMs,
-        value: res.swaps,
+        value: swaps,
       },
       cbk);
     }],

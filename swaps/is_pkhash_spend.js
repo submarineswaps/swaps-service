@@ -15,11 +15,11 @@ const sigMaxLength = 72;
   <Is a Public Key Hash Spend Bool>
 */
 module.exports = ({script, witness}) => {
-  const isWitness = Array.isArray(witness) && !!witness.length;
+  const isWitness = Array.isArray(witness) && !!witness && !!witness.length;
 
   const scriptElements = isWitness ? witness : decompile(script);
 
-  if (scriptElements.length !== payToPublicKeyLength) {
+  if (!scriptElements || scriptElements.length !== payToPublicKeyLength) {
     return false;
   }
 

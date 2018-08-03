@@ -47,7 +47,7 @@ module.exports = ({cache, network, transaction}, cbk) => {
       }
 
       if (!transaction) {
-        return cbk([400, 'ExpectedTransaction']);
+        return cbk([400, 'ExpectedTransactionForSwapOutputs']);
       }
 
       return cbk();

@@ -33,10 +33,14 @@ module.exports = ({cache, network, transaction}, cbk) => {
   return asyncAuto({
     // Transaction id for swap
     id: cbk => {
+      if (!transaction) {
+        return cbk([400, 'ExpectedTransactionHexForInputs']);
+      }
+
       try {
         return cbk(null, Transaction.fromHex(transaction).getId());
-      } catch (e) {
-        return cbk([400, 'ExpectedValidTransactionHex', e]);
+      } catch (err) {
+        return cbk([400, 'ExpectedValidTransactionHex', err]);
       }
     },
 
@@ -61,8 +65,8 @@ module.exports = ({cache, network, transaction}, cbk) => {
     swaps: ['validate', ({}, cbk) => {
       try {
         return cbk(null, swapResolutions({network, transaction}).resolutions);
-      } catch (e) {
-        return cbk([500, 'FailedToDeriveSwapResolutions', e]);
+      } catch (err) {
+        return cbk([500, 'FailedToDeriveSwapResolutions', err]);
       }
     }],
 

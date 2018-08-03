@@ -4,6 +4,8 @@ const {getJsonFromCache} = require('./../cache');
 const {returnResult} = require('./../async-util');
 const {swapScriptDetails} = require('./../swaps');
 
+const lastAddress = {};
+
 /** Get details about a watched output
 
   {
@@ -44,6 +46,11 @@ module.exports = ({address, cache, network}, cbk) => {
 
     // Find cached address
     getCachedAddress: ['validate', ({}, cbk) => {
+      // Exit early when the last address lookup is hit
+      if (!!lastAddress[network] && lastAddress[network].address === address) {
+        return cbk(null, lastAddress[network].swap);
+      }
+
       return getJsonFromCache({
         cache,
         key: address,
@@ -58,7 +65,11 @@ module.exports = ({address, cache, network}, cbk) => {
           return cbk();
         }
 
-        return cbk(null, {id: res.id, script: res.script, tokens: res.tokens});
+        const swap = {id: res.id, script: res.script, tokens: res.tokens};
+
+        lastAddress[network] = {address, swap};
+
+        return cbk(null, swap);
       });
     }],
 

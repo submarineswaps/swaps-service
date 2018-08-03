@@ -32,8 +32,8 @@ module.exports = ({network, transaction}) => {
   try {
     // Decode the raw transaction
     inputs = Transaction.fromHex(transaction).ins;
-  } catch (e) {
-    throw e;
+  } catch (err) {
+    throw err;
   }
 
   // Find inputs that appear to be swap spends.
@@ -43,7 +43,7 @@ module.exports = ({network, transaction}) => {
     .map(({hash, index, script, witness}) => {
       const elements = scriptElements({script, witness});
 
-      const redeemScript = !witness.length ? elements[2] : elements[0];
+      const redeem = !!witness && !witness.length ? elements[2] : elements[0];
       const secret = elements[1];
 
       const isClaim = secret.length === preimageByteLength;
@@ -51,7 +51,7 @@ module.exports = ({network, transaction}) => {
       return {
         outpoint: `${hash.reverse().toString('hex')}:${index}`,
         preimage: isClaim ? secret.toString('hex') : null,
-        script: redeemScript.toString('hex'),
+        script: redeem.toString('hex'),
         type: isClaim ? 'claim' : 'refund',
       };
     });

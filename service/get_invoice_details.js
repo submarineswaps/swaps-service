@@ -80,6 +80,15 @@ module.exports = ({cache, invoice, network}, cbk) => {
       }
     }],
 
+    // Parameters for a swap with an invoice
+    swapParams: ['validate', ({}, cbk) => {
+      try {
+        return cbk(null, swapParameters({network}));
+      } catch (e) {
+        return cbk([400, 'ExpectedSwapParameters', e]);
+      }
+    }],
+
     // Get the chain tip for the invoice's network
     getInvoiceChainTip: ['parsedInvoice', ({parsedInvoice}, cbk) => {
       return getRecentChainTip({cache, network: parsedInvoice.network}, cbk);
@@ -99,15 +108,6 @@ module.exports = ({cache, invoice, network}, cbk) => {
         return cbk(null, lightningDaemon({network: parsedInvoice.network}));
       } catch (err) {
         return cbk([500, 'FailedToInstantiateLndConnection', err, network]);
-      }
-    }],
-
-    // Parameters for a swap with an invoice
-    swapParams: ['validate', ({}, cbk) => {
-      try {
-        return cbk(null, swapParameters({network}));
-      } catch (e) {
-        return cbk([400, 'ExpectedSwapParameters', e]);
       }
     }],
 

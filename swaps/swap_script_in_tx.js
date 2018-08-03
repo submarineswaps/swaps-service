@@ -36,7 +36,7 @@ module.exports = args => {
   }
 
   if (!args.transaction) {
-    throw new Error('ExpectedTransaction');
+    throw new Error('ExpectedTransactionForSwapScriptInTx');
   }
 
   const p2sh = p2shOutputScript({script: args.redeem_script});

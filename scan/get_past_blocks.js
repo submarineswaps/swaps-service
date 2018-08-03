@@ -43,6 +43,8 @@ module.exports = ({current, network}, cbk) => {
 
         // Final blocks result
         blocks: ['getBlock', ({getBlock}, cbk) => {
+          getBlock.id = cursor;
+
           blocks.push(getBlock);
           cursor = getBlock.previous_block_hash;
 

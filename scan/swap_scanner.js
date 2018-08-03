@@ -8,6 +8,8 @@ const mempoolListener = require('./mempool_listener');
 const maxChecksCount = 3;
 const {MIN_SAFE_INTEGER} = Number;
 
+let jobCount = 0;
+
 /** The swap output scanner is an event emitter for swap outputs
 
   When instantiated the scanner will start looking for relevant swap outputs.
@@ -84,6 +86,7 @@ module.exports = ({cache, network}) => {
     throw new Error('ExpectedNetworkName');
   }
 
+  let bar;
   const scanner = new EventEmitter();
 
   const listeners = [
@@ -93,6 +96,8 @@ module.exports = ({cache, network}) => {
 
   const detectJobs = asyncPriorityQueue(({block, cache, id, network}, cbk) => {
     return detectSwaps({block, cache, id, network}, (err, detected) => {
+      jobCount--;
+
       if (!!err) {
         return scanner.emit('error', err);
       }
@@ -162,6 +167,8 @@ module.exports = ({cache, network}) => {
       // Newer transactions are more likely to be hits, newer gets priority
       // Block transactions are fast to lookup, they get ultimate priority
       const priority = !!block ? MIN_SAFE_INTEGER : 1e8 - detectJobs.length();
+
+      jobCount++;
 
       return detectJobs.push({block, cache, id, network}, priority);
     });

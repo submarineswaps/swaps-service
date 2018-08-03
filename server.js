@@ -38,12 +38,22 @@ const scanners = Object.keys(networks).map(network => {
     return null;
   }
 
-  const scanner = swapScanner({cache, network});
+  let scanner;
 
-  scanner.on('claim', swap => addSwapToPool({cache, swap}, logOnErr));
-  scanner.on('error', err => logOnErr);
-  scanner.on('funding', swap => addSwapToPool({cache, swap}, logOnErr));
-  scanner.on('refund', swap => addSwapToPool({cache, swap}, logOnErr));
+  const startScanner = () => {
+    scanner = swapScanner({cache, network});
+
+    scanner.on('claim', swap => addSwapToPool({cache, swap}, logOnErr));
+    scanner.on('error', err => {
+      console.log(err);
+
+      return setTimeout(startScanner, 1000);
+    });
+    scanner.on('funding', swap => addSwapToPool({cache, swap}, logOnErr));
+    scanner.on('refund', swap => addSwapToPool({cache, swap}, logOnErr));
+  };
+
+  startScanner();
 
   confirmChainBackend({network}, logOnErr);
 
