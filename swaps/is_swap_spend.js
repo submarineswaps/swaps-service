@@ -1,4 +1,3 @@
-const {decompile} = require('./../tokenslib').script;
 const scriptElements = require('./script_elements');
 const swapScriptDetails = require('./swap_script_details');
 
@@ -14,11 +13,17 @@ const swapScriptDetails = require('./swap_script_details');
   <Is Swap Spend Bool>
 */
 module.exports = ({network, script, witness}) => {
-  const [redeemScript] = scriptElements({script, witness}).reverse();
+  const elements = scriptElements({script, witness});
+
+  if (!Array.isArray(elements)) {
+    return false;
+  }
+
+  const [redeemScript] = elements.reverse();
 
   try {
     return !!swapScriptDetails({network, script: redeemScript});
-  } catch (e) {
+  } catch (err) {
     return false;
   }
 };

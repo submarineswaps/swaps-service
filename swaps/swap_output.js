@@ -56,12 +56,6 @@ module.exports = args => {
     throw new Error('ExpectedOutputValue');
   }
 
-  console.log('FINALLY', {
-    output_index: outputIndex,
-    output_tokens: output.value,
-    transaction_id: transaction.getId(),
-  });
-
   return {
     output_index: outputIndex,
     output_tokens: output.value,
