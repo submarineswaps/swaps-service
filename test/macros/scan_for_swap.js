@@ -73,8 +73,8 @@ module.exports = ({cache, daemon, network, type}, cbk) => {
     generateKeyPair: ['index', ({index}, cbk) => {
       try {
         return cbk(null, serverSwapKeyPair({index, network}));
-      } catch (e) {
-        return cbk([0, 'ExpectedGeneratedKeyPair', e]);
+      } catch (err) {
+        return cbk([500, 'ExpectedGeneratedKeyPair', err]);
       }
     }],
 
@@ -127,8 +127,8 @@ module.exports = ({cache, daemon, network, type}, cbk) => {
         scanner.on('error', () => {});
 
         return cbk(null, scanner);
-      } catch (e) {
-        return cbk([0, 'FailedToInitScanner', e]);
+      } catch (err) {
+        return cbk([500, 'FailedToInitScanner', err]);
       }
     }],
 

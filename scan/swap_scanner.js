@@ -86,7 +86,6 @@ module.exports = ({cache, network}) => {
     throw new Error('ExpectedNetworkName');
   }
 
-  let bar;
   const scanner = new EventEmitter();
 
   const listeners = [

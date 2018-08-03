@@ -6,7 +6,7 @@ const credentialsForNetwork = require('./credentials_for_network');
 
 const chainTimeoutMs = 3000;
 const interval = retryCount => 50 * Math.pow(2, retryCount); // Retry backoff
-const times = 10; // Retry times
+const times = 5; // Retry count.
 
 /** Execute Chain RPC command
 
