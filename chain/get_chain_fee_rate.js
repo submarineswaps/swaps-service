@@ -1,11 +1,11 @@
 const chainRpc = require('./call_chain_rpc');
 const {estimateSmartFee} = require('./conf/rpc_commands');
-const parseTokenValue = require('./parse_token_value');
 
 const bytesPerKb = 1e3;
 const cmd = estimateSmartFee;
 const defaultFee = 10;
 const defaultBlockCount = 6;
+const divisibility = 1e8;
 
 /** Get blockchain fee rate
 
@@ -43,15 +43,9 @@ module.exports = ({blocks, network}, cbk) => {
       return cbk([500, 'ExpectedFeeRate', res]);
     }
 
-    const value = (fee / bytesPerKb).toString();
+    const feeTokens = Math.ceil(fee / bytesPerKb * divisibility);
 
-    try {
-      parsedValue = parseTokenValue({value});
-    } catch (e) {
-      return cbk([500, 'FailedToParseTokenValue', e]);
-    }
-
-    return cbk(null, {fee_tokens_per_vbyte: parsedValue.tokens});
+    return cbk(null, {fee_tokens_per_vbyte: feeTokens});
   });
 };
 

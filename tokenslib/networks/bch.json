@@ -1,12 +1,15 @@
 {
   "// BCH mainnet": "",
 
+  "fork_id": "40",
+  "is_cash_address_network": true,
+  "is_segwit_absent": true,
   "ms_per_block": 600000,
   "prefix": {
-    "bech32": "",
+    "bech32": "bitcoincash",
     "bip32_private_key": "0488ADE4",
     "bip32_public_key": "0488B21E",
-    "message_prefix": "\\x18Bitecoin Signed Message:\n",
+    "message_prefix": "\\x18Bitcoin Signed Message:\n",
     "p2pkh": "00",
     "p2sh": "05",
     "wif": "80"

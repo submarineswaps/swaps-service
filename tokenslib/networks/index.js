@@ -1,4 +1,5 @@
 const bcashregtest = require('./bcashregtest');
+const bch = require('./bch');
 const bchtestnet = require('./bchtestnet');
 const bcoinregtest = require('./bcoinregtest');
 const bitcoin = require('./bitcoin');
@@ -12,6 +13,7 @@ const testnet = require('./testnet');
 */
 module.exports = {
   bcashregtest,
+  bch,
   bchtestnet,
   bcoinregtest,
   bitcoin,
