@@ -25,17 +25,25 @@ with KEY=VALUE instead.
     export NODE_ENV="production" // Add this when running in production
     export PORT="HTTP SERVER PORT" // Override default server port (9889)
     export REDIS_URL="redis://username:password@host:port" // Redis service
-    export SSS_PORT="HTTP SERVER PORT" // Override server port if PORT not set
+    export SSS_CHAIN_BCH_RPC_API="user:pass@host:port" // Chain service
     export SSS_CHAIN_BCHTESTNET_RPC_API="user:pass@host:port" // Chain service
+    export SSS_CHAIN_BITCOIN_RPC_API="user:pass@host:port" // Chain service
+    export SSS_CHAIN_LTC_RPC_API="user:pass@host:port" // Chain service
     export SSS_CHAIN_LTCTESTNET_RPC_API="user:pass@host:port" // Chain service
     export SSS_CHAIN_TESTNET_RPC_API="user:pass@host:port" // Chain service
     export SSS_CLAIM_BIP39_SEED="bip39 wallet seed" // in-flight claims seed
+    export SSS_CLAIM_BCH_ADDRESS="bch addr" // Claim to address
     export SSS_CLAIM_BCHTESTNET_ADDRESS="bchtestnet addr" // Claim to address
+    export SSS_CLAIM_LTC_ADDRESS="ltc addr" // Claim to address
     export SSS_CLAIM_LTCTESTNET_ADDRESS="ltctestnet addr" // Claim to address
     export SSS_CLAIM_TESTNET_ADDRESS="testnet addr" // Override LND claiming
+    export SSS_LND_BITCOIN_GRPC_HOST="host:port" // LND GRPC API
+    export SSS_LND_BITCOIN_MACAROON="base64 exported lnd macaroon file"
+    export SSS_LND_BITCOIN_TLS_CERT="base64 exported TLS cert" // LND TLS cert
     export SSS_LND_TESTNET_GRPC_HOST="host:port" // LND GRPC API
     export SSS_LND_TESTNET_MACAROON="base64 exported lnd macaroon file"
     export SSS_LND_TESTNET_TLS_CERT="base64 exported TLS cert" // LND TLS cert
+    export SSS_PORT="HTTP SERVER PORT" // Override server port if PORT not set
 
 ## Testing
 

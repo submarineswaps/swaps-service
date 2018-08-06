@@ -3,6 +3,7 @@
 
   "fork_id": "40",
   "is_cash_address_network": true,
+  "is_rbf_disabled": true,
   "is_segwit_absent": true,
   "ms_per_block": 600000,
   "prefix": {

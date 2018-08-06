@@ -39,6 +39,9 @@ Object.keys(networks).forEach(network => {
   // Uses cash address types?
   net.is_cash_address_network = !!chain.is_cash_address_network;
 
+  // Is missing RBF?
+  net.is_rbf_disabled = chain.is_rbf_disabled || false;
+
   // Is missing SegWit?
   net.is_segwit_absent = chain.is_segwit_absent || false;
 

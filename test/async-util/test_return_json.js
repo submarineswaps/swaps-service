@@ -27,7 +27,7 @@ test('error is sent when error is the result of the function', t => {
   };
 
   const log = msg => t.equal(msg, fixture);
-  const send = msg => t.equal(msg, fixture[1]) && t.end();
+  const send = msg => t.equal(res.statusMessage, fixture[1]) && t.end();
 
   res.send = send;
   res.status = status;

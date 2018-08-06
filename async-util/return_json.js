@@ -15,7 +15,11 @@ module.exports = ({log, res}) => {
       log(err);
     }
 
-    return !!err ? res.status(errCode).send(errMessage) : res.json(json);
+    if (!!err) {
+      res.statusMessage = errMessage;
+    }
+
+    return !!err ? res.status(errCode).send() : res.json(json);
   };
 };
 

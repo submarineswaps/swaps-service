@@ -1169,6 +1169,7 @@ App.submitRefundRecovery = function(event) {
   $('.claimed-balance').removeClass('show').addClass('hide');
   $('.no-balance').removeClass('show').addClass('hide');
   $('.refund-details-not-found').collapse('hide');
+  $('.refund-tx-failure').collapse('hide');
 
   const clearFields = [
     '.refund-key',
@@ -1253,6 +1254,10 @@ App.submitRefundRecovery = function(event) {
 
           details.txs.forEach(({hash, outputs}) => {
             return outputs.forEach(({addresses}, vout) => {
+              if (!Array.isArray(addresses)) {
+                return;
+              }
+
               return addresses.forEach(addr => payouts[addr] = {hash, vout});
             });
           });
@@ -1478,7 +1483,15 @@ App.submitSignWithRefundDetails = function(e) {
     return;
   })
   .catch(err => {
-    console.log([503, 'FailedToBroadcastTransaction', err]);
+    switch (err.message) {
+    case 'ChainHeightNotReached':
+      $('.height-not-reached.refund-tx-failure').collapse('show');
+      break;
+
+    default:
+      console.log([503, 'FailedToBroadcastTransaction', err]);
+      break;
+    }
 
     return;
   });

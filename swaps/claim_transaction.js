@@ -14,7 +14,8 @@ const witnessUtxos = require('./witness_utxos');
 const witnessesForResolution = require('./witnesses_for_resolution');
 
 const dustRatio = 1 / chainConstants.dust_denominator;
-const minSequenceValue = chainConstants.min_sequence_value
+const maxSequenceValue = chainConstants.max_sequence_value;
+const minSequenceValue = chainConstants.min_sequence_value;
 const vRatio = chainConstants.witness_byte_discount_denominator;
 
 /** Make a claim chain swap output transaction that completes a swap
@@ -74,10 +75,13 @@ module.exports = args => {
 
   let anticipatedWeight;
   let destinationScript;
+  const isRbfAllowed = !networks[args.network].is_rbf_disabled;
   const tokens = args.utxos.reduce((sum, n) => n.tokens + sum, 0);
   const tokensPerVirtualByte = args.fee_tokens_per_vbyte;
   const tx = new Transaction();
   const {utxos} = args;
+
+  const sequence = isRbfAllowed ? minSequenceValue : maxSequenceValue;
 
   // Add each UTXO as an input
   args.utxos
@@ -97,8 +101,8 @@ module.exports = args => {
   // Add the sweep destination as an output script
   tx.addOutput(Buffer.from(destinationScript, 'hex'), tokens);
 
-  // Set input sequence values to non-final
-  tx.ins.forEach(n => n.sequence = minSequenceValue);
+  // Set input sequence values
+  tx.ins.forEach(n => n.sequence = sequence);
 
   // Set a transaction locktime
   tx.locktime = bip65Encode({blocks: args.current_block_height});
@@ -142,17 +146,17 @@ module.exports = args => {
     throw err;
   }
 
-  const feeSum = tokensPerVirtualByte * Math.ceil(anticipatedWeight / vRatio);
+  const fee = tokensPerVirtualByte * Math.ceil(anticipatedWeight / vRatio);
 
   // Exit early when the ratio of the amount spent on fees would be too high
-  if (feeSum > tokens || feeSum / (tokens - feeSum) > dustRatio) {
+  if (fee > tokens || fee / (tokens - fee) > dustRatio) {
     throw new Error('FeesTooHighToClaim');
   }
 
   // Reduce the final output value to give some tokens over to fees
   const [out] = tx.outs;
 
-  out.value -= feeSum;
+  out.value -= fee;
 
   // Legacy P2SH: Set final input scripts with proper signatures
   try {

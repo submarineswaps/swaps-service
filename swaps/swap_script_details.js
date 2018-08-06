@@ -263,18 +263,13 @@ module.exports = (args) => {
   if (!!network.is_segwit_absent) {
     let bchAddress;
 
-    switch (args.network) {
-    case 'bchtestnet':
+    if (!!networks[args.network].is_cash_address_network) {
       try {
         bchAddress = toCashAddress(p2shAddress);
 
       } catch (err) {
         throw new Error('FailedToConvertToBchAddress');
       }
-      break;
-
-    default:
-      break;
     }
 
     return {

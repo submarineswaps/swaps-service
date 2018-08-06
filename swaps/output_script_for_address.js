@@ -25,15 +25,8 @@ module.exports = ({address, network}) => {
 
   let normalizedAddress = address;
 
-  switch (network) {
-  case 'bchtestnet':
-    if (isCashAddress(address)) {
-      normalizedAddress = toLegacyAddress(address);
-    }
-    break;
-
-  default:
-    break;
+  if (!!networks[network].is_cash_address_network && isCashAddress(address)) {
+    normalizedAddress = toLegacyAddress(address);
   }
 
   return toOutputScript(normalizedAddress, networks[network]).toString('hex');

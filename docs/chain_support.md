@@ -15,6 +15,7 @@ The network JSON format is: (`[]` indicates non-required attribute)
     {
       [fork_id]: "<Hex Encoded SigHash Modification String>"
       [is_cash_address_network]: <Network Uses CashAddr Format Bool>
+      [is_rbf_disabled]: <Network Does Not Support RBF Bool>
       [is_segwit_absent]: <Network Does Not Enforce SegWit Bool>
       ms_per_block: <Milliseconds Per Block Number>
       prefix: {

@@ -86,6 +86,7 @@ module.exports = ({cache, log}) => {
   // POST a transaction to broadcast to the network
   router.post('/transactions/', ({body}, res) => {
     return broadcastTransaction({
+      cache,
       network: body.network,
       transaction: body.transaction,
     },

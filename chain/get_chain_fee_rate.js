@@ -1,11 +1,13 @@
 const chainRpc = require('./call_chain_rpc');
 const {estimateSmartFee} = require('./conf/rpc_commands');
+const {networks} = require('./../tokenslib');
 
 const bytesPerKb = 1e3;
 const cmd = estimateSmartFee;
 const defaultFee = 10;
 const defaultBlockCount = 6;
 const divisibility = 1e8;
+const noRbfMultiplier = 10;
 
 /** Get blockchain fee rate
 
@@ -43,7 +45,10 @@ module.exports = ({blocks, network}, cbk) => {
       return cbk([500, 'ExpectedFeeRate', res]);
     }
 
-    const feeTokens = Math.ceil(fee / bytesPerKb * divisibility);
+    // Increase fee conservativeness on networks with no RBF
+    const noRbfFee = !!networks[network].is_rbf_disabled ? noRbfMultiplier : 1;
+
+    const feeTokens = Math.ceil(fee / bytesPerKb * divisibility) * noRbfFee;
 
     return cbk(null, {fee_tokens_per_vbyte: feeTokens});
   });

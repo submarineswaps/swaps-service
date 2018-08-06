@@ -6,6 +6,7 @@
   "dust_denominator": 3,
   "ecdsa_sig_max_byte_length": 72,
   "maturity_block_count": 432,
+  "max_sequence_value": 4294967295,
   "min_sequence_value": 0,
   "p2sh_scriptpub_byte_length": 23,
   "sequence_byte_length": 4,
