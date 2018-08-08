@@ -24,7 +24,12 @@ const type = 'get_block_metadata';
 module.exports = ({id, network}, cbk) => {
   return asyncAuto({
     // See if we have cached block metadata
-    getCached: cbk => getJsonFromCache({type, cache: 'memory', key: id}, cbk),
+    getCached: cbk => getJsonFromCache({
+      type,
+      cache: 'memory',
+      key: [id, network].join(),
+    },
+    cbk),
 
     // Check arguments
     validate: cbk => {
@@ -41,11 +46,14 @@ module.exports = ({id, network}, cbk) => {
 
     // Get the block
     getBlock: ['getCached', 'validate', ({getCached}, cbk) => {
-      if (!!getCached && !!getCached.previous_block_hash) {
+      const cached = getCached;
+
+      if (!!cached && !!cached.previous_block_hash && !!cached.network) {
         return cbk(null, {
           is_cached: true,
-          previous_block_hash: getCached.previous_block_hash,
-          transaction_ids: getCached.transaction_ids,
+          network: cached.network,
+          previous_block_hash: cached.previous_block_hash,
+          transaction_ids: cached.transaction_ids,
         });
       }
 
@@ -55,6 +63,7 @@ module.exports = ({id, network}, cbk) => {
         }
 
         return cbk(null, {
+          network,
           previous_block_hash: res.previous_block_hash,
           transaction_ids: res.transaction_ids,
         });
@@ -71,9 +80,10 @@ module.exports = ({id, network}, cbk) => {
       return setJsonInCache({
         type,
         cache: 'memory',
-        key: id,
+        key: [id, network].join(),
         ms: blockExpirationMs,
         value: {
+          network,
           previous_block_hash: getBlock.previous_block_hash,
           transaction_ids: getBlock.transaction_ids,
         },

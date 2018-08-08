@@ -5,10 +5,11 @@ const blockListener = require('./block_listener');
 const detectSwaps = require('./detect_swaps');
 const mempoolListener = require('./mempool_listener');
 
+const jobQueues = [];
 const maxChecksCount = 3;
 const {MIN_SAFE_INTEGER} = Number;
-
-let jobCount = 0;
+const staleBlockTxTime = 1000 * 60 * 5;
+const staleMempoolTxTime = 1000 * 60 * 10;
 
 /** The swap output scanner is an event emitter for swap outputs
 
@@ -93,9 +94,18 @@ module.exports = ({cache, network}) => {
     mempoolListener({network}),
   ];
 
-  const detectJobs = asyncPriorityQueue(({block, cache, id, network}, cbk) => {
+  const detectJobs = asyncPriorityQueue(({
+    block,
+    cache,
+    date,
+    id,
+    network,
+  },
+  cbk) => {
     return detectSwaps({block, cache, id, network}, (err, detected) => {
-      jobCount--;
+      const queueLength = jobQueues
+        .map(n => n.length())
+        .reduce((sum, n) => sum + n, 0);
 
       if (!!err) {
         return scanner.emit('error', err);
@@ -157,19 +167,34 @@ module.exports = ({cache, network}) => {
   },
   maxChecksCount);
 
+  jobQueues.push(detectJobs);
+
   // Both block listeners and mempool listeners emit transaction ids when they
   // detect new transactions.
   listeners.forEach(listener => {
     listener.on('error', err => scanner.emit('error', err));
 
     listener.on('transaction', ({block, id}) => {
+      const date = Date.now();
+
       // Newer transactions are more likely to be hits, newer gets priority
       // Block transactions are fast to lookup, they get ultimate priority
       const priority = !!block ? MIN_SAFE_INTEGER : 1e8 - detectJobs.length();
 
-      jobCount++;
+      // Eliminate existing jobs that match this job
+      detectJobs.remove(({data}) => data.id === id);
 
-      return detectJobs.push({block, cache, id, network}, priority);
+      detectJobs.remove(({data}) => {
+        const timeInQueue = Date.now() - data.date;
+
+        if (!data.block && timeInQueue > staleMempoolTxTime) {
+          return true;
+        }
+
+        return false;
+      });
+
+      return detectJobs.push({block, date, cache, id, network}, priority);
     });
 
     return;

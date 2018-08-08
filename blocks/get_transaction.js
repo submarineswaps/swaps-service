@@ -7,10 +7,11 @@ const {getTransaction} = require('./../chain');
 const {returnResult} = require('./../async-util');
 const {setJsonInCache} = require('./../cache');
 
-const cacheResultMs = 1000 * 60 * 10;
+const cacheResultMs = 1000 * 60 * 5;
 const lastBlock = {};
-const typeBlock = 'get_transaction_block'
+const typeBlock = 'get_transaction_block';
 const typeTx = 'get_transaction_tx';
+const txForBlock = {};
 
 /** Get a raw transaction, with an optional cached result
 
@@ -155,6 +156,7 @@ module.exports = ({block, cache, id, network}, cbk) => {
       ({getCachedBlock, getFreshBlock}, cbk) =>
     {
       const result = getFreshBlock || getCachedBlock;
+      let transactions = {};
 
       // Exit early when there's no block result to look for a tx in
       if (!block || !result || !result.block) {
@@ -163,28 +165,28 @@ module.exports = ({block, cache, id, network}, cbk) => {
 
       const hexBlock = result.block;
 
-      try {
-        const cachedTx = lastBlock[network].transactions;
+      lastBlock[network] = {block: hexBlock, id: block};
 
-        const transactions = cachedTx || Block.fromHex(hexBlock).transactions;
-
-        lastBlock[network].block = result.block;
-        lastBlock[network].id = block;
-
-        if (!cachedTx) {
-          lastBlock[network].transactions = transactions;
+      if (!!txForBlock[network] && txForBlock[network].block === block) {
+        transactions = txForBlock[network].transactions;
+      } else {
+        try {
+          Block.fromHex(hexBlock).transactions
+            .forEach(t => transactions[t.getId()] = t);
+        } catch (err) {
+          return cbk([503, 'FailedToParseHexBlock', err]);
         }
 
-        const tx = transactions.find(t => t.getId());
-
-        if (!tx) {
-          return cbk([400, 'TransactionNotFoundInBlock']);
-        }
-
-        return cbk(null, tx.toHex());
-      } catch (err) {
-        return cbk([503, 'FailedToDeriveTransactionsFromBlock', err]);
+        txForBlock[network] = {block, transactions};
       }
+
+      const tx = transactions[id];
+
+      if (!tx) {
+        return cbk([400, 'TransactionNotFoundInBlock']);
+      }
+
+      return cbk(null, tx.toHex());
     }],
 
     // Final result

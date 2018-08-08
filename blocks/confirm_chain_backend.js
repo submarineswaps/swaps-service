@@ -51,7 +51,7 @@ module.exports = ({network}, cbk) => {
       const delayMs = Date.now() - Date.parse(getHeaderInfo.median_created_at);
 
       if (delayMs > networks[network].ms_per_block * staleBlockVariance) {
-        return cbk([503, 'StaleRemoteBlockTime', delayMs]);
+        return cbk([503, 'StaleRemoteBlockTime', network, delayMs]);
       }
 
       return cbk();

@@ -1,3 +1,5 @@
+const {round} = Math;
+
 const redisCache = require('./redis_cache');
 
 const msPerSec = 1e3;
@@ -29,7 +31,7 @@ module.exports = ({key, ms, value}, cbk) => {
 
   const cache = redisCache({});
 
-  cache.setex(key, ms / msPerSec, value, err => {
+  cache.setex(key, round(ms / msPerSec), value, err => {
     if (!!err) {
       return cbk([500, 'UnexpectedSetRedisError', err]);
     }

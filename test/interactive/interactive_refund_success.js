@@ -370,8 +370,6 @@ module.exports = ({}, cbk) => {
     {
       const {transaction} = refundTransaction;
 
-      console.log('BROADCAST', refundTransaction);
-
       return broadcastTransaction({network, transaction}, cbk);
     }],
   },

@@ -5,7 +5,6 @@ const {getRoutes} = require('ln-service');
 const {parseInvoice} = require('ln-service');
 const {payInvoice} = require('ln-service');
 
-const addDetectedSwap = require('./../pool/add_detected_swap');
 const {broadcastTransaction} = require('./../chain');
 const {claimTransaction} = require('./../swaps');
 const {getFee} = require('./../chain');
@@ -36,6 +35,14 @@ const swapSuccessCacheMs = 1000 * 60 * 60;
 
   @returns via cbk
   {
+    funding_utxos: [{
+      redeem: <Redeem Script Hex String>
+      script: <ScriptPub Hex String>
+      tokens: <Tokens Number>
+      transaction_id: <Transaction Id Hex String>
+      vout: <Vout Number>
+    }]
+    invoice_id: <Invoice Id Hex String>
     payment_secret: <Payment Secret Hex String>
     transaction_id: <Transaction Id Hex String>
   }
@@ -228,41 +235,19 @@ module.exports = (args, cbk) => {
       return broadcastTransaction({transaction, network: args.network}, cbk);
     }],
 
-    // Add the completed swap to the pool
-    addSwap: [
+    // Return the details of the completed swap
+    completedSwap: [
       'broadcastTransaction',
       'fundingUtxos',
       'invoice',
       'payInvoice',
       ({broadcastTransaction, fundingUtxos, invoice, payInvoice}, cbk) =>
     {
-      if (fundingUtxos.matching_outputs.length !== 1) {
-        return cbk();
-      }
-
-      const [utxo] = fundingUtxos.matching_outputs;
-
-      return addDetectedSwap({
-        cache: args.cache,
-        claim: {
-          id: broadcastTransaction.id,
-          invoice: args.invoice,
-          network: args.network,
-          outpoint: `${utxo.transaction_id}:${utxo.vout}`,
-          preimage: payInvoice.payment_secret,
-          script: args.redeem_script,
-        },
-        id: invoice.id,
-      },
-      cbk);
-    }],
-
-    // Return the details of the completed swap
-    completedSwap: ['broadcastTransaction', 'payInvoice', (res, cbk) => {
       return cbk(null, {
-        invoice_id: res.invoice.id,
-        payment_secret: res.payInvoice.payment_secret,
-        transaction_id: res.broadcastTransaction.id,
+        invoice_id: invoice.id,
+        funding_utxos: fundingUtxos.matching_outputs,
+        payment_secret: payInvoice.payment_secret,
+        transaction_id: broadcastTransaction.id,
       });
     }],
   },

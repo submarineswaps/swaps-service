@@ -4,10 +4,12 @@ const asyncAuto = require('async/auto');
 
 const {addJsonToCachedSet} = require('./../cache');
 const {returnResult} = require('./../async-util');
+const {setJsonInCache} = require('./../cache');
 const {swapScriptDetails} = require('./../swaps');
 
 const cacheSwapElementMs = 1000 * 60 * 60 * 3;
 const elementCount = 1; // Number of elements that can be added per call
+const interestingTxCacheMs = 1000 * 60 * 60 * 24;
 
 /** Add a detected swap element to the pool set
 
@@ -186,6 +188,22 @@ module.exports = ({cache, claim, id, funding, refund}, cbk) => {
       const height = swapDetails.timelock_block_height;
 
       return cbk(null, [height, hash.digest('hex')].join('-'));
+    }],
+
+    // Mark the swap transaction in a block as interesting for block listener
+    markTransactionId: ['element', 'sortKey', ({element, sortKey}, cbk) => {
+      if (!element.block) {
+        return cbk();
+      }
+
+      return setJsonInCache({
+        cache: 'memory',
+        key: [element.network, element.id].join(),
+        ms: interestingTxCacheMs,
+        type: 'swap_transaction_id',
+        value: {id: element.id},
+      },
+      cbk);
     }],
 
     // Add the swap to the cached set

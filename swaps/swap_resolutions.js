@@ -10,11 +10,14 @@ const preimageByteLength = 32;
   transaction.
 
   {
-    transaction: <Transaction Hex String>
+    inputs: [{
+      hash: <Internal Byte Order Transaction Id Buffer>
+      index: <Spending Outpoint Vin Number>
+      script: <Script Signature Buffer>
+      witness: [<Witness Stack Item Buffer>]
+    }]
+    network: <Network Type String>
   }
-
-  @throws
-  <Error> when transaction is invalid
 
   @returns
   {
@@ -26,16 +29,7 @@ const preimageByteLength = 32;
     }]
   }
 */
-module.exports = ({network, transaction}) => {
-  let inputs;
-
-  try {
-    // Decode the raw transaction
-    inputs = Transaction.fromHex(transaction).ins;
-  } catch (err) {
-    throw err;
-  }
-
+module.exports = ({inputs, network}) => {
   // Find inputs that appear to be swap spends.
   const resolutions = inputs
     .filter(({script, witness}) => !isPublicKeyHashSpend({script, witness}))

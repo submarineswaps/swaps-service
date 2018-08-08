@@ -7,6 +7,7 @@ const difference = require('lodash/difference');
 const {getMempool} = require('./../chain');
 
 const event = 'transaction';
+const maxMempoolIdsCount = 30000;
 const pollingDelayMs = 2000;
 
 /** Poll the mempool for transactions. When we find a transaction in the
@@ -32,7 +33,7 @@ module.exports = ({network}) => {
     throw new Error('ExpectedNetworkName');
   }
 
-  let ids;
+  let ids = [];
   const listener = new EventEmitter();
 
   asyncForever(cbk => {
@@ -42,6 +43,11 @@ module.exports = ({network}) => {
 
       // Compare the mempool's transaction against the cache
       differentIds: ['getMempool', ({getMempool}, cbk) => {
+        // Clear ids if we get too many
+        if (ids.length > maxMempoolIdsCount) {
+          ids = [];
+        }
+
         const freshIds = getMempool.transaction_ids;
 
         // Emit all transactions new to the mempool

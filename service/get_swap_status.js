@@ -1,6 +1,7 @@
 const asyncAuto = require('async/auto');
 const {parseInvoice} = require('ln-service');
 
+const {addSwapToPool} = require('./../pool');
 const completeSwapTransaction = require('./complete_swap_transaction');
 const {getBlockPlacement} = require('./../blocks');
 const getFeeForSwap = require('./get_fee_for_swap');
@@ -185,8 +186,8 @@ module.exports = ({block, cache, id, invoice, network, script}, cbk) => {
         const requiredFundingConfs = swapParameters({network}).funding_confs;
 
         return cbk(null, Math.max(0, requiredFundingConfs - confCount));
-      } catch (e) {
-        return cbk([500, 'FailedToDetermineSwapParameters']);
+      } catch (err) {
+        return cbk([500, 'FailedToDetermineSwapParameters', err]);
       }
     }],
 
@@ -217,7 +218,7 @@ module.exports = ({block, cache, id, invoice, network, script}, cbk) => {
     }],
 
     // Complete the swap transaction
-    swapTransaction: [
+    completeSwap: [
       'checkDestinationPublicKey',
       'checkTimelockHeight',
       'checkTransactionDetected',
@@ -240,9 +241,13 @@ module.exports = ({block, cache, id, invoice, network, script}, cbk) => {
         redeem_script: script,
         transaction: getTransaction.transaction,
       },
-      err => {
+      (err, res) => {
         if (!err) {
-          return cbk();
+          return cbk(null, {
+            funding_utxos: res.funding_utxos,
+            payment_secret: res.payment_secret,
+            transaction_id: res.transaction_id,
+          });
         }
 
         const [,error] = err;
@@ -255,19 +260,51 @@ module.exports = ({block, cache, id, invoice, network, script}, cbk) => {
       });
     }],
 
+    // Add swap to pool as necessary
+    addCompletedSwap: [
+      'completeSwap',
+      'getSwapKeyIndex',
+      ({completeSwap, getSwapKeyIndex}, cbk) =>
+    {
+      if (!completeSwap) {
+        return cbk();
+      }
+
+      const [utxo] = completeSwap.funding_utxos;
+
+      return addSwapToPool({
+        cache,
+        swap: {
+          invoice,
+          network,
+          script,
+          id: completeSwap.transaction_id,
+          index: getSwapKeyIndex.index,
+          outpoint: `${utxo.transaction_id}:${utxo.vout}`,
+          preimage: completeSwap.payment_secret,
+          type: 'claim',
+        },
+      },
+      cbk);
+    }],
+
     // Current swap status
-    swapStatus: ['pendingDetails', 'swapTransaction', (res, cbk) => {
-      if (!!res.swapTransaction) {
+    swapStatus: [
+      'completeSwap',
+      'pendingDetails',
+      ({completeSwap, pendingDetails}, cbk) =>
+    {
+      if (!!completeSwap) {
         return cbk(null, {
-          payment_secret: res.swapTransaction.payment_secret,
-          transaction_id: res.swapTransaction.transaction_id,
+          payment_secret: completeSwap.payment_secret,
+          transaction_id: completeSwap.transaction_id,
         });
       } else {
         return cbk(null, {
-          conf_wait_count: res.pendingDetails.conf_wait_count,
-          output_index: res.pendingDetails.output_index,
-          output_tokens: res.pendingDetails.output_tokens,
-          transaction_id: res.pendingDetails.transaction_id,
+          conf_wait_count: pendingDetails.conf_wait_count,
+          output_index: pendingDetails.output_index,
+          output_tokens: pendingDetails.output_tokens,
+          transaction_id: pendingDetails.transaction_id,
         });
       }
     }],

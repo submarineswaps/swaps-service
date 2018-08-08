@@ -7,7 +7,6 @@ const {setJsonInCache} = require('./../cache');
 const swapsFromInputs = require('./swaps_from_inputs');
 const swapsFromOutputs = require('./swaps_from_outputs');
 
-const cacheKeySize = 16;
 const cacheSwapsMs = 1000 * 60 * 10;
 const type = 'detect_swaps';
 
@@ -55,7 +54,7 @@ module.exports = ({block, cache, id, network}, cbk) => {
     },
 
     // Cache key
-    key: ['validate', ({}, cbk) => cbk(null, id.substring(0, cacheKeySize))],
+    key: ['validate', ({}, cbk) => cbk(null, id)],
 
     // See if we already know swaps related to this transaction
     getCachedSwaps: ['key', ({key}, cbk) => {

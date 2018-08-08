@@ -1,8 +1,8 @@
 const asyncQueue = require('async/queue');
 const asyncRetry = require('async/retry');
-const chainRpc = require('node-bitcoin-rpc');
 
 const credentialsForNetwork = require('./credentials_for_network');
+const rpc = require('./rpc');
 
 const chainTimeoutMs = 3000;
 const interval = retryCount => 50 * Math.pow(2, retryCount); // Retry backoff
@@ -37,6 +37,8 @@ module.exports = ({cmd, network, params}, cbk) => {
   const {port} = credentials;
   const {user} = credentials;
 
+  const chainRpc = require('node-bitcoin-rpc');
+
   chainRpc.init(host, port, user, pass);
   chainRpc.setTimeout(chainTimeoutMs);
 
@@ -47,17 +49,22 @@ module.exports = ({cmd, network, params}, cbk) => {
   let called = false;
 
   return asyncRetry({interval, times}, cbk => {
-    try {
-      return chainRpc.call(cmd, niceParams, (err, response) => {
-        if (!response) {
-          return cbk([503, 'ExpectedNonEmptyChainResponse', cmd, network]);
-        }
+    return rpc({
+      cmd,
+      host,
+      pass,
+      port,
+      user,
+      params: niceParams,
+      timeout: chainTimeoutMs,
+    },
+    (err, response) => {
+      if (!response) {
+        return cbk([503, 'ExpectedNonEmptyChainResponse', cmd, network]);
+      }
 
-        return cbk(null, response.result);
-      });
-    } catch (err) {
-      return cbk([500, 'FailedToCallChainRpc', err]);
-    }
+      return cbk(null, response.result);
+    });
   },
   (err, res) => {
     if (!!called) {

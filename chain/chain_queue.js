@@ -2,7 +2,7 @@ const asyncQueue = require('async/queue');
 
 const chainRpc = require('./chain_rpc');
 
-const maxSimultaneousChainRpcCalls = 3;
+const maxSimultaneousChainRpcCalls = 4;
 let queue;
 
 /** Get the chain RPC queue. This is a queue that rate-limits RPC calls.

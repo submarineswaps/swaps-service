@@ -13,13 +13,14 @@ const {Transaction} = require('./../tokenslib');
 
   {
     cache: <Cache Type String>
+    network: <Network Type String>
     transaction: <Transaction Hex String>
   }
 
   @returns via cbk
   {
     swaps: [{
-      id: <Transaction Id Hex String>
+      id: <Claim or Refund Transaction Id Hex String>
       index: <Swap Key Index Number>
       invoice: <BOLT 11 Encoded Invoice Corresponding to Input String>
       outpoint: <Spent Outpoint String>
@@ -31,14 +32,14 @@ const {Transaction} = require('./../tokenslib');
 */
 module.exports = ({cache, network, transaction}, cbk) => {
   return asyncAuto({
-    // Transaction id for swap
-    id: cbk => {
+    // Raw transaction
+    tx: cbk => {
       if (!transaction) {
         return cbk([400, 'ExpectedTransactionHexForInputs']);
       }
 
       try {
-        return cbk(null, Transaction.fromHex(transaction).getId());
+        return cbk(null, Transaction.fromHex(transaction));
       } catch (err) {
         return cbk([400, 'ExpectedValidTransactionHex', err]);
       }
@@ -61,10 +62,15 @@ module.exports = ({cache, network, transaction}, cbk) => {
       return cbk();
     },
 
+    // Transaction id
+    id: ['tx', ({tx}, cbk) => cbk(null, tx.getId())],
+
     // Derive swap resolutions related to the transaction
-    swaps: ['validate', ({}, cbk) => {
+    swaps: ['tx', 'validate', ({tx}, cbk) => {
+      const inputs = tx.ins;
+
       try {
-        return cbk(null, swapResolutions({network, transaction}).resolutions);
+        return cbk(null, swapResolutions({inputs, network}).resolutions);
       } catch (err) {
         return cbk([500, 'FailedToDeriveSwapResolutions', err]);
       }
