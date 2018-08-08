@@ -1,10 +1,10 @@
 const asyncAuto = require('async/auto');
 const asyncMapSeries = require('async/mapSeries');
 
-const getBlock = require('./get_block');
-const getTransaction = require('./get_transaction');
-const {returnResult} = require('./../async-util');
-const {Transaction} = require('./../tokenslib');
+const {getBlock} = require('./../../chain');
+const {getTransaction} = require('./../../chain');
+const {returnResult} = require('./../../async-util');
+const {Transaction} = require('./../../tokenslib');
 
 /** Get details for a block
 

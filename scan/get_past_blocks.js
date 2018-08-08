@@ -4,7 +4,7 @@ const asyncWhilst = require('async/whilst');
 const {getBlockMetadata} = require('./../blocks');
 const {returnResult} = require('./../async-util');
 
-const fetchBlocksCount = 3;
+const fetchBlocksCount = 6;
 
 /** Get past blocks
 

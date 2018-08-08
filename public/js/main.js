@@ -691,12 +691,10 @@ App.init = args => {
   $('.new-swap').click(App.clickedNewSwap);
   $('.pay-to-lightning-invoice').on(App.change_events, App.changedInvoice);
   $('.refund-address').on(App.change_events, App.changedRefundAddress);
-  $('.select-currency').prop('disabled', false);
   $('.sign-with-refund-details').submit(App.submitSignWithRefundDetails);
   $('.refund-details-script').on(App.change_events, App.changedRefundScript);
   $('.create-swap-quote .select-currency').change(App.changedCurrencySelection);
   $('#use-paper-wallet').change(App.changedRefundPreference);
-  $('.pay-to-lightning-invoice').prop('readonly', false);
 
   App.initActiveChains({}, err => console.log);
 
@@ -729,6 +727,9 @@ App.initActiveChains = ({}, cbk) => {
       if (!res || !Array.isArray(res.networks)) {
         throw new Error('ExpectedActiveNetworks');
       }
+
+      $('.pay-to-lightning-invoice').prop('readonly', false);
+      $('.select-currency').prop('disabled', false);
 
       res.networks.forEach(n => $(`.${n}-chain`).prop('hidden', false));
 

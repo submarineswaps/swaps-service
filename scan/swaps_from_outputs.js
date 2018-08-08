@@ -16,8 +16,12 @@ const {fromOutputScript} = address;
 
   {
     cache: <Cache Type String>
+    id: <Transaction Id Hex String>
     network: <Network Name String>
-    transaction: <Transaction Hex String>
+    outputs: [{
+      script: <Output Script Buffer>
+      value: <Tokens Number>
+    }]
   }
 
   @returns via cbk
@@ -34,7 +38,7 @@ const {fromOutputScript} = address;
     }]
   }
 */
-module.exports = ({cache, network, transaction}, cbk) => {
+module.exports = ({cache, id, network, outputs}, cbk) => {
   return asyncAuto({
     // Validate arguments
     validate: cbk => {
@@ -42,34 +46,23 @@ module.exports = ({cache, network, transaction}, cbk) => {
         return cbk([400, 'ExpectedCacheTypeForSwapCaching']);
       }
 
+      if (!id) {
+        return cbk([400, 'ExpectedTransactionIdForSwapOutputsCheck']);
+      }
+
       if (!network) {
         return cbk([400, 'ExpectedNetworkToWatchForSwapOutput']);
       }
 
-      if (!transaction) {
-        return cbk([400, 'ExpectedTransactionForSwapOutputs']);
+      if (!Array.isArray(outputs)) {
+        return cbk([400, 'ExpectedOutputsArrayForSwapOutputsCheck']);
       }
 
       return cbk();
     },
 
-    // Transaction
-    tx: ['validate', ({}, cbk) => {
-      try {
-        return cbk(null, Transaction.fromHex(transaction));
-      } catch (e) {
-        return cbk([400, 'ExpectedValidTransaction']);
-      }
-    }],
-
-    // Transaction id
-    id: ['tx', ({tx}, cbk) => cbk(null, tx.getId())],
-
-    // Derive transaction outputs
-    outputs: ['tx', ({tx}, cbk) => cbk(null, tx.outs)],
-
     // Addresses associated with outputs, if any
-    addresses: ['outputs', ({outputs}, cbk) => {
+    addresses: ['validate', ({}, cbk) => {
       if (!networks[network]) {
         return cbk([400, 'InvalidNetworkForSwapOutput']);
       }
@@ -98,7 +91,7 @@ module.exports = ({cache, network, transaction}, cbk) => {
     }],
 
     // Addresses watched by the scanner
-    watchedAddresses: ['addresses', 'id', ({addresses, id}, cbk) => {
+    watchedAddresses: ['addresses', ({addresses}, cbk) => {
       return asyncMap(addresses, ({address, index, output, tokens}, cbk) => {
         return getWatchedOutput({address, network, cache}, (err, res) => {
           if (!!err) {

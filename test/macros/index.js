@@ -1,5 +1,6 @@
 const addressForPublicKey = require('./address_for_public_key');
 const claimSuccess = require('./claim_success');
+const generateChainBlocks = require('./generate_chain_blocks');
 const generateInvoice = require('./generate_invoice');
 const isChainBelowHeight = require('./is_chain_below_height');
 const mineTransaction = require('./mine_transaction');
@@ -12,6 +13,7 @@ const spawnChainDaemon = require('./spawn_chain_daemon');
 module.exports = {
   addressForPublicKey,
   claimSuccess,
+  generateChainBlocks,
   generateInvoice,
   isChainBelowHeight,
   mineTransaction,

@@ -6,6 +6,7 @@ const {returnResult} = require('./../async-util');
 const {setJsonInCache} = require('./../cache');
 const swapsFromInputs = require('./swaps_from_inputs');
 const swapsFromOutputs = require('./swaps_from_outputs');
+const {Transaction} = require('./../tokenslib');
 
 const cacheSwapsMs = 1000 * 60 * 10;
 const type = 'detect_swaps';
@@ -79,8 +80,8 @@ module.exports = ({block, cache, id, network}, cbk) => {
       cbk);
     }],
 
-    // Determine if the inputs have swaps. (Claim or refund type)
-    swapsFromInputs: ['getTransaction', ({getTransaction}, cbk) => {
+    // Parsed transaction
+    tx: ['getTransaction', ({getTransaction}, cbk) => {
       // Exit early when there's no transaction to lookup
       if (!getTransaction || !getTransaction.transaction) {
         return cbk();
@@ -88,19 +89,39 @@ module.exports = ({block, cache, id, network}, cbk) => {
 
       const {transaction} = getTransaction;
 
-      return swapsFromInputs({cache, network, transaction}, cbk);
+      try {
+        const tx = Transaction.fromHex(transaction);
+
+        return cbk(null, {id: tx.getId(), inputs: tx.ins, outputs: tx.outs});
+      } catch (err) {
+        return cbk([400, 'ExpectedValidTransactionHex', err]);
+      }
+    }],
+
+    // Determine if the inputs have swaps. (Claim or refund type)
+    swapsFromInputs: ['tx', ({tx}, cbk) => {
+      // Exit early when there's no transaction to lookup
+      if (!tx) {
+        return cbk();
+      }
+
+      const {id} = tx;
+      const {inputs} = tx;
+
+      return swapsFromInputs({cache, id, inputs, network}, cbk);
     }],
 
     // Determine if the outputs have swap output scripts (funding type)
-    swapsFromOutputs: ['getTransaction', ({getTransaction}, cbk) => {
+    swapsFromOutputs: ['tx', ({tx}, cbk) => {
       // Exit early when there's no transaction to lookup
-      if (!getTransaction || !getTransaction.transaction) {
+      if (!tx) {
         return cbk();
       }
 
-      const {transaction} = getTransaction;
+      const {id} = tx;
+      const {outputs} = tx;
 
-      return swapsFromOutputs({cache, network, transaction}, cbk);
+      return swapsFromOutputs({cache, id, network, outputs}, cbk);
     }],
 
     // Concat all detected swaps

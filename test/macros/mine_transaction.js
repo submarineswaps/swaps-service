@@ -1,7 +1,7 @@
 const asyncAuto = require('async/auto');
 
 const {broadcastTransaction} = require('./../../chain');
-const {generateChainBlocks} = require('./../../chain');
+const generateChainBlocks = require('./generate_chain_blocks');
 const {getTransaction} = require('./../../chain');
 const {returnResult} = require('./../../async-util');
 const {Transaction} = require('./../../tokenslib');

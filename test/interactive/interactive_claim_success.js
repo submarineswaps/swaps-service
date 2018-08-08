@@ -3,20 +3,20 @@ const {parseInvoice} = require('ln-service');
 
 const macros = './../macros/';
 
-const addressForPublicKey = require(`${macros}address_for_public_key`);
+const {addressForPublicKey} = require('./../macros');
 const {broadcastTransaction} = require('./../../chain');
 const chain = require('./../../chain').constants;
 const {claimTransaction} = require('./../../swaps');
 const {generateChainBlocks} = require('./../../chain');
-const generateInvoice = require(`${macros}generate_invoice`);
+const {generateInvoice} = require('./../macros');
 const {generateKeyPair} = require('./../../chain');
 const {getCurrentHeight} = require('./../../chain');
 const {getTransaction} = require('./../../chain');
 const math = require('./../conf/math');
-const mineTransaction = require(`${macros}mine_transaction`);
-const promptForInput = require(`${macros}prompt`);
+const {mineTransaction} = require('./../macros');
+const promptForInput = require('./../macros').prompt;
 const {returnResult} = require('./../../async-util');
-const sendChainTokensTransaction = require(`${macros}send_chain_tokens_tx`);
+const {sendChainTokensTransaction} = require('./../macros');
 const {spawnChainDaemon} = require('./../macros');
 const {stopChainDaemon} = require('./../../chain');
 const {swapAddress} = require('./../../swaps');
