@@ -3,8 +3,9 @@ const asyncWhilst = require('async/whilst');
 
 const {getBlockMetadata} = require('./../blocks');
 const {returnResult} = require('./../async-util');
+const {swapParameters} = require('./../service');
 
-const fetchBlocksCount = 6;
+const buffer = 1; // Extra blocks to check in case of re-organization
 
 /** Get past blocks
 
@@ -33,6 +34,7 @@ module.exports = ({current, network}, cbk) => {
 
   const blocks = [];
   let cursor = current;
+  const fetchBlocksCount = swapParameters({network}).funding_confs + buffer;
 
   return asyncWhilst(
     () => (blocks.length < fetchBlocksCount) && cursor,

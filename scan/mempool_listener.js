@@ -8,7 +8,7 @@ const {getMempool} = require('./../chain');
 
 const event = 'transaction';
 const maxMempoolIdsCount = 30000;
-const pollingDelayMs = 2000;
+const pollingDelayMs = 3000;
 
 /** Poll the mempool for transactions. When we find a transaction in the
     mempool, emit an event.
