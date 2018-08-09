@@ -7,8 +7,9 @@ const isConfigured = require('./is_configured');
 const {networks} = require('./../tokenslib');
 const {returnResult} = require('./../async-util');
 
+const active = {};
 const nets = Object.keys(networks);
-const timeout = 1000 * 20;
+const timeout = 1000 * 30;
 
 /** Get networks that are currently active and available for swaps
 
@@ -30,18 +31,30 @@ module.exports = ({}, cbk) => {
 
     // Confirm chain backends have data
     online: ['configured', ({configured}, cbk) => {
+      const hasCheckedActive = Object.keys(active).length;
+
       return asyncFilter(configured, (network, cbk) => {
+        if (!!hasCheckedActive && active[network]) {
+          return cbk(null, true);
+        }
+
         const getChainTip = ({network}, cbk) => {
           return getRecentChainTip({network}, err => cbk(null, !err));
         };
 
-        return asyncTimeout(getChainTip, timeout)({network}, (err, isOn) => {
+        asyncTimeout(getChainTip, timeout)({network}, (err, isOn) => {
           if (!!err) {
-            return cbk(null, false);
+            return;
           }
 
-          return cbk(null, isOn);
+          active[network] = isOn;
+
+          return !hasCheckedActive ? cbk(null, isOn) : null;
         });
+
+        if (!!hasCheckedActive) {
+          return cbk(null, false);
+        }
       },
       cbk);
     }],
