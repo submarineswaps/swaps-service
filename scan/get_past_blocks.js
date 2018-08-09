@@ -5,7 +5,7 @@ const {getBlockMetadata} = require('./../blocks');
 const {returnResult} = require('./../async-util');
 const {swapParameters} = require('./../service');
 
-const buffer = 1; // Extra blocks to check in case of re-organization
+const buffer = 2; // Extra blocks to check in case of re-organization
 
 /** Get past blocks
 

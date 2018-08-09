@@ -19,7 +19,7 @@ module.exports = ({log, res}) => {
       res.statusMessage = errMessage;
     }
 
-    return !!err ? res.status(errCode).send() : res.json(json);
+    return !!err ? res.status(errCode).send(errMessage) : res.json(json);
   };
 };
 

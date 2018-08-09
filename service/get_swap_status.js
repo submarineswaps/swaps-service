@@ -5,7 +5,6 @@ const addDetectedSwap = require('./../pool/add_detected_swap');
 const completeSwapTransaction = require('./complete_swap_transaction');
 const {getBlockPlacement} = require('./../blocks');
 const getFeeForSwap = require('./get_fee_for_swap');
-const getInvoiceDetails = require('./get_invoice_details');
 const {getRecentChainTip} = require('./../blocks');
 const {getSwapKeyIndex} = require('./../scan');
 const {getTransaction} = require('./../blocks');
@@ -81,11 +80,6 @@ module.exports = ({block, cache, id, invoice, network, script}, cbk) => {
       }
 
       return cbk();
-    }],
-
-    // Get all the invoice details.
-    getInvoice: ['validate', ({}, cbk) => {
-      return getInvoiceDetails({cache, invoice, network}, cbk);
     }],
 
     // Determine the confirmation count of a block
@@ -222,7 +216,6 @@ module.exports = ({block, cache, id, invoice, network, script}, cbk) => {
       'checkDestinationPublicKey',
       'checkTimelockHeight',
       'checkTransactionDetected',
-      'getInvoice',
       'getTransaction',
       'remainingConfs',
       'serverKeyPair',

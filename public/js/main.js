@@ -642,7 +642,7 @@ App.getInvoiceDetails = ({invoice, network}, cbk) => {
         return err.text().then(text => cbk([err.status, text]));
       }
 
-      return cbk([500, err.message]);
+      return cbk([500, err.statusText]);
     });
 };
 
@@ -732,6 +732,13 @@ App.initActiveChains = ({}, cbk) => {
       $('.select-currency').prop('disabled', false);
 
       res.networks.forEach(n => $(`.${n}-chain`).prop('hidden', false));
+
+      // Select a currency
+      if (!$('.select-currency').val()) {
+        ['testnet', 'bitcoin']
+          .filter(n => res.networks.indexOf(n) !== -1)
+          .forEach(n => $('.select-currency').val(n));
+      }
 
       return cbk();
     })
@@ -1720,6 +1727,10 @@ App.updateInvoiceDetails = ({swap}) => {
 
       case 'Failed to fetch':
         text = `Couldn\'t connect to swap server. Try again?`;
+        break;
+
+      case 'FoundExistingFundingForInvoice':
+        text = 'Existing swap found for this invoice. Try a new invoice?';
         break;
 
       case 'InsufficientCapacityForSwap':

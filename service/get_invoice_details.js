@@ -7,6 +7,7 @@ const {parseInvoice} = require('ln-service');
 
 const {checkInvoicePayable} = require('./../swaps');
 const {getExchangeRate} = require('./../fiat');
+const getDetectedSwaps = require('./../pool/get_detected_swaps');
 const getFeeForSwap = require('./get_fee_for_swap');
 const {getRecentChainTip} = require('./../blocks');
 const {getRecentFeeRate} = require('./../blocks');
@@ -75,8 +76,8 @@ module.exports = ({cache, invoice, network}, cbk) => {
     parsedInvoice: ['validate', ({}, cbk) => {
       try {
         return cbk(null, parseInvoice({invoice}));
-      } catch (e) {
-        return cbk([400, 'DecodeInvoiceFailure', e]);
+      } catch (err) {
+        return cbk([400, 'DecodeInvoiceFailure', err]);
       }
     }],
 
@@ -84,9 +85,14 @@ module.exports = ({cache, invoice, network}, cbk) => {
     swapParams: ['validate', ({}, cbk) => {
       try {
         return cbk(null, swapParameters({network}));
-      } catch (e) {
-        return cbk([400, 'ExpectedSwapParameters', e]);
+      } catch (err) {
+        return cbk([400, 'ExpectedSwapParameters', err]);
       }
+    }],
+
+    // See if there are any swaps already known for this invoice
+    getExistingSwaps: ['parsedInvoice', ({parsedInvoice}, cbk) => {
+      return getDetectedSwaps({cache, id: parsedInvoice.id}, cbk);
     }],
 
     // Get the chain tip for the invoice's network
@@ -109,6 +115,15 @@ module.exports = ({cache, invoice, network}, cbk) => {
       } catch (err) {
         return cbk([500, 'FailedToInstantiateLndConnection', err, network]);
       }
+    }],
+
+    // Check that no swap currently exists for this invoice
+    checkNoExistingSwap: ['getExistingSwaps', ({getExistingSwaps}, cbk) => {
+      if (!!getExistingSwaps.funding.length) {
+        return cbk([409, 'FoundExistingFundingForInvoice']);
+      }
+
+      return cbk();
     }],
 
     // Pull the pending channels to see if we have a related pending channel
