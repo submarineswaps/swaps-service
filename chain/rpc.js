@@ -1,6 +1,7 @@
 const http = require('http');
 
-const defaultTimeout = 500;
+const defaultTimeout = 1000 * 30;
+const agents = {};
 
 /** Call JSON RPC
 
@@ -10,7 +11,7 @@ const defaultTimeout = 500;
     params: [<Parameter Object>]
     pass: <Password String>
     port: <Port Number>
-    [timeout]: <Ms Timeout Number>
+    [timeout]: <Milliseconds Timeout Number>
     user: <Username String>
   }
 
@@ -18,10 +19,14 @@ const defaultTimeout = 500;
   <Result Object>
 */
 module.exports = ({cmd, host, params, pass, port, timeout, user}, cbk) => {
+  const service = `${host}:${port}`;
   const post = JSON.stringify({params, id: '1', method: cmd});
+
+  agents[service] = agents[service] || new http.Agent({keepAlive: true});
 
   const req = http.request({
     port,
+    agent: agents[service],
     auth: `${user}:${pass}`,
     headers: {
       'Content-Type': 'application/json',

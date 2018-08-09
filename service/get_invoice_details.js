@@ -63,7 +63,7 @@ module.exports = ({cache, invoice, network}, cbk) => {
 
     // Determine where the chain tip is at
     getChainTip: ['validate', ({}, cbk) => {
-      return getRecentChainTip({cache, network}, cbk);
+      return getRecentChainTip({network}, cbk);
     }],
 
     // Get the current fee rate
@@ -91,7 +91,7 @@ module.exports = ({cache, invoice, network}, cbk) => {
 
     // Get the chain tip for the invoice's network
     getInvoiceChainTip: ['parsedInvoice', ({parsedInvoice}, cbk) => {
-      return getRecentChainTip({cache, network: parsedInvoice.network}, cbk);
+      return getRecentChainTip({network: parsedInvoice.network}, cbk);
     }],
 
     // Figure out what it will cost to do this swap

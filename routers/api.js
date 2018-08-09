@@ -58,7 +58,7 @@ module.exports = ({cache, log}) => {
 
   // Get list of supported networks to pay on-chain
   router.get('/networks/', ({}, res) => {
-    return getActiveNetworks({cache}, returnJson({log, res}));
+    return getActiveNetworks({}, returnJson({log, res}));
   });
 
   // POST a new swap
@@ -86,7 +86,6 @@ module.exports = ({cache, log}) => {
   // POST a transaction to broadcast to the network
   router.post('/transactions/', ({body}, res) => {
     return broadcastTransaction({
-      cache,
       network: body.network,
       transaction: body.transaction,
     },

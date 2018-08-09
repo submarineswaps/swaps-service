@@ -7,12 +7,13 @@ const asyncMap = require('async/map');
 const asyncForever = require('async/forever');
 const difference = require('lodash/difference');
 
-const {getCurrentHash} = require('./../chain');
 const {getJsonFromCache} = require('./../cache');
 const getPastBlocks = require('./get_past_blocks');
+const {getRecentChainTip} = require('./../blocks');
 const {setJsonInCache} = require('./../cache');
 
 const cacheBlockEmissionMs = 1000 * 60 * 10;
+const currentBlockHash = {};
 const notFound = -1;
 const pollingDelayMs = 3000;
 const type = 'emitted_block';
@@ -44,30 +45,36 @@ const type = 'emitted_block';
     id: <Transaction Id Hex String>
   }
 */
-module.exports = ({cache, network}) => {
-  if (!cache || ['memory', 'redis'].indexOf(cache) === notFound) {
-    throw new Error('ExpectedCacheStrategy');
-  }
-
+module.exports = ({network}) => {
   if (!network) {
     throw new Error('ExpectedNetworkName');
   }
 
-  // let bestBlockHash = null;
   const listener = new EventEmitter();
 
   asyncForever(cbk => {
     return asyncAuto({
       // Get the current hash
-      getCurrentHash: cbk => getCurrentHash({network}, cbk),
+      getCurrentHash: cbk => getRecentChainTip({network}, cbk),
 
       // When we discover a new current hash, pull transaction ids from blocks
       getPastBlocks: ['getCurrentHash', ({getCurrentHash}, cbk) => {
+        // Exit early when the current hash is the same as before
+        if (currentBlockHash[network] === getCurrentHash.hash) {
+          return cbk();
+        }
+
+        currentBlockHash[network] = getCurrentHash.hash;
+
         return getPastBlocks({network, current: getCurrentHash.hash}, cbk);
       }],
 
       // Get blocks that were already emitted
       getEmittedBlocks: ['getPastBlocks', ({getPastBlocks}, cbk) => {
+        if (!getPastBlocks) {
+          return cbk();
+        }
+
         return asyncMap(getPastBlocks.blocks, ({id}, cbk) => {
           return getJsonFromCache({
             type,
@@ -81,6 +88,10 @@ module.exports = ({cache, network}) => {
 
       // Look in transaction ids to see if we have any special ones
       getInterestingTx: ['getPastBlocks', ({getPastBlocks}, cbk) => {
+        if (!getPastBlocks) {
+          return cbk();
+        }
+
         const txIds = [];
 
         getPastBlocks.blocks.forEach(block => {
@@ -159,7 +170,11 @@ module.exports = ({cache, network}) => {
       }],
 
       // Wait a bit before triggering another poll
-      delayForNextPoll: ['setBlocksAsEmitted', ({}, cbk) => {
+      delayForNextPoll: [
+        'getCurrentHash',
+        'setBlocksAsEmitted',
+        ({getCurrentHash}, cbk) =>
+      {
         return setTimeout(cbk, pollingDelayMs);
       }],
     },

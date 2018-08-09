@@ -93,7 +93,7 @@ module.exports = ({cache, id, network, outputs}, cbk) => {
     // Addresses watched by the scanner
     watchedAddresses: ['addresses', ({addresses}, cbk) => {
       return asyncMap(addresses, ({address, index, output, tokens}, cbk) => {
-        return getWatchedOutput({address, network, cache}, (err, res) => {
+        return getWatchedOutput({address, cache, network}, (err, res) => {
           if (!!err) {
             return cbk(err);
           }

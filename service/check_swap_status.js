@@ -144,10 +144,6 @@ module.exports = ({cache, invoice, network, script}, cbk) => {
         return cbk();
       }
 
-      if (new Date().toISOString() > getSwapAttempt) {
-        return cbk([410, 'PaymentFailed']);
-      }
-
       return cbk();
     }],
 

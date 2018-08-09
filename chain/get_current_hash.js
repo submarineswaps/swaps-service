@@ -5,6 +5,7 @@ const {getBestBlockHash} = require('./conf/rpc_commands');
 
   {
     network: <Network Name String>
+    [priority]: <Priority Number>
   }
 
   @returns via cbk
@@ -12,8 +13,8 @@ const {getBestBlockHash} = require('./conf/rpc_commands');
     hash: <Block Hash Hex String>
   }
 */
-module.exports = ({network}, cbk) => {
-  return chainRpc({network, cmd: getBestBlockHash}, (err, hash) => {
+module.exports = ({network, priority}, cbk) => {
+  return chainRpc({network, priority, cmd: getBestBlockHash}, (err, hash) => {
     if (!!err) {
       return cbk(err);
     }

@@ -48,7 +48,7 @@ module.exports = ({cache, invoice, network, refund}, cbk) => {
     },
 
     // Get info about the state of the chain
-    getChainTip: cbk => getRecentChainTip({cache, network}, cbk),
+    getChainTip: cbk => getRecentChainTip({network}, cbk),
 
     // Pull details about the invoice to pay
     getInvoice: cbk => getInvoiceDetails({cache, invoice, network}, cbk),

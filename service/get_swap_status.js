@@ -1,7 +1,7 @@
 const asyncAuto = require('async/auto');
 const {parseInvoice} = require('ln-service');
 
-const {addSwapToPool} = require('./../pool');
+const addDetectedSwap = require('./../pool/add_detected_swap');
 const completeSwapTransaction = require('./complete_swap_transaction');
 const {getBlockPlacement} = require('./../blocks');
 const getFeeForSwap = require('./get_fee_for_swap');
@@ -43,7 +43,7 @@ const minBlocksUntilRefundHeight = 70;
 module.exports = ({block, cache, id, invoice, network, script}, cbk) => {
   return asyncAuto({
     // Get the current chain height
-    getChainInfo: cbk => getRecentChainTip({cache, network}, cbk),
+    getChainInfo: cbk => getRecentChainTip({network}, cbk),
 
     // Parse the encoded invoice
     invoiceDetails: cbk => {
@@ -212,8 +212,8 @@ module.exports = ({block, cache, id, invoice, network, script}, cbk) => {
           output_tokens: swapUtxo.output_tokens,
           transaction_id: swapUtxo.transaction_id,
         });
-      } catch (e) {
-        return cbk([500, 'ExpectedSwapUtxoDetails', e]);
+      } catch (err) {
+        return cbk([500, 'ExpectedSwapUtxoDetails', err]);
       }
     }],
 
@@ -264,7 +264,8 @@ module.exports = ({block, cache, id, invoice, network, script}, cbk) => {
     addCompletedSwap: [
       'completeSwap',
       'getSwapKeyIndex',
-      ({completeSwap, getSwapKeyIndex}, cbk) =>
+      'invoiceDetails',
+      ({completeSwap, getSwapKeyIndex, invoiceDetails}, cbk) =>
     {
       if (!completeSwap) {
         return cbk();
@@ -272,9 +273,9 @@ module.exports = ({block, cache, id, invoice, network, script}, cbk) => {
 
       const [utxo] = completeSwap.funding_utxos;
 
-      return addSwapToPool({
+      return addDetectedSwap({
         cache,
-        swap: {
+        claim: {
           invoice,
           network,
           script,
@@ -284,6 +285,7 @@ module.exports = ({block, cache, id, invoice, network, script}, cbk) => {
           preimage: completeSwap.payment_secret,
           type: 'claim',
         },
+        id: invoiceDetails.id,
       },
       cbk);
     }],

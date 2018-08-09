@@ -8,7 +8,6 @@ const {Transaction} = require('./../tokenslib');
 /** Send a raw transaction to the network
 
   {
-    cache: <Cache Type String>
     network: <Network Name String>
     transaction: <Transaction Hex String>
   }
@@ -18,17 +17,13 @@ const {Transaction} = require('./../tokenslib');
     id: <Transaction Id Hex String>
   }
 */
-module.exports = ({cache, network, transaction}, cbk) => {
+module.exports = ({network, transaction}, cbk) => {
   return asyncAuto({
     // Check the chain tip
-    getChainTip: cbk => getRecentChainTip({cache, network}, cbk),
+    getChainTip: cbk => getRecentChainTip({network}, cbk),
 
     // Check arguments
     validate: cbk => {
-      if (!cache) {
-        return cbk([400, 'ExpectedCacheForTransactionBroadcast']);
-      }
-
       if (!network) {
         return cbk([400, 'ExpectedNetworkForTransactionBroadcast']);
       }

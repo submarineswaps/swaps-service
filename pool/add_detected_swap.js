@@ -31,6 +31,7 @@ const interestingTxCacheMs = 1000 * 60 * 60 * 24;
       outpoint: <Spent Outpoint String>
       preimage: <Preimage Hex String>
       script: <Redeem Script Hex String>
+      type: <Type String>
     },
     [funding]: {
       [block]: <Block Id Hex String>
@@ -41,6 +42,7 @@ const interestingTxCacheMs = 1000 * 60 * 60 * 24;
       output: <Output Script Hex String>
       script: <Redeem Script Hex String>
       tokens: <Output Token Count Number>
+      type: <Type String>
       vout: <Output Index Number>
     }
     id: <Invoice Id String>
@@ -51,6 +53,7 @@ const interestingTxCacheMs = 1000 * 60 * 60 * 24;
       network: <Network Name String>
       outpoint: <Spent Outpoint String>
       script: <Redeem Script Hex String>
+      type: <Type String>
     }
   }
 */

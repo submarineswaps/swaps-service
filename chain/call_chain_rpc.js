@@ -6,12 +6,17 @@ const chainQueue = require('./chain_queue');
     cmd: <Chain RPC Command String>
     network: <Network Name String>
     [params]: <RPC Arguments Array>
+    [priority]: <Priority Number>
   }
 
   @returns via cbk
   <Result Object>
 */
-module.exports = ({cmd, network, params}, cbk) => {
-  return chainQueue({}).push({cmd, network, params}, cbk);
+module.exports = ({cmd, network, params, priority}, cbk) => {
+  const queue = chainQueue({});
+
+  const order = priority === undefined ? queue.length() : priority;
+
+  return queue.push({cmd, network, params}, order, cbk);
 };
 

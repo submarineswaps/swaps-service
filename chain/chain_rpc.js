@@ -4,7 +4,7 @@ const asyncRetry = require('async/retry');
 const credentialsForNetwork = require('./credentials_for_network');
 const rpc = require('./rpc');
 
-const chainTimeoutMs = 3000;
+const chainTimeoutMs = 30 * 1000;
 const interval = retryCount => 50 * Math.pow(2, retryCount); // Retry backoff
 const times = 5; // Retry count.
 
@@ -28,19 +28,14 @@ module.exports = ({cmd, network, params}, cbk) => {
 
   try {
     credentials = credentialsForNetwork({network});
-  } catch (e) {
-    return cbk([500, 'FailedToGetCredentials', e]);
+  } catch (err) {
+    return cbk([500, 'FailedToGetCredentials', err]);
   }
 
   const {host} = credentials;
   const {pass} = credentials;
   const {port} = credentials;
   const {user} = credentials;
-
-  const chainRpc = require('node-bitcoin-rpc');
-
-  chainRpc.init(host, port, user, pass);
-  chainRpc.setTimeout(chainTimeoutMs);
 
   // Should the params be a single argument instead of array, array-ize it.
   const niceParams = !Array.isArray(params || []) ? [params] : params || [];
@@ -59,6 +54,10 @@ module.exports = ({cmd, network, params}, cbk) => {
       timeout: chainTimeoutMs,
     },
     (err, response) => {
+      if (!!err) {
+        return cbk(err);
+      }
+
       if (!response) {
         return cbk([503, 'ExpectedNonEmptyChainResponse', cmd, network]);
       }

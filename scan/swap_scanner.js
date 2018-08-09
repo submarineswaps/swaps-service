@@ -89,10 +89,11 @@ module.exports = ({cache, network}) => {
 
   const scanner = new EventEmitter();
 
-  const listeners = [
-    blockListener({cache, network}),
-    mempoolListener({network}),
-  ];
+  const listeners = [blockListener({network}), mempoolListener({network})];
+
+  const queueLength = () => {
+    return jobQueues.map(n => n.length()).reduce((sum, n) => sum + n, 0);
+  };
 
   const detectJobs = asyncPriorityQueue(({
     block,
@@ -103,10 +104,6 @@ module.exports = ({cache, network}) => {
   },
   cbk) => {
     return detectSwaps({block, cache, id, network}, (err, detected) => {
-      const queueLength = jobQueues
-        .map(n => n.length())
-        .reduce((sum, n) => sum + n, 0);
-
       if (!!err) {
         return scanner.emit('error', err);
       }
@@ -184,6 +181,7 @@ module.exports = ({cache, network}) => {
       // Eliminate existing jobs that match this job
       detectJobs.remove(({data}) => data.id === id);
 
+      // Eliminate mempool jobs that have been around a long time
       detectJobs.remove(({data}) => {
         const timeInQueue = Date.now() - data.date;
 

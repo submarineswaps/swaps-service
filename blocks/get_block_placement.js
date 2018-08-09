@@ -46,7 +46,7 @@ module.exports = ({block, cache, network}, cbk) => {
 
     // Figure what the current chain tip is, placement is relative to the tip
     getChainTip: ['validate', ({}, cbk) => {
-      return getRecentChainTip({cache, network}, cbk);
+      return getRecentChainTip({network}, cbk);
     }],
 
     // See if the previous block hash value is cached

@@ -11,6 +11,7 @@ const broadcastDelayMs = 200;
 
   {
     network: <Network Name String>
+    [priority]: <Priority Number>
     transaction: <Transaction Hex String>
   }
 
@@ -19,7 +20,7 @@ const broadcastDelayMs = 200;
     id: <Transaction Id Hex String>
   }
 */
-module.exports = ({network, transaction}, cbk) => {
+module.exports = ({network, priority, transaction}, cbk) => {
   return asyncAuto({
     // Check arguments
     validate: cbk => {
@@ -39,7 +40,7 @@ module.exports = ({network, transaction}, cbk) => {
       const cmd = sendRawTransaction;
       const params = transaction;
 
-      return chainRpc({cmd, network, params}, (err, id) => {
+      return chainRpc({cmd, network, params, priority}, (err, id) => {
         if (!!err) {
           return cbk(err);
         }

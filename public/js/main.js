@@ -437,7 +437,7 @@ App.createSwap = ({invoice, network, refund}, cbk) => {
   }
 
   if (!network) {
-    return cbk([0, 'ExpectedNetwork']);
+    return cbk([0, 'ExpectedNetworkForSwapCreation']);
   }
 
   if (!refund) {
@@ -1010,6 +1010,10 @@ App.submitCreateSwapQuote = function(event) {
     return;
   }
 
+  if (!network) {
+    return console.log([500, 'ExpectedNetworkValue']);
+  }
+
   swap.collapse('hide');
 
   const quote = $('.swap-quote').clone();
@@ -1507,13 +1511,14 @@ App.submitSignWithRefundDetails = function(e) {
   }
 */
 App.updatedSwapDetails = ({swap}) => {
-  if (!swap.find('.pay-to-lightning-invoice').length) {
+  const invoice = swap.find('.pay-to-lightning-invoice').val().trim();
+  const network = swap.find('.select-currency').val();
+
+  if (!invoice.length || !network) {
     return;
   }
 
   const address = swap.find('.refund-address').val().trim();
-  const invoice = swap.find('.pay-to-lightning-invoice').val().trim();
-  const network = swap.find('.select-currency').val();
 
   const hasAddress = !!App.address_details[address];
   const hasInvoiceDetails = !!App.invoice_details[invoice];
@@ -1631,12 +1636,14 @@ App.updatedSwapDetails = ({swap}) => {
   }
 
   swap.find('.address-currency-label').text(networkAddressName);
-  swap.find('.current-fiat-price').text(fiatPrice.toFixed(2));
   swap.find('.fee-percentage').text(feePercentage.toFixed(2));
   swap.find('.fiat-fee-total').text(totalFee.toFixed(2));
   swap.find('.final-fee').prop('hidden', !totalFee);
-
   swap.find('.make').toggleClass('disabled', !isReady);
+
+  if (!!fiatPrice) {
+    swap.find('.current-fiat-price').text(fiatPrice.toFixed(2));
+  }
 
   return;
 };

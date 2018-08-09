@@ -50,13 +50,7 @@ const swapSuccessCacheMs = 1000 * 60 * 60;
 module.exports = (args, cbk) => {
   return asyncAuto({
     // Check the current state of the blockchain to get a good locktime
-    getChainTip: cbk => {
-      return getRecentChainTip({
-        cache: args.cache,
-        network: args.network
-      },
-      cbk);
-    },
+    getChainTip: cbk => getRecentChainTip({network: args.network}, cbk),
 
     // Figure out what fee is needed to sweep the funds
     getFee: cbk => {
@@ -67,8 +61,8 @@ module.exports = (args, cbk) => {
     invoice: cbk => {
       try {
         return cbk(null, parseInvoice({invoice: args.invoice}));
-      } catch (e) {
-        return cbk([400, 'DecodeInvoiceFailure', e]);
+      } catch (err) {
+        return cbk([400, 'DecodeInvoiceFailure', err]);
       }
     },
 
@@ -230,9 +224,12 @@ module.exports = (args, cbk) => {
 
     // Broadcast the claim transaction
     broadcastTransaction: ['claimTransaction', ({claimTransaction}, cbk) => {
-      const {transaction} = claimTransaction;
-
-      return broadcastTransaction({transaction, network: args.network}, cbk);
+      return broadcastTransaction({
+        network: args.network,
+        priority: 0,
+        transaction: claimTransaction.transaction
+      },
+      cbk);
     }],
 
     // Return the details of the completed swap

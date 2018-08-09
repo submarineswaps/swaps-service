@@ -1,28 +1,30 @@
-const asyncQueue = require('async/queue');
+const asyncPriorityQueue = require('async/priorityQueue');
 
 const chainRpc = require('./chain_rpc');
 
-const maxSimultaneousChainRpcCalls = 4;
-let queue;
+const maxSimultaneousChainRpcCalls = 2;
+const queues = {};
 
 /** Get the chain RPC queue. This is a queue that rate-limits RPC calls.
 
-  {}
+  {
+    network: <Network Queue>
+  }
 
   @returns
   <Queue Object>
 */
-module.exports = ({}) => {
+module.exports = ({network}) => {
   // Exit early when there is already a queue
-  if (!!queue) {
-    return queue;
+  if (!!queues[network]) {
+    return queues[network];
   }
 
-  queue = asyncQueue(({cmd, network, params}, cbk) => {
+  queues[network] = asyncPriorityQueue(({cmd, network, params}, cbk) => {
     return chainRpc({cmd, network, params}, cbk);
   },
   maxSimultaneousChainRpcCalls);
 
-  return queue;
+  return queues[network];
 };
 
