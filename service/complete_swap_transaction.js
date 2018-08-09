@@ -5,6 +5,7 @@ const {getRoutes} = require('ln-service');
 const {parseInvoice} = require('ln-service');
 const {payInvoice} = require('ln-service');
 
+const {addressDetails} = require('./../chain');
 const {broadcastTransaction} = require('./../chain');
 const {claimTransaction} = require('./../swaps');
 const {getFee} = require('./../chain');
@@ -170,8 +171,31 @@ module.exports = (args, cbk) => {
       return createAddress({lnd}, cbk);
     }],
 
+    // Make sure that the sweep address is OK
+    checkSweepAddress: ['getSweepAddress', ({getSweepAddress}, cbk) => {
+      const {address} = getSweepAddress;
+
+      try {
+        const {type} = addressDetails({address, network: args.network});
+
+        switch (type) {
+        case 'p2wpkh':
+        case 'p2wsh':
+        case 'p2pkh':
+        case 'p2sh':
+          return cbk();
+
+        default:
+          return cbk([500, 'UnknownClaimAddressType', address, type]);
+        }
+      } catch (err) {
+        return cbk([500, 'InvalidClaimAddress', address]);
+      }
+    }],
+
     // Do a sanity check to see if the invoice can be claimed
     canClaim: [
+      'checkSweepAddress',
       'fundingUtxos',
       'getChainTip',
       'getFee',

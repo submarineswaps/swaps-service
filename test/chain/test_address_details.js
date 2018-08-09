@@ -25,6 +25,12 @@ const fixtures = {
     network: 'ltctestnet',
   },
 
+  testnet_invalid_p2sh: {
+    address: 'QQo8HhGPwuyFt3ek2zgPiF9ppTRs5zf83p',
+    error: 'UnknownAddressVersion',
+    network: 'testnet',
+  },
+
   testnet_p2sh: {
     address: '2MzQwSSnBHWHqSAqtTVQ6v47XtaisrJa1Vc',
     expected: {
@@ -84,10 +90,16 @@ const fixtures = {
 
 const tests = Object.keys(fixtures).map(n => fixtures[n]);
 
-tests.forEach(({address, expected, network}) => {
-  const details = addressDetails({address, network});
-
+tests.forEach(({address, error, expected, network}) => {
   test(`${network} ${address}`, t => {
+    if (!!error) {
+      t.throws(() => addressDetails({address, network}), new Error(error));
+
+      return t.end();
+    }
+
+    const details = addressDetails({address, network});
+
     t.equal(details.data, expected.data, 'DataMatches');
     t.equal(details.hash, expected.hash, 'HashMatches');
     t.equal(details.prefix, expected.prefix, 'PrefixMatches');
