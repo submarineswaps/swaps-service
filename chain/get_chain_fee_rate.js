@@ -14,6 +14,7 @@ const noRbfMultiplier = 10;
   {
     [blocks]: <Block Count Number> // defaults to 6
     network: <Network Name String>
+    [priority]: <Priority Number>
   }
 
   @returns via cbk
@@ -21,10 +22,10 @@ const noRbfMultiplier = 10;
     fee_tokens_per_vbyte: <Fee Tokens per Vbyte Number>
   }
 */
-module.exports = ({blocks, network}, cbk) => {
+module.exports = ({blocks, network, priority}, cbk) => {
   const params = !blocks ? [defaultBlockCount] : [blocks];
 
-  return chainRpc({cmd, network, params}, (err, res) => {
+  return chainRpc({cmd, network, params, priority}, (err, res) => {
     if (!!err) {
       return cbk(err);
     }

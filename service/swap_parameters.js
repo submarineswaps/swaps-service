@@ -1,49 +1,11 @@
-const decBase = 10;
-const {SSS_FUNDING_BCH_CONFS} = process.env;
-const {SSS_FUNDING_BCHTESTNET_CONFS} = process.env;
-const {SSS_FUNDING_BITCOIN_CONFS} = process.env;
-const {SSS_FUNDING_LTC_CONFS} = process.env;
-const {SSS_FUNDING_LTCTESTNET_CONFS} = process.env;
-const {SSS_FUNDING_TESTNET_CONFS} = process.env;
+const {ceil} = Math;
 
-const params = {
-  bch: {
-    claim_window: 3,
-    funding_confs: parseInt(SSS_FUNDING_BCH_CONFS || 1, decBase),
-    refund_timeout: 144,
-    swap_fees: [{base: 10000, network: 'bitcoin', rate: 10000}],
-  },
-  bchtestnet: {
-    claim_window: 10,
-    funding_confs: parseInt(SSS_FUNDING_BCHTESTNET_CONFS || 3, decBase),
-    refund_timeout: 144,
-    swap_fees: [{base: 10000, network: 'testnet', rate: 10000}],
-  },
-  bitcoin: {
-    claim_window: 14,
-    funding_confs: parseInt(SSS_FUNDING_BITCOIN_CONFS || 3, decBase),
-    refund_timeout: 144,
-    swap_fees: [{base: 1000, network: 'bitcoin', rate: 1000}],
-  },
-  ltc: {
-    claim_window: 3,
-    funding_confs: parseInt(SSS_FUNDING_LTC_CONFS || 3, decBase),
-    refund_timeout: 576,
-    swap_fees: [{base: 30000, network: 'bitcoin', rate: 14900}],
-  },
-  ltctestnet: {
-    claim_window: 10,
-    funding_confs: parseInt(SSS_FUNDING_LTCTESTNET_CONFS || 12, decBase),
-    refund_timeout: 576,
-    swap_fees: [{base: 30000, network: 'testnet', rate: 14900}],
-  },
-  testnet: {
-    claim_window: 10,
-    funding_confs: parseInt(SSS_FUNDING_TESTNET_CONFS || 3, decBase),
-    refund_timeout: 144,
-    swap_fees: [{base: 1000, network: 'testnet', rate: 1000}],
-  },
-};
+const {networks} = require('./../tokenslib');
+
+const decBase = 10;
+const {env} = process;
+const hoursInDay = 24;
+const msPerHour = 1000 * 60 * 60;
 
 /** Get swap parameters for a network
 
@@ -51,7 +13,8 @@ const params = {
     network: <Network Name String>
   }
 
-  @throws Error
+  @throws
+  <Parameters Lookup Error>
 
   @returns
   {
@@ -66,10 +29,45 @@ const params = {
   }
 */
 module.exports = ({network}) => {
-  if (!params[network]) {
+  if (!networks[network]) {
     throw new Error('UnknownNetworkForSwapParams');
   }
 
-  return params[network];
+  const net = network.toUpperCase();
+
+  const fundingWaitConfs = env[`SSS_FUNDING_${net}_CONFS`];
+  const standardConfCount = ceil(msPerHour / networks[network].ms_per_block);
+
+  // Collect pair fee rates set in env
+  const swapFees = Object.keys(networks)
+    .map(target => target.toUpperCase())
+    .map(target => ({target, pair: `${net}_${target}`}))
+    .filter(({pair}) => {
+      // A base fee is required for a swap pair
+      if ((!env[`SSS_FEE_BASE_${pair}`] || '') !== '') {
+        return false;
+      }
+
+      // A fee rate is required for a swap pair
+      if ((!env[`SSS_FEE_RATE_${pair}`] || '') !== '') {
+        return false;
+      }
+
+      return true;
+    })
+    .map(({pair, target}) => {
+      return {
+        base: parseInt(process.env[`SSS_FEE_BASE_${pair}`] || '', decBase),
+        network: target.toLowerCase(),
+        rate: parseInt(process.env[`SSS_FEE_RATE_${pair}`] || '', decBase),
+      };
+    });
+
+  return {
+    claim_window: standardConfCount,
+    funding_confs: parseInt(fundingWaitConfs || standardConfCount, decBase),
+    refund_timeout: standardConfCount * hoursInDay,
+    swap_fees: swapFees,
+  };
 };
 

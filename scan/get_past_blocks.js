@@ -1,11 +1,14 @@
+const {ceil} = Math;
+
 const asyncAuto = require('async/auto');
 const asyncWhilst = require('async/whilst');
 
 const {getBlockMetadata} = require('./../blocks');
+const {networks} = require('./../tokenslib');
 const {returnResult} = require('./../async-util');
 const {swapParameters} = require('./../service');
 
-const buffer = 2; // Extra blocks to check in case of re-organization
+const bufferTimeMs = 1000 * 60 * 30;
 
 /** Get past blocks
 
@@ -33,8 +36,15 @@ module.exports = ({current, network}, cbk) => {
   }
 
   const blocks = [];
+  const buffer = ceil(bufferTimeMs / networks[network].ms_per_block);
   let cursor = current;
-  const fetchBlocksCount = swapParameters({network}).funding_confs + buffer;
+  let fetchBlocksCount;
+
+  try {
+    fetchBlocksCount = swapParameters({network}).funding_confs + buffer;
+  } catch (err) {
+    return cbk([400, 'FailedToDetermineSwapFundingConfsCount', err]);
+  }
 
   return asyncWhilst(
     () => (blocks.length < fetchBlocksCount) && cursor,

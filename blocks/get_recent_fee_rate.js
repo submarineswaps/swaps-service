@@ -47,7 +47,7 @@ module.exports = ({cache, network}, cbk) => {
         return cbk();
       }
 
-      return getChainFeeRate({network}, cbk);
+      return getChainFeeRate({network, priority: 0}, cbk);
     }],
 
     // Set the fresh result into the cache
