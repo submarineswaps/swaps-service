@@ -610,6 +610,7 @@ App.getInvoiceDetails = ({invoice, network}, cbk) => {
 
       switch (details.network) {
       case 'bitcoin':
+      case 'ltc':
       case 'testnet':
         break;
 

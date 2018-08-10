@@ -2,7 +2,6 @@ const {createHash} = require('crypto');
 
 const asyncAuto = require('async/auto');
 const {getInvoice} = require('ln-service');
-const {parseInvoice} = require('ln-service');
 const {shuffle} = require('lodash');
 
 const swapParameters = require('./swap_parameters');
@@ -11,6 +10,7 @@ const {getBlockPlacement} = require('./../blocks');
 const getDetectedSwaps = require('./../pool/get_detected_swaps');
 const getSwapStatus = require('./get_swap_status');
 const {lightningDaemon} = require('./../lightning');
+const {parseInvoice} = require('./../lightning');
 const {returnResult} = require('./../async-util');
 
 /** Check the status of a swap

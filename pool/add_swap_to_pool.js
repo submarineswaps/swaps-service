@@ -1,9 +1,9 @@
 const asyncAuto = require('async/auto');
-const {parseInvoice} = require('ln-service');
 
 const addDetectedSwap = require('./add_detected_swap');
 const getDetectedSwaps = require('./get_detected_swaps');
 const getSwapStatus = require('./../service/get_swap_status');
+const {parseInvoice} = require('./../lightning');
 const {returnResult} = require('./../async-util');
 
 /** Add a swap to the pool

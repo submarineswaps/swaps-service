@@ -1,5 +1,4 @@
 const asyncAuto = require('async/auto');
-const {parseInvoice} = require('ln-service');
 
 const macros = './../macros/';
 
@@ -14,6 +13,7 @@ const {getCurrentHeight} = require('./../../chain');
 const {getTransaction} = require('./../../chain');
 const math = require('./../conf/math');
 const {mineTransaction} = require('./../macros');
+const {parseInvoice} = require('./../lightning');
 const promptForInput = require('./../macros').prompt;
 const {returnResult} = require('./../../async-util');
 const {sendChainTokensTransaction} = require('./../macros');

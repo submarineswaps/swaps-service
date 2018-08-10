@@ -1,5 +1,4 @@
 const asyncAuto = require('async/auto');
-const {parseInvoice} = require('ln-service');
 
 const addDetectedSwap = require('./../pool/add_detected_swap');
 const completeSwapTransaction = require('./complete_swap_transaction');
@@ -8,6 +7,7 @@ const getFeeForSwap = require('./get_fee_for_swap');
 const {getRecentChainTip} = require('./../blocks');
 const {getSwapKeyIndex} = require('./../scan');
 const {getTransaction} = require('./../blocks');
+const {parseInvoice} = require('./../lightning');
 const {returnResult} = require('./../async-util');
 const serverSwapKeyPair = require('./server_swap_key_pair');
 const {swapOutput} = require('./../swaps');

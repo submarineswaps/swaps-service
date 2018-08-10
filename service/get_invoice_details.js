@@ -3,7 +3,6 @@ const {nextTick} = process;
 const asyncAuto = require('async/auto');
 const {getPendingChannels} = require('ln-service');
 const {getRoutes} = require('ln-service');
-const {parseInvoice} = require('ln-service');
 
 const {checkInvoicePayable} = require('./../swaps');
 const {getExchangeRate} = require('./../fiat');
@@ -12,6 +11,7 @@ const getFeeForSwap = require('./get_fee_for_swap');
 const {getRecentChainTip} = require('./../blocks');
 const {getRecentFeeRate} = require('./../blocks');
 const {lightningDaemon} = require('./../lightning');
+const {parseInvoice} = require('./../lightning');
 const {returnResult} = require('./../async-util');
 const swapParameters = require('./swap_parameters');
 

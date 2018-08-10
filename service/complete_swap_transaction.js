@@ -2,7 +2,6 @@ const asyncAuto = require('async/auto');
 const {createAddress} = require('ln-service');
 const {createInvoice} = require('ln-service');
 const {getRoutes} = require('ln-service');
-const {parseInvoice} = require('ln-service');
 const {payInvoice} = require('ln-service');
 
 const {addressDetails} = require('./../chain');
@@ -11,6 +10,7 @@ const {claimTransaction} = require('./../swaps');
 const {getFee} = require('./../chain');
 const {getRecentChainTip} = require('./../blocks');
 const {getRecentFeeRate} = require('./../blocks');
+const {parseInvoice} = require('./../lightning');
 const {lightningDaemon} = require('./../lightning');
 const {returnResult} = require('./../async-util');
 const {setJsonInCache} = require('./../cache');

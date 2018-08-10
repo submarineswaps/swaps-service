@@ -1,8 +1,8 @@
 const asyncAuto = require('async/auto');
 const asyncEach = require('async/each');
-const {parseInvoice} = require('ln-service');
 
 const {deleteJsonFromCache} = require('./../cache');
+const {parseInvoice} = require('./../lightning');
 const {serverSwapKeyPair} = require('./../service');
 const {swapScriptDetails}= require('./../swaps');
 
