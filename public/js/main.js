@@ -966,6 +966,7 @@ App.showInvoice = args => {
   case 'ltc':
     symbolForFiat = 'USD';
     symbolForNetwork = 'Lightning LTC';
+    break;
 
   case 'testnet':
     symbolForFiat = 'tUSD';
