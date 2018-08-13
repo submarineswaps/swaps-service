@@ -743,7 +743,7 @@ App.initActiveChains = ({}, cbk) => {
         const option = $('<option></option>');
 
         option.addClass(`${network}-chain`);
-        option.prop('value', network);
+        option.attr('value', network);
 
         switch (network) {
         case 'bch':
