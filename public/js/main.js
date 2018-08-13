@@ -145,6 +145,8 @@ App.changedRefundScript = function({}) {
   if (!script) {
     $('.dump-refund-address').text('');
 
+    $('.refund-p2pkh .refund-p2wpkh').val('');
+
     return $('.redeem-refund-address, .timeout-block-height').val('');
   }
 
@@ -153,6 +155,8 @@ App.changedRefundScript = function({}) {
   $('.dump-refund-address').text(details.refund_p2wpkh_address);
   $('.timeout-block-height').val(details.timelock_block_height);
   $('.redeem-refund-address').val(details.refund_p2wpkh_address);
+  $('.refund-p2pkh').text(details.refund_p2pkh_address);
+  $('.refund-p2wpkh').text(details.refund_p2wpkh_address);
   $('.refund-p2sh-p2wsh-swap-address').text(details.p2sh_p2wsh_address);
   $('.refund-p2sh-swap-address').text(details.p2sh_address);
   $('.refund-p2wsh-swap-address').text(details.p2wsh_address);
@@ -733,6 +737,53 @@ App.initActiveChains = ({}, cbk) => {
       $('.select-currency').prop('disabled', false);
 
       res.networks.forEach(n => $(`.${n}-chain`).prop('hidden', false));
+
+      res.networks.forEach(network => {
+        let optionName;
+        const option = $('<option></option>');
+
+        option.addClass(`${network}-chain`);
+        option.prop('value', network);
+
+        switch (network) {
+        case 'bch':
+          optionName = 'Bcash';
+          break;
+
+        case 'bchtestnet':
+          optionName = 'Bcash Testnet';
+          break;
+
+        case 'bitcoin':
+          optionName = 'Bitcoin';
+          break;
+
+        case 'ltc':
+          optionName = 'Litecoin';
+          break;
+
+        case 'ltctestnet':
+          optionName = 'Litecoin Testnet'
+          break;
+
+        case 'testnet':
+          optionName = 'Testnet';
+          break;
+
+        default:
+          break;
+        }
+
+        if (!optionName) {
+          return;
+        }
+
+        option.text(optionName);
+
+        $('.select-currency').append(option);
+
+        return;
+      });
 
       // Select a currency
       if (!$('.select-currency').val()) {
@@ -1386,8 +1437,8 @@ App.submitSignWithRefundDetails = function(e) {
       network: $('.select-currency').val(),
       script: redeemScript,
     });
-  } catch (e) {
-    return console.log([0, 'FailedToDeriveSwapDetails'], e);
+  } catch (err) {
+    return console.log([0, 'FailedToDeriveSwapDetails'], err);
   }
 
   const network = $('.select-currency').val();
