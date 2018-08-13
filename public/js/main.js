@@ -767,7 +767,7 @@ App.initActiveChains = ({}, cbk) => {
           break;
 
         case 'testnet':
-          optionName = 'Testnet';
+          optionName = 'Bitcoin Testnet';
           break;
 
         default:
