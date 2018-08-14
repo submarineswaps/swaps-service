@@ -55,7 +55,7 @@ module.exports = ({cmd, network, params}, cbk) => {
     },
     (err, response) => {
       if (!!err) {
-        return cbk(err);
+        return cbk([503, 'RpcFailure', err, network]);
       }
 
       if (!response) {
