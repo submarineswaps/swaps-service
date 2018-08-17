@@ -71,7 +71,12 @@ module.exports = ({block, cache, id, network}, cbk) => {
       // Last block doesn't match the block we're looking at, wipe "lastBlock"
       lastBlock[network] = {};
 
-      return getJsonFromCache({cache, key: block, type: typeBlock}, cbk);
+      return getJsonFromCache({
+        cache: 'memory',
+        key: block,
+        type: typeBlock,
+      },
+      cbk);
     }],
 
     // Get a fresh block
@@ -109,7 +114,7 @@ module.exports = ({block, cache, id, network}, cbk) => {
       }
 
       return setJsonInCache({
-        cache,
+        cache: 'memory',
         key: block,
         ms: cacheResultMs,
         type: typeBlock,

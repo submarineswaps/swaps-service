@@ -89,7 +89,10 @@ module.exports = ({cache, network}) => {
 
   const scanner = new EventEmitter();
 
-  const listeners = [blockListener({network}), mempoolListener({network})];
+  const listeners = [
+    blockListener({cache, network}),
+    mempoolListener({network}),
+  ];
 
   const queueLength = () => {
     return jobQueues.map(n => n.length()).reduce((sum, n) => sum + n, 0);

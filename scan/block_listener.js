@@ -12,7 +12,7 @@ const getPastBlocks = require('./get_past_blocks');
 const {getRecentChainTip} = require('./../blocks');
 const {setJsonInCache} = require('./../cache');
 
-const cacheBlockEmissionMs = 1000 * 60 * 10;
+const cacheBlockEmissionMs = 1000 * 60 * 60;
 const currentBlockHash = {};
 const notFound = -1;
 const pollingDelayMs = 3000;
@@ -45,9 +45,13 @@ const type = 'emitted_block';
     id: <Transaction Id Hex String>
   }
 */
-module.exports = ({network}) => {
+module.exports = ({cache, network}) => {
+  if (!cache) {
+    throw new Error('ExpectedCacheForBlockListener');
+  }
+
   if (!network) {
-    throw new Error('ExpectedNetworkName');
+    throw new Error('ExpectedNetworkNameForBlockListener');
   }
 
   const listener = new EventEmitter();
@@ -77,8 +81,8 @@ module.exports = ({network}) => {
 
         return asyncMap(getPastBlocks.blocks, ({id}, cbk) => {
           return getJsonFromCache({
+            cache,
             type,
-            cache: 'memory',
             key: [id, network].join(),
           },
           cbk);
@@ -158,8 +162,8 @@ module.exports = ({network}) => {
       setBlocksAsEmitted: ['emitTransactions', ({emitTransactions}, cbk) => {
         return asyncEach(emitTransactions, ({id}, cbk) => {
           return setJsonInCache({
+            cache,
             type,
-            cache: 'memory',
             key: [id, network].join(),
             ms: cacheBlockEmissionMs,
             value: {id}
