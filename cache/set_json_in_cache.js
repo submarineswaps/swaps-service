@@ -40,7 +40,6 @@ module.exports = ({cache, key, ms, type, value}, cbk) => {
     return setInMemoryCache({ms, type, value, key: scopedKey}, cbk);
 
   case 'redis':
-    console.log('SETTING JSON IN CACHE', ms, key, value);
     return setInRedis({
       ms,
       value: JSON.stringify(value),
