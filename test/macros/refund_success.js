@@ -15,6 +15,7 @@ const {payments} = require('./../../tokenslib');
 const {refundTransaction} = require('./../../swaps');
 const sendChainTokensTransaction = require('./send_chain_tokens_tx');
 const spawnChainDaemon = require('./spawn_chain_daemon');
+const spawnLnd = require('./spawn_lnd');
 const {stopChainDaemon} = require('./../../chain');
 const {swapAddress} = require('./../../swaps');
 const {swapScriptInTransaction} = require('./../../swaps');
@@ -48,6 +49,9 @@ module.exports = (args, cbk) => {
         return cbk([0, 'ExpectedGeneratedKeyPair', e]);
       }
     },
+
+    // Create a dummy LND
+    spawnLnd: cbk => spawnLnd({}, cbk),
 
     // Chain sync is started. Alice will get block rewards for use in deposit
     spawnChainDaemon: ['generateAliceKeyPair', (res, cbk) => {
@@ -91,12 +95,13 @@ module.exports = (args, cbk) => {
     },
 
     // Alice generates a Lightning invoice which gives a preimage/hash
-    generatePaymentPreimage: ['generateAliceKeyPair', (res, cbk) => {
-      return generateInvoice({
-        network: args.network,
-        private_key: res.generateAliceKeyPair.private_key,
-      },
-      cbk);
+    generatePaymentPreimage: ['spawnLnd', ({spawnLnd}, cbk) => {
+      return generateInvoice({lnd: spawnLnd.lnd}, cbk);
+    }],
+
+    // Stop the dummy LND
+    stopLnd: ['generatePaymentPreimage', 'spawnLnd', ({spawnLnd}, cbk) => {
+      return spawnLnd.kill({}, cbk);
     }],
 
     // A bunch of blocks are made so Alice's rewards are mature
@@ -322,12 +327,15 @@ module.exports = (args, cbk) => {
       },
       cbk);
     }],
+
+    // Shut down the chain daemon
+    stopChainDaemon: ['mineSweepTransaction', ({}, cbk) => {
+      return stopChainDaemon({network: args.network}, cbk);
+    }],
   },
   (err, res) => {
-    if (!!res && !!res.spawnChainDaemon && !!res.spawnChainDaemon.is_ready) {
-      return stopChainDaemon({network: args.network}, stopErr => {
-        return cbk(stopErr || err);
-      });
+    if (!!res && !!res.spawnChainDaemon) {
+      res.spawnChainDaemon.daemon.kill();
     }
 
     if (!!err) {

@@ -67,6 +67,13 @@ with KEY=VALUE instead.
 
     npm t // Unit tests
 
+A [btcd installation](https://github.com/btcsuite/btcd#installation) is
+required to run all regtest tests and is the main regtest suite.
+
+    npm run btcd_regtest // regtest tests
+
+### Other Tests
+
 A [bcash installation](https://github.com/bcoin-org/bcash#install) is
 required to run bcash bcashregtest tests.
 
@@ -81,11 +88,6 @@ A [bitcoind installation](https://bitcoin.org/en/full-node#what-is-a-full-node) 
 required to run bitcoind_regtest tests.
 
     npm run bitcoind_regtest // bitcoind_regtest tests
-
-A [btcd installation](https://github.com/btcsuite/btcd#installation) is
-required to run btcd regtest tests.
-
-    npm run btcd_regtest // regtest tests
 
 A [ltcd installation](https://github.com/ltcsuite/ltcd#installation) is
 required to run ltcd ltcregtest tests.

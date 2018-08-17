@@ -9,6 +9,7 @@ const refundSuccess = require('./refund_success');
 const scanForSwap = require('./scan_for_swap');
 const sendChainTokensTransaction = require('./send_chain_tokens_tx');
 const spawnChainDaemon = require('./spawn_chain_daemon');
+const spawnLnd = require('./spawn_lnd');
 
 module.exports = {
   addressForPublicKey,
@@ -22,5 +23,6 @@ module.exports = {
   scanForSwap,
   sendChainTokensTransaction,
   spawnChainDaemon,
+  spawnLnd,
 };
 

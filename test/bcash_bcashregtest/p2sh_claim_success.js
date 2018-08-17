@@ -13,13 +13,10 @@ const {claimSuccess} = require('./../macros');
     },
     testErr => {
       if (!!testErr) {
-        console.log(testErr);
-        throw new Error('FailedClaimSuccess');
+        throw new Error(testErr);
       }
 
-      t.end();
-
-      return;
+      return t.end();
     });
   });
 

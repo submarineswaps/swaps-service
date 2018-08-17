@@ -15,9 +15,7 @@ test('the block scanner picks up a claimed swap', t => {
       throw new Error('ScannerFailedToIdentifySwaps');
     }
 
-    t.end();
-
-    return;
+    return t.end();
   });
 });
 

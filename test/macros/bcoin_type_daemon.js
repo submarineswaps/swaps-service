@@ -16,7 +16,7 @@ const serverDefaults = require('./../../chain/conf/chain_server_defaults');
 
   @returns via cbk
   {
-    is_ready: <Chain Daemon is Ready Bool>
+    daemon: <Daemon Child Process Object>
   }
 */
 module.exports = ({dir, network}, cbk) => {
@@ -48,8 +48,8 @@ module.exports = ({dir, network}, cbk) => {
 
   try {
     credentials = credentialsForNetwork({network});
-  } catch (e) {
-    return cbk([500, 'CredentialsLookupFailure', e]);
+  } catch (err) {
+    return cbk([500, 'CredentialsLookupFailure', err]);
   }
 
   const daemon = spawn(serverDefaults[network].executable, [
@@ -62,7 +62,7 @@ module.exports = ({dir, network}, cbk) => {
 
   daemon.stdout.on('data', data => {
     if (rpcServerReady.test(`${data}`)) {
-      return cbk(null, {is_ready: true});
+      return cbk(null, {daemon});
     }
 
     return;

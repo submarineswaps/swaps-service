@@ -12,13 +12,10 @@ const {refundSuccess} = require('./../macros');
     },
     err => {
       if (!!err) {
-        console.log(err);
-        throw new Error('FailedRefundSuccess');
+        throw new Error(err);
       }
 
-      t.end();
-
-      return;
+      return t.end();
     });
   });
 });

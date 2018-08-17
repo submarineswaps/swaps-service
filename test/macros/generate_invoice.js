@@ -1,20 +1,9 @@
-const {createHash} = require('crypto');
-const {encode} = require('bolt11');
-const {sign} = require('bolt11');
-const uuidv4 = require('uuid/v4');
+const {createInvoice} = require('ln-service');
 
-const {ECPair} = require('./../../tokenslib');
-const {networks} = require('./../../tokenslib');
-
-const preimageByteCount = 32;
-const privKeySize = 32;
-const uuidv4ByteCount = 16;
-
-/** Generate a fake invoice payment preimage and payment hash pair
+/** Generate an invoice payment preimage and payment hash pair
 
   {
-    network: <Network Name String>
-    private_key: <WIF Encoded Private Key String>
+    lnd: <LND GRPC API Object>
   }
 
   @returns via cbk
@@ -24,33 +13,21 @@ const uuidv4ByteCount = 16;
     payment_preimage: <Payment Preimage Hex String>
   }
 */
-module.exports = (args, cbk) => {
-  if (!args.network) {
-    return cbk([0, 'ExpectedNetworkForInvoice']);
+module.exports = ({lnd}, cbk) => {
+  if (!lnd) {
+    return cbk([400, 'ExpectedLndForInvoiceGeneration']);
   }
 
-  if (!args.private_key) {
-    return cbk([0, 'ExpectedPrivateKeyForInvoiceSigning']);
-  }
+  return createInvoice({lnd, tokens: 1}, (err, res) => {
+    if (!!err) {
+      return cbk(err);
+    }
 
-  const keyPair = ECPair.fromWIF(args.private_key, networks[args.network]);
-  const preimage = new Buffer(preimageByteCount);
-
-  // Populate preimage bytes with a couple uuidv4s
-  uuidv4({}, preimage);
-  uuidv4({}, preimage, uuidv4ByteCount);
-
-  // The invoice requires a payment hash and is signed with a private key.
-  const payHash = createHash('sha256').update(preimage).digest('hex');
-
-  const privKey = keyPair.privateKey.toString('hex');
-
-  const invoice = encode({tags: [{tagName: 'payment_hash', data: payHash}]});
-
-  return cbk(null, {
-    invoice: sign(invoice, privKey).paymentRequest,
-    payment_hash: payHash,
-    payment_preimage: preimage.toString('hex'),
+    return cbk(null, {
+      invoice: res.invoice,
+      payment_hash: res.id,
+      payment_preimage: res.payment_secret,
+    });
   });
 };
 

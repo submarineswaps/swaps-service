@@ -1,3 +1,4 @@
+const {join} = require('path');
 const {spawn} = require('child_process');
 
 const chainServer = require('./../../chain/conf/chain_server_defaults');
@@ -6,6 +7,7 @@ const {ECPair} = require('./../../tokenslib');
 const {networks} = require('./../../tokenslib');
 const {payments} = require('./../../tokenslib');
 
+const defaultListenPort = 19495;
 const {fromPublicKey} = ECPair;
 const knownDaemons = ['btcd', 'ltcd'];
 const notFoundIndex = -1;
@@ -18,8 +20,11 @@ const unableToStartServer = /Unable.to.start.server/;
   {
     daemon: <Daemon Name String>
     dir: <Data Directory String>
+    [is_tls]: <Uses TLS Bool>
+    [listen_port]: <Listen Port Number>
     mining_public_key: <Mining Public Key Hex String>
     network: <Network Name String>
+    [rpc_port]: <Rpc Port Number>
   }
 
   @returns
@@ -27,7 +32,7 @@ const unableToStartServer = /Unable.to.start.server/;
 
   @returns via cbk
   {
-    is_ready: <Chain Daemon is Ready Bool>
+    daemon: <Daemon Child Process Object>
   }
 */
 module.exports = (args, cbk) => {
@@ -55,18 +60,21 @@ module.exports = (args, cbk) => {
 
   try {
     credentials = credentialsForNetwork({network: args.network});
-  } catch (e) {
-    return cbk([500, 'CredentialsLookupFailure', e]);
+  } catch (err) {
+    return cbk([500, 'CredentialsLookupFailure', err]);
   }
 
   const daemon = spawn(args.daemon, [
     '--datadir', args.dir,
+    '--listen', `127.0.0.1:${args.listen_port || defaultListenPort}`,
     '--logdir', args.dir,
     '--miningaddr', p2pkh({network, pubkey}).address,
-    '--notls',
+    (!args.is_tls ? '--notls' : null),
     '--regtest',
     '--relaynonstd',
-    '--rpclisten', `${credentials.host}:${credentials.port}`,
+    '--rpccert', join(args.dir, 'rpc.cert'),
+    '--rpckey', join(args.dir, 'rpc.key'),
+    '--rpclisten', `${credentials.host}:${args.rpc_port || credentials.port}`,
     '--rpcpass', credentials.pass,
     '--rpcuser', credentials.user,
     '--txindex',
@@ -74,11 +82,11 @@ module.exports = (args, cbk) => {
 
   daemon.stdout.on('data', data => {
     if (unableToStartServer.test(`${data}`)) {
-      return cbk([500, 'SpawnDaemonFailure']);
+      return cbk([503, 'SpawnDaemonFailure', args]);
     }
 
     if (rpcServerReady.test(`${data}`)) {
-      return cbk(null, {is_ready: true});
+      return cbk(null, {daemon});
     }
 
     return;

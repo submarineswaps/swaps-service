@@ -11,13 +11,17 @@ const btcsuiteTypeDaemon = require('./btcsuite_type_daemon');
 
   {
     daemon: <Daemon Type String>
-    mining_public_key: <Mining Public Key Hex String>
+    [is_tls]: <Uses TLS Bool> // only supported for btcsuite type
+    [listen_port]: <Listen Port Number> // only supported for btcsuite type
+    [mining_public_key]: <Mining Public Key Hex String>
     network: <Network Name String>
+    [rpc_port]: <Rpc Port Number> // only supported for btcsuite type
   }
 
   @returns via cbk
   {
-    is_ready: <Chain Daemon is Ready Bool>
+    daemon: <Daemon Child Process Object>
+    dir: <Data Dir Path String>
   }
 */
 module.exports = (args, cbk) => {
@@ -40,20 +44,35 @@ module.exports = (args, cbk) => {
   case 'btcd':
   case 'ltcd':
     daemon = btcsuiteTypeDaemon({
-        dir,
-        daemon: args.daemon,
-        mining_public_key: args.mining_public_key,
-        network: args.network,
-      },
-      cbk);
+      dir,
+      daemon: args.daemon,
+      is_tls: args.is_tls,
+      listen_port: args.listen_port,
+      mining_public_key: args.mining_public_key,
+      network: args.network,
+      rpc_port: args.rpc_port,
+    },
+    (err, res) => {
+      if (!!err) {
+        return cbk(err);
+      }
+
+      return cbk(null, {dir, daemon: res.daemon});
+    });
     break;
   case 'bitcoind':
     daemon = bitcoincoreTypeDaemon({
-        dir,
-        daemon: args.daemon,
-        network: args.network,
-      },
-      cbk);
+      dir,
+      daemon: args.daemon,
+      network: args.network,
+    },
+    (err, res) => {
+      if (!!err) {
+        return cbk(err);
+      }
+
+      return cbk(null, {dir, daemon: res.daemon});
+    });
     break;
   default:
     return cbk([400, 'UnknownDaemonType', args.daemon]);

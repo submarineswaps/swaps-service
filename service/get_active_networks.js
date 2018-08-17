@@ -9,7 +9,7 @@ const {returnResult} = require('./../async-util');
 
 const active = {};
 const nets = Object.keys(networks);
-const timeout = 1000 * 10;
+const timeout = 1000 * 3;
 
 /** Get networks that are currently active and available for swaps
 

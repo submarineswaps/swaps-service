@@ -588,10 +588,6 @@ App.getInvoiceDetails = ({invoice, network}, cbk) => {
         throw new Error('ExpectedCreatedAt');
       }
 
-      if (typeof details.description !== 'string') {
-        throw new Error('ExpectedDescription');
-      }
-
       if (!details.destination_public_key) {
         throw new Error('ExpectedDestinationPublicKey');
       }
@@ -630,7 +626,6 @@ App.getInvoiceDetails = ({invoice, network}, cbk) => {
     })
     .then(details => cbk(null, {
       created_at: details.created_at,
-      description: details.description,
       destination_public_key: details.destination_public_key,
       expires_at: details.expires_at,
       fee: details.fee,
@@ -780,7 +775,7 @@ App.initActiveChains = ({}, cbk) => {
 
         option.text(optionName);
 
-        $('.select-currency').append(option);
+        $('.create-swap-quote .select-currency').append(option);
 
         return;
       });
@@ -1037,8 +1032,6 @@ App.showInvoice = args => {
   details.find('.payment-public-key').prop('hidden', !!hasDestinationUrl);
   details.find('.fiat-currency-code').text(symbolForFiat);
   details.find('.fiat-send-amount').text(currencyFormatter.format(fiat));
-  details.find('.description').prop('hidden', !invoice.description);
-  details.find('.payment-description').text(invoice.description);
   details.find('.send-amount').text(App.format({tokens: invoice.tokens}));
   details.find('.send-currency-code').text(symbolForNetwork);
 
@@ -1571,6 +1564,10 @@ App.submitSignWithRefundDetails = function(e) {
   }
 */
 App.updatedSwapDetails = ({swap}) => {
+  if (!swap.find('.pay-to-lightning-invoice').length) {
+    return;
+  }
+
   const invoice = swap.find('.pay-to-lightning-invoice').val().trim();
   const network = swap.find('.select-currency').val();
 

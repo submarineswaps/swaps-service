@@ -19,6 +19,7 @@ module.exports = ({invoice}) => {
 
   switch (details.network) {
   case 'bitcoin':
+  case 'regtest':
   case 'testnet':
     break;
 

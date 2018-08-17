@@ -16,6 +16,7 @@ const {payments} = require('./../../tokenslib');
 const {networks} = require('./../../tokenslib');
 const sendChainTokensTransaction = require('./send_chain_tokens_tx');
 const spawnChainDaemon = require('./spawn_chain_daemon');
+const spawnLnd = require('./spawn_lnd');
 const {stopChainDaemon} = require('./../../chain');
 const {swapAddress} = require('./../../swaps');
 const {swapScriptInTransaction} = require('./../../swaps');
@@ -62,13 +63,16 @@ module.exports = (args, cbk) => {
       }
     },
 
+    // Create a dummy LND
+    spawnLnd: cbk => spawnLnd({}, cbk),
+
     // Bob will make a Lightning invoice to pay
-    generatePaymentPreimage: ['generateBobKeyPair', (res, cbk) => {
-      return generateInvoice({
-        network: args.network,
-        private_key: res.generateBobKeyPair.private_key,
-      },
-      cbk);
+    generatePaymentPreimage: ['spawnLnd', ({spawnLnd}, cbk) => {
+      return generateInvoice({lnd: spawnLnd.lnd}, cbk);
+    }],
+
+    stopLnd: ['generatePaymentPreimage', 'spawnLnd', ({spawnLnd}, cbk) => {
+      return spawnLnd.kill({}, cbk);
     }],
 
     // We'll bring up a fake chain for this test, with Bob getting the rewards
@@ -361,12 +365,15 @@ module.exports = (args, cbk) => {
       },
       cbk);
     }],
+
+    // Stop the chain daemon
+    stopChainDaemon: ['mineClaimTransaction', ({}, cbk) => {
+      return stopChainDaemon({network: args.network}, cbk);
+    }],
   },
   (err, res) => {
-    if (!!res.spawnChainDaemon && !!res.spawnChainDaemon.is_ready) {
-      return stopChainDaemon({network: args.network}, stopErr => {
-        return cbk(stopErr || err);
-      });
+    if (!!res && !!res.spawnChainDaemon) {
+      res.spawnChainDaemon.daemon.kill();
     }
 
     if (!!err) {

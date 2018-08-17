@@ -20,6 +20,7 @@ const {refundTransaction} = require('./../../swaps');
 const sendChainTokensTransaction = require('./send_chain_tokens_tx');
 const serverSwapKeyPair = require('./../../service/server_swap_key_pair');
 const spawnChainDaemon = require('./spawn_chain_daemon');
+const spawnLnd = require('./spawn_lnd');
 const {swapAddress} = require('./../../swaps');
 const {swapScanner} = require('./../../scan');
 const {stopChainDaemon} = require('./../../chain');
@@ -69,6 +70,9 @@ module.exports = ({cache, daemon, network, type}, cbk) => {
       });
     },
 
+    // Create a LND
+    spawnLnd: cbk => spawnLnd({}, cbk),
+
     // Generate a key pair to use for mining and a swap invoice
     generateKeyPair: ['index', ({index}, cbk) => {
       try {
@@ -79,12 +83,13 @@ module.exports = ({cache, daemon, network, type}, cbk) => {
     }],
 
     // Generate a swap invoice
-    generateSwapInvoice: ['generateKeyPair', ({generateKeyPair}, cbk) => {
-      return generateInvoice({
-        network,
-        private_key: generateKeyPair.private_key,
-      },
-      cbk);
+    generateSwapInvoice: ['spawnLnd', ({spawnLnd}, cbk) => {
+      return generateInvoice({lnd: spawnLnd.lnd}, cbk);
+    }],
+
+    // Stop the LND
+    stopLnd: ['generateSwapInvoice', 'spawnLnd', ({spawnLnd}, cbk) => {
+      return spawnLnd.kill({}, cbk);
     }],
 
     // Determine mine-to-address
@@ -559,12 +564,15 @@ module.exports = ({cache, daemon, network, type}, cbk) => {
 
       return cbk();
     }],
+
+    // Shut down the chain daemon
+    stopDaemon: ['checkDetectedSwaps', ({}, cbk) => {
+      return stopChainDaemon({network}, cbk);
+    }],
   },
   (err, res) => {
-    if (!!res.spawnChainDaemon && !!res.spawnChainDaemon.is_ready) {
-      return stopChainDaemon({network}, stopErr => {
-        return cbk(stopErr || err);
-      });
+    if (!!res && !!res.spawnChainDaemon) {
+      res.spawnChainDaemon.daemon.kill();
     }
 
     if (!!err) {

@@ -6,19 +6,14 @@ const rpcServerReady = /init message: Done loading/;
 
 /** Start a bitcoin core style daemon
 
- {
-   dir: <Path to Data Directory>
-   network: <Network Name String>
- }
+  {
+    dir: <Path to Data Directory>
+    network: <Network Name String>
+  }
 
- @returns
-   <Daemon Object>
-
- @returns via cbk
- {
-   is_ready: <Chain Daemon is Ready Bool>
- }
- */
+  @returns
+  <Daemon Object>
+*/
 module.exports = ({dir, network}, cbk) => {
   if (!dir) {
     return cbk([400, 'ExpectedDirectoryForDaemon']);
@@ -56,7 +51,7 @@ module.exports = ({dir, network}, cbk) => {
 
   daemon.stdout.on('data', data => {
     if (rpcServerReady.test(`${data}`)) {
-      return cbk(null, {is_ready: true});
+      return cbk();
     }
 
     return;

@@ -1,4 +1,5 @@
 const asyncAuto = require('async/auto');
+const {createInvoice} = require('ln-service');
 
 const macros = './../macros/';
 
@@ -18,6 +19,7 @@ const promptForInput = require('./../macros').prompt;
 const {returnResult} = require('./../../async-util');
 const {sendChainTokensTransaction} = require('./../macros');
 const {spawnChainDaemon} = require('./../macros');
+const {spawnLnd} = require('./../macros');
 const {stopChainDaemon} = require('./../../chain');
 const {swapAddress} = require('./../../swaps');
 const {swapScriptInTransaction} = require('./../../swaps');
@@ -43,17 +45,27 @@ module.exports = ({}, cbk) => {
     },
     cbk),
 
+    // Create a dummy LND
+    spawnLnd: cbk => {
+      return spawnLnd({}, cbk);
+    },
+
     // In a default case we can assume Alice made the invoice herself
     defaultLightningInvoice: [
-      'generateAliceKeyPair',
       'network',
-      ({generateAliceKeyPair, network}, cbk) =>
+      'spawnLnd',
+      ({network, spawnLnd}, cbk) =>
     {
-      return generateInvoice({
-        network,
-        private_key: generateAliceKeyPair.private_key,
-      },
-      cbk);
+      if (network !== defaultNetwork) {
+        return cbk();
+      }
+
+      return generateInvoice({lnd: spawnLnd.lnd}, cbk);
+    }],
+
+    // Stop the dummy LND
+    stopLnd: ['defaultLightningInvoice', 'spawnLnd', ({spawnLnd}, cbk) => {
+      return spawnLnd.kill({}, cbk);
     }],
 
     // Make sure the network is a known network
@@ -170,8 +182,8 @@ module.exports = ({}, cbk) => {
     parseLightningInvoice: ['promptForLightingInvoice', (res, cbk) => {
       try {
         return parseInvoice({invoice: res.promptForLightingInvoice.value});
-      } catch (e) {
-        return cbk([0, 'ExpectedValidInvoice', e]);
+      } catch (err) {
+        return cbk([0, 'ExpectedValidInvoice', err]);
       }
     }],
 

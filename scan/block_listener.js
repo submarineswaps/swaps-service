@@ -180,7 +180,11 @@ module.exports = ({network}) => {
     },
     cbk);
   },
-  err => listener.emit('error', err));
+  err => {
+    listener.emit('error', err);
+
+    return;
+  });
 
   return listener;
 };

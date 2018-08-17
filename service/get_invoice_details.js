@@ -159,6 +159,8 @@ module.exports = ({cache, invoice, network}, cbk) => {
       },
       cbk) =>
     {
+      return cbk();
+
       try {
         const check = checkInvoicePayable({
           network,
