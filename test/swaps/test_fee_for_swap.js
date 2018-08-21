@@ -13,7 +13,7 @@ const tests = {
       send_tokens: 1000,
       swap_rate: 2500,
     },
-    expected: {fee: 12000, tokens: 13000},
+    expected: {converted_fee: 12000, fee: 12000, tokens: 13000},
   },
 
   // Predictable fee rate is charged against a normal swap
@@ -26,11 +26,12 @@ const tests = {
       send_tokens: 100000,
       swap_rate: 1000,
     },
-    expected: {fee: 10300, tokens: 10010300},
+    expected: {converted_fee: 103, fee: 10300, tokens: 10010300},
   },
 };
 
 Object.keys(tests).map(k => tests[k]).forEach(({expected, args}) => {
+  equal(feeForSwap(args).converted_fee, expected.converted_fee);
   equal(feeForSwap(args).fee, expected.fee);
   equal(feeForSwap(args).tokens, expected.tokens);
 

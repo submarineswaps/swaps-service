@@ -20,6 +20,7 @@ const swapRateDivisor = 1e6;
 
   @returns
   {
+    converted_fee: <Converted Fee Tokens Number>
     fee: <Fee Tokens For Swap Number>
     tokens: <Total Expected Tokens Number>
   }
@@ -66,6 +67,6 @@ module.exports = args => {
 
   const tokens = convertedTokens + fee;
 
-  return {fee, tokens};
+  return {fee, tokens, converted_fee: round(fee * args.rate_source)};
 };
 

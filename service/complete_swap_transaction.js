@@ -218,7 +218,7 @@ module.exports = ({cache, invoice, key, network, script, transaction}, cbk) => {
       'lnd',
       ({getSwapFee, lnd}, cbk) =>
     {
-      return payInvoice({invoice, lnd, fee: getSwapFee.fee}, cbk);
+      return payInvoice({invoice, lnd, fee: getSwapFee.converted_fee}, cbk);
     }],
 
     // Create a claim transaction to sweep the swap to the destination address
