@@ -4,6 +4,7 @@ const asyncAuto = require('async/auto');
 const asyncEach = require('async/each');
 const asyncFilter = require('async/filter');
 const asyncMap = require('async/map');
+const asyncMapSeries = require('async/mapSeries');
 const asyncForever = require('async/forever');
 const difference = require('lodash/difference');
 
@@ -12,6 +13,7 @@ const getPastBlocks = require('./get_past_blocks');
 const {getRecentChainTip} = require('./../blocks');
 const {setJsonInCache} = require('./../cache');
 
+const blockAnnounceBufferMs = 1000 * 30;
 const cacheBlockEmissionMs = 1000 * 60 * 60;
 const currentBlockHash = {};
 const notFound = -1;
@@ -145,17 +147,18 @@ module.exports = ({cache, network}) => {
 
         const newBlocks = getPastBlocks.blocks.filter(({id}) => !emitted[id]);
 
-        newBlocks.forEach(block => {
-          return block.transaction_ids.forEach(id => {
-            return listener.emit('transaction', {id, block: block.id});
-          });
-        });
-
         getInterestingTx.forEach(({block, id}) => {
           return listener.emit('transaction', {block, id});
         });
 
-        return cbk(null, newBlocks);
+        return asyncMapSeries(newBlocks, (block, cbk) => {
+          block.transaction_ids.forEach(id => {
+            return listener.emit('transaction', {id, block: block.id});
+          });
+
+          return setTimeout(() => cbk(null, block), blockAnnounceBufferMs);
+        },
+        cbk);
       }],
 
       // Cache the fact that block transactions were already emitted
