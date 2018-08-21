@@ -230,8 +230,8 @@ module.exports = ({block, cache, id, invoice, network, script}, cbk) => {
         cache,
         invoice,
         network,
-        private_key: serverKeyPair.private_key,
-        redeem_script: script,
+        script,
+        key: serverKeyPair.private_key,
         transaction: getTransaction.transaction,
       },
       (err, res) => {

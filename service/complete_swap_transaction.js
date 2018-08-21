@@ -6,18 +6,22 @@ const {payInvoice} = require('ln-service');
 
 const {addressDetails} = require('./../chain');
 const {broadcastTransaction} = require('./../chain');
+const {checkInvoicePayable} = require('./../swaps');
 const {claimTransaction} = require('./../swaps');
-const {getFee} = require('./../chain');
+const getFeeForSwap = require('./get_fee_for_swap');
+const {getFeeRate} = require('./../blocks');
 const {getRecentChainTip} = require('./../blocks');
 const {getRecentFeeRate} = require('./../blocks');
 const {parseInvoice} = require('./../lightning');
 const {lightningDaemon} = require('./../lightning');
 const {returnResult} = require('./../async-util');
 const {setJsonInCache} = require('./../cache');
+const swapParameters = require('./swap_parameters');
 const {swapScriptInTransaction} = require('./../swaps');
 
 const dummyLockingInvoiceValue = 1;
 const dummyPreimage = '0000000000000000000000000000000000000000000000000000000000000000';
+const estimatedTxVirtualSize = 200;
 const paymentTimeoutMs = 1000 * 60;
 const swapSuccessCacheMs = 1000 * 60 * 60;
 
@@ -28,9 +32,9 @@ const swapSuccessCacheMs = 1000 * 60 * 60;
   {
     cache: <Cache Type String>
     invoice: <Bolt 11 Invoice String>
+    key: <Private Key WIF String>
     network: <Network Name String>
-    private_key: <Private Key WIF String>
-    redeem_script: <Redeem Script Hex String>
+    script: <Redeem Script Hex String>
     transaction: <Funding Transaction Hex String>
   }
 
@@ -48,101 +52,95 @@ const swapSuccessCacheMs = 1000 * 60 * 60;
     transaction_id: <Transaction Id Hex String>
   }
 */
-module.exports = (args, cbk) => {
+module.exports = ({cache, invoice, key, network, script, transaction}, cbk) => {
   return asyncAuto({
-    // Check the current state of the blockchain to get a good locktime
-    getChainTip: cbk => getRecentChainTip({network: args.network}, cbk),
-
-    // Figure out what fee is needed to sweep the funds
-    getFee: cbk => {
-      return getRecentFeeRate({cache: args.cache, network: args.network}, cbk);
-    },
-
-    // Parse the given invoice
-    invoice: cbk => {
-      try {
-        return cbk(null, parseInvoice({invoice: args.invoice}));
-      } catch (err) {
-        return cbk([400, 'DecodeInvoiceFailure', err]);
-      }
-    },
-
     // Check completion arguments
     validate: cbk => {
-      if (!args.cache) {
+      if (!cache) {
         return cbk([400, 'ExpectedCacheToStoreSwapSuccess']);
       }
 
-      if (!args.invoice) {
+      if (!invoice) {
         return cbk([400, 'ExpectedInvoice']);
       }
 
-      if (!args.network) {
-        return cbk([400, 'ExpectedNetwork']);
-      }
-
-      if (!args.private_key) {
+      if (!key) {
         return cbk([400, 'ExpectedPrivateKey']);
       }
 
-      if (!args.redeem_script) {
+      if (!network) {
+        return cbk([400, 'ExpectedNetwork']);
+      }
+
+      if (!script) {
         return cbk([400, 'ExpectedRedeemScript']);
       }
 
-      if (!args.transaction) {
+      if (!transaction) {
         return cbk([400, 'ExpectedFundingTransaction']);
       }
 
       return cbk();
     },
 
-    // Initialize the LN daemon connection
-    lnd: ['invoice', ({invoice}, cbk) => {
-      try {
-        return cbk(null, lightningDaemon({network: invoice.network}));
-      } catch (e) {
-        return cbk([500, 'FailedToInitLightningDaemonConnection']);
-      }
-    }],
-
     // Funding UTXOs from the transaction
     fundingUtxos: ['validate', ({}, cbk) => {
       try {
         return cbk(null, swapScriptInTransaction({
-          redeem_script: args.redeem_script,
-          transaction: args.transaction,
+          transaction,
+          redeem_script: script,
         }));
       } catch (err) {
-        return cbk([0, e.message, err]);
+        return cbk([500, e.message, err]);
       }
     }],
 
-    // See if this invoice is payable
-    getRoutes: ['invoice', 'lnd', ({invoice, lnd}, cbk) => {
-      const {destination} = invoice;
-      const {tokens} = invoice;
-
-      return getRoutes({destination, lnd, tokens}, cbk);
+    // Check the current state of the blockchain to get a good locktime
+    getChainTip: ['validate', ({}, cbk) => {
+      return getRecentChainTip({network}, cbk);
     }],
 
-    checkRoutes: ['getRoutes', ({getRoutes}, cbk) => {
-      if (!getRoutes.routes.length) {
-        return cbk([503, 'InsufficientCapacity']);
-      }
+    // Figure out what fee is needed to sweep the funds
+    getFeeRate: ['validate', ({}, cbk) => {
+      return getRecentFeeRate({cache, network}, cbk);
+    }],
 
-      return cbk();
+    // Decode the supplied invoice
+    parsedInvoice: ['validate', ({}, cbk) => {
+      try {
+        return cbk(null, parseInvoice({invoice}));
+      } catch (err) {
+        return cbk([400, 'DecodeInvoiceFailure', err]);
+      }
+    }],
+
+    // Figure out what it will cost to do this swap
+    getSwapFee: ['parsedInvoice', ({parsedInvoice}, cbk) => {
+      const to = parsedInvoice.network;
+      const {tokens} = parsedInvoice;
+
+      return getFeeForSwap({cache, network, to, tokens}, cbk);
+    }],
+
+    // Initialize the LN daemon connection
+    lnd: ['parsedInvoice', ({parsedInvoice}, cbk) => {
+      try {
+        return cbk(null, lightningDaemon({network: parsedInvoice.network}));
+      } catch (err) {
+        return cbk([500, 'FailedToInitLightningDaemonConnection', err]);
+      }
     }],
 
     // Hack around the locking failure of paying invoices twice
     createLockingInvoice: [
       'fundingUtxos',
       'getChainTip',
-      'getFee',
-      'invoice',
+      'getFeeRate',
       'lnd',
-      ({invoice, lnd}, cbk) =>
+      'parsedInvoice',
+      ({parsedInvoice, lnd}, cbk) =>
     {
-      const {id} = invoice;
+      const {id} = parsedInvoice;
 
       return createInvoice({
         lnd,
@@ -154,15 +152,10 @@ module.exports = (args, cbk) => {
     }],
 
     // Make a new address to sweep out the funds to
-    getSweepAddress: [
-      'checkRoutes',
-      'createLockingInvoice',
-      'lnd',
-      ({lnd}, cbk) =>
-    {
-      const net = args.network;
+    getSweepAddress: ['createLockingInvoice', 'lnd', ({lnd}, cbk) => {
+      const net = network.toUpperCase();
 
-      const address = process.env[`SSS_CLAIM_${net.toUpperCase()}_ADDRESS`];
+      const address = process.env[`SSS_CLAIM_${net}_ADDRESS`];
 
       if (!!address) {
         return cbk(null, {address});
@@ -176,7 +169,7 @@ module.exports = (args, cbk) => {
       const {address} = getSweepAddress;
 
       try {
-        const {type} = addressDetails({address, network: args.network});
+        const {type} = addressDetails({address, network});
 
         switch (type) {
         case 'p2wpkh':
@@ -198,18 +191,18 @@ module.exports = (args, cbk) => {
       'checkSweepAddress',
       'fundingUtxos',
       'getChainTip',
-      'getFee',
+      'getFeeRate',
       'getSweepAddress',
-      ({fundingUtxos, getChainTip, getFee, getSweepAddress}, cbk) =>
+      ({fundingUtxos, getChainTip, getFeeRate, getSweepAddress}, cbk) =>
     {
       try {
         return cbk(null, claimTransaction({
+          network,
           current_block_height: getChainTip.height,
           destination: getSweepAddress.address,
-          fee_tokens_per_vbyte: getFee.fee_tokens_per_vbyte,
-          network: args.network,
+          fee_tokens_per_vbyte: getFeeRate.fee_tokens_per_vbyte,
           preimage: dummyPreimage,
-          private_key: args.private_key,
+          private_key: key,
           utxos: fundingUtxos.matching_outputs,
         }));
       } catch (err) {
@@ -218,28 +211,41 @@ module.exports = (args, cbk) => {
     }],
 
     // Pay the invoice
-    payInvoice: ['canClaim', 'createLockingInvoice', 'lnd', ({lnd}, cbk) => {
-      return payInvoice({lnd, invoice: args.invoice}, cbk);
+    payInvoice: [
+      'canClaim',
+      'createLockingInvoice',
+      'getSwapFee',
+      'lnd',
+      ({getSwapFee, lnd}, cbk) =>
+    {
+      return payInvoice({invoice, lnd, fee: getSwapFee.fee}, cbk);
     }],
 
     // Create a claim transaction to sweep the swap to the destination address
     claimTransaction: [
       'fundingUtxos',
       'getChainTip',
-      'getFee',
+      'getFeeRate',
       'getSweepAddress',
       'payInvoice',
-      (res, cbk) =>
+      ({
+        fundingUtxos,
+        getChainTip,
+        getFeeRate,
+        getSweepAddress,
+        payInvoice,
+      },
+      cbk) =>
     {
       try {
         return cbk(null, claimTransaction({
-          current_block_height: res.getChainTip.height,
-          destination: res.getSweepAddress.address,
-          fee_tokens_per_vbyte: res.getFee.fee_tokens_per_vbyte,
-          network: args.network,
-          preimage: res.payInvoice.payment_secret,
-          private_key: args.private_key,
-          utxos: res.fundingUtxos.matching_outputs,
+          network,
+          current_block_height: getChainTip.height,
+          destination: getSweepAddress.address,
+          fee_tokens_per_vbyte: getFeeRate.fee_tokens_per_vbyte,
+          preimage: payInvoice.payment_secret,
+          private_key: key,
+          utxos: fundingUtxos.matching_outputs,
         }));
       } catch (err) {
         return cbk([500, 'ExpectedClaimTransaction', err]);
@@ -249,7 +255,7 @@ module.exports = (args, cbk) => {
     // Broadcast the claim transaction
     broadcastTransaction: ['claimTransaction', ({claimTransaction}, cbk) => {
       return broadcastTransaction({
-        network: args.network,
+        network,
         priority: 0,
         transaction: claimTransaction.transaction
       },
@@ -260,12 +266,18 @@ module.exports = (args, cbk) => {
     completedSwap: [
       'broadcastTransaction',
       'fundingUtxos',
-      'invoice',
+      'parsedInvoice',
       'payInvoice',
-      ({broadcastTransaction, fundingUtxos, invoice, payInvoice}, cbk) =>
+      ({
+        broadcastTransaction,
+        fundingUtxos,
+        parsedInvoice,
+        payInvoice,
+      },
+      cbk) =>
     {
       return cbk(null, {
-        invoice_id: invoice.id,
+        invoice_id: parsedInvoice.id,
         funding_utxos: fundingUtxos.matching_outputs,
         payment_secret: payInvoice.payment_secret,
         transaction_id: broadcastTransaction.id,
