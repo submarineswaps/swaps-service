@@ -121,6 +121,13 @@ module.exports = ({block, cache, id, network}, cbk) => {
       const {id} = tx;
       const {outputs} = tx;
 
+      const strangeOutputs = outputs.filter(({value}) => !value);
+
+      // Ignore mempool transactions that have strange outputs
+      if (!block && !!strangeOutputs.length) {
+        return cbk();
+      }
+
       return swapsFromOutputs({cache, id, network, outputs}, cbk);
     }],
 

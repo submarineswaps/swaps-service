@@ -52,6 +52,7 @@ module.exports = ({cache, network}, cbk) => {
         return cbk(null, 'BCH');
 
       case 'bitcoin':
+      case 'regtest':
       case 'testnet':
         return cbk(null, 'BTC');
 

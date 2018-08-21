@@ -25,6 +25,11 @@ const noRbfMultiplier = 10;
 module.exports = ({blocks, network, priority}, cbk) => {
   const params = !blocks ? [defaultBlockCount] : [blocks];
 
+  // Exit early when there are no real fees
+  if (network === 'regtest') {
+    return cbk(null, {fee_tokens_per_vbyte: defaultFee});
+  }
+
   return chainRpc({cmd, network, params, priority}, (err, res) => {
     if (!!err) {
       return cbk(err);

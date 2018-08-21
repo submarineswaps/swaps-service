@@ -43,8 +43,11 @@ const startWalletTimeoutMs = 4500;
 
   @returns via cbk
   {
+    cert: <Base 64 TLS Certificate String>
+    host: <IP and Port String>
     kill: <Stop Function> ({}, () => {})
     lnd: <LND GRPC API Object>
+    macaroon: <Base 64 Admin Macaroon String>
   }
 */
 module.exports = ({}, cbk) => {
@@ -166,18 +169,26 @@ module.exports = ({}, cbk) => {
       });
     }],
 
-    // Wallet LND GRPC API
-    lnd: ['createWallet', ({spawnChainDaemon}, cbk) => {
+    // Wallet details
+    wallet: ['createWallet', ({spawnChainDaemon}, cbk) => {
       const {dir} = spawnChainDaemon;
+      const certPath = join(dir, lightningTlsCertFileName);
+      const macaroonPath = join(dir, adminMacaroonFileName);
 
-      const cert = readFileSync(join(dir, lightningTlsCertFileName));
-      const macaroon = readFileSync(join(dir, adminMacaroonFileName));
+      return cbk(null, {
+        cert: readFileSync(certPath).toString('base64'),
+        host: `${lightningDaemonIp}:${lightningDaemonRpcPort}`,
+        macaroon: readFileSync(macaroonPath).toString('base64'),
+      });
+    }],
 
+    // Wallet LND GRPC API
+    lnd: ['wallet', ({wallet}, cbk) => {
       try {
         return cbk(null, lightningDaemon({
-          cert: cert.toString('base64'),
-          host: `${lightningDaemonIp}:${lightningDaemonRpcPort}`,
-          macaroon: macaroon.toString('base64'),
+          cert: wallet.cert,
+          host: wallet.host,
+          macaroon: wallet.macaroon,
         }));
       } catch (err) {
         return cbk([503, 'FailedToInstantiateWalletLnd', err]);
@@ -215,7 +226,13 @@ module.exports = ({}, cbk) => {
       return cbk(err);
     }
 
-    return cbk(null, {kill: res.killCommand.kill, lnd: res.lnd});
+    return cbk(null, {
+      cert: res.wallet.cert,
+      host: res.wallet.host,
+      kill: res.killCommand.kill,
+      lnd: res.lnd,
+      macaroon: res.wallet.macaroon,
+    });
   });
 };
 

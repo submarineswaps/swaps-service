@@ -6,11 +6,17 @@
   flow by alerting the server to the presence of a funded swap.
 
 */
-
+const createScanners = require('./create_scanners');
 const forgetSwap = require('./forget_swap');
 const getSwapKeyIndex = require('./get_swap_key_index');
 const swapScanner = require('./swap_scanner');
 const watchSwapOutput = require('./watch_swap_output');
 
-module.exports = {forgetSwap, getSwapKeyIndex, swapScanner, watchSwapOutput};
+module.exports = {
+  createScanners,
+  forgetSwap,
+  getSwapKeyIndex,
+  swapScanner,
+  watchSwapOutput,
+};
 
