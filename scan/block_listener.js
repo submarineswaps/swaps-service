@@ -17,6 +17,7 @@ const blockAnnounceBufferMs = 1000 * 30;
 const cacheBlockEmissionMs = 1000 * 60 * 60;
 const currentBlockHash = {};
 const notFound = -1;
+const manyTxCount = 50;
 const pollingDelayMs = 3000;
 const type = 'emitted_block';
 
@@ -156,7 +157,11 @@ module.exports = ({cache, network}) => {
             return listener.emit('transaction', {id, block: block.id});
           });
 
-          return setTimeout(() => cbk(null, block), blockAnnounceBufferMs);
+          if (block.transaction_ids.length > manyTxCount) {
+            return setTimeout(() => cbk(null, block), blockAnnounceBufferMs);
+          } else {
+            return cbk(null, block);
+          }
         },
         cbk);
       }],
