@@ -1767,6 +1767,10 @@ App.updateInvoiceDetails = ({swap}) => {
       let text;
 
       switch (errMessage) {
+      case 'ExpectedBaseFeeRate':
+        text = 'Using this currency to pay this invoice is not yet supported.';
+        break;
+
       case 'ChainFeesTooHighToSwap':
         text = 'Value too low for a chain swap. Use a higher value invoice?';
         break;
