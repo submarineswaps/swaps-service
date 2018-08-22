@@ -17,6 +17,7 @@ const {Transaction} = require('./../tokenslib');
 
 const blockSearchDepth = 9;
 const minBlocksUntilRefundHeight = 70;
+const priority = 0;
 
 /** Get the status of a pkhash swap
 
@@ -88,7 +89,7 @@ module.exports = ({block, cache, id, invoice, network, script}, cbk) => {
         return cbk(null, {current_confirmation_count: 0});
       }
 
-      return getBlockPlacement({block, cache, network}, cbk);
+      return getBlockPlacement({block, cache, network, priority}, cbk);
     }],
 
     // Figure out what swap key index corresponds to this redeem script

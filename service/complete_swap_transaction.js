@@ -23,6 +23,7 @@ const dummyLockingInvoiceValue = 1;
 const dummyPreimage = '0000000000000000000000000000000000000000000000000000000000000000';
 const estimatedTxVirtualSize = 200;
 const paymentTimeoutMs = 1000 * 60;
+const priority = 0;
 const swapSuccessCacheMs = 1000 * 60 * 60;
 
 /** Complete a swap transaction
@@ -97,7 +98,7 @@ module.exports = ({cache, invoice, key, network, script, transaction}, cbk) => {
 
     // Check the current state of the blockchain to get a good locktime
     getChainTip: ['validate', ({}, cbk) => {
-      return getRecentChainTip({network}, cbk);
+      return getRecentChainTip({network, priority}, cbk);
     }],
 
     // Figure out what fee is needed to sweep the funds

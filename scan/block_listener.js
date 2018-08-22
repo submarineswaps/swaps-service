@@ -19,6 +19,7 @@ const currentBlockHash = {};
 const notFound = -1;
 const manyTxCount = 50;
 const pollingDelayMs = 3000;
+const priority = 0;
 const type = 'emitted_block';
 
 /** Poll the chain for blocks. Transactions in blocks are emitted.
@@ -62,7 +63,7 @@ module.exports = ({cache, network}) => {
   asyncForever(cbk => {
     return asyncAuto({
       // Get the current hash
-      getCurrentHash: cbk => getRecentChainTip({network}, cbk),
+      getCurrentHash: cbk => getRecentChainTip({network, priority}, cbk),
 
       // When we discover a new current hash, pull transaction ids from blocks
       getPastBlocks: ['getCurrentHash', ({getCurrentHash}, cbk) => {

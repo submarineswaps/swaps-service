@@ -12,16 +12,18 @@ const notFoundIndex = -1;
   {
     block: <Block Hash Id String>
     network: <Network Name String>
+    [priority]: <Priority Number>
   }
 
   @returns via cbk
   {
     [current_confirmation_count]: <Current Confirmation Count Number>
+    [height]: <Chain Height Number>
     [median_created_at]: <Median Time Created At ISO 8601 String>
     [previous_block]: <Previous Block Hash Hex String>
   }
 */
-module.exports = ({block, cache, network}, cbk) => {
+module.exports = ({block, cache, network, priority}, cbk) => {
   return asyncAuto({
     // Check arguments
     validate: cbk => {
@@ -40,6 +42,7 @@ module.exports = ({block, cache, network}, cbk) => {
     getHeader: ['validate', ({}, cbk) => {
       return chainRpc({
         network,
+        priority,
         cmd: getBlockHeader,
         params: [block],
       },
@@ -54,10 +57,15 @@ module.exports = ({block, cache, network}, cbk) => {
         }
 
         const {confirmations} = details;
+        const {height} = details;
         const {mediantime} = details;
 
         if (!confirmations || confirmations < notFoundIndex) {
           return cbk([503, 'UnexpectedConfirmationsValue']);
+        }
+
+        if (height === undefined) {
+          return cbk([503, 'ExpectedBlockHeight']);
         }
 
         if (!mediantime) {
@@ -65,6 +73,7 @@ module.exports = ({block, cache, network}, cbk) => {
         }
 
         return cbk(null, {
+          height,
           current_confirmation_count: confirmations > 0 ? confirmations : null,
           median_created_at: new Date(mediantime * msPerSec).toISOString(),
           previous_block: details.previousblockhash,

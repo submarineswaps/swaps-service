@@ -1,18 +1,21 @@
 const asyncAuto = require('async/auto');
 
+const {getBlockHeader} = require('./../chain');
 const {getCurrentHash} = require('./../chain');
-const {getCurrentHeight} = require('./../chain');
+const getHeightForBlock = require('./get_height_for_block');
 const {getJsonFromCache} = require('./../cache');
 const {returnResult} = require('./../async-util');
 const {setJsonInCache} = require('./../cache');
 
-const cacheChainTipMs = 1000 * 5;
+const cache = 'memory';
+const cacheChainTipMs = 1000 * 10;
 const type = 'get_recent_chain_tip';
 
 /** Get recent-ish chain tip values
 
   {
     network: <Network Name String>
+    [priority]: <Priority Number>
   }
 
   @returns via cbk
@@ -21,7 +24,7 @@ const type = 'get_recent_chain_tip';
     height: <Block Height Number>
   }
 */
-module.exports = ({network}, cbk) => {
+module.exports = ({network, priority}, cbk) => {
   return asyncAuto({
     // Check arguments
     validate: cbk => {
@@ -32,56 +35,55 @@ module.exports = ({network}, cbk) => {
       return cbk();
     },
 
-    // Get the cached chain tip value
+    // Get the cached chain tip hash
     getCached: ['validate', ({}, cbk) => {
-      return getJsonFromCache({type, cache: 'memory', key: network}, cbk);
+      return getJsonFromCache({cache, type, key: network}, cbk);
     }],
 
     // Get the fresh chain tip hash value as necessary
-    getFreshHash: ['getCached', ({getCached}, cbk) => {
+    getFresh: ['getCached', ({getCached}, cbk) => {
       if (!!getCached && !!getCached.hash) {
         return cbk();
       }
 
-      return getCurrentHash({network, priority: 0}, cbk);
-    }],
-
-    // Get the fresh chain tip height as necessary
-    getFreshHeight: ['getCached', ({getCached}, cbk) => {
-      if (!!getCached && !!getCached.height) {
-        return cbk();
-      }
-
-      return getCurrentHeight({network, priority: 0}, cbk);
+      return getCurrentHash({network, priority}, cbk);
     }],
 
     // Set the cached chain tip value
-    setCached: ['chainTip', 'getCached', ({chainTip, getCached}, cbk) => {
-      if (!!getCached) {
+    setCached: ['getCached', 'getFresh', ({getCached, getFresh}, cbk) => {
+      if (!!getCached || !getFresh.hash) {
         return cbk();
       }
 
       return setJsonInCache({
+        cache,
         type,
-        cache: 'memory',
         key: network,
         ms: cacheChainTipMs,
-        value: {hash: chainTip.hash, height: chainTip.height},
+        value: {hash: getFresh.hash},
       },
       cbk);
     }],
 
+    // Best block hash
+    hash: ['getCached', 'getFresh', ({getCached, getFresh}, cbk) => {
+      const {hash} = getCached || getFresh;
+
+      return cbk(null, hash);
+    }],
+
+    // Get height for hash
+    getHeightForBlock: ['hash', ({hash}, cbk) => {
+      return getHeightForBlock({network, priority, block: hash}, cbk);
+    }],
+
     // Final chain tip result
     chainTip: [
-      'getCached',
-      'getFreshHash',
-      'getFreshHeight',
-      ({getCached, getFreshHash, getFreshHeight}, cbk) =>
+      'getHeightForBlock',
+      'hash',
+      ({getHeightForBlock, hash}, cbk) =>
     {
-      return cbk(null, {
-        hash: !!getFreshHash ? getFreshHash.hash : getCached.hash,
-        height: !!getFreshHeight ? getFreshHeight.height : getCached.height,
-      });
+      return cbk(null, {hash, height: getHeightForBlock.height});
     }],
   },
   returnResult({of: 'chainTip'}, cbk));

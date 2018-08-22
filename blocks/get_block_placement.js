@@ -16,6 +16,7 @@ const type = 'get_block_placement';
     block: <Block Hash Id String>
     [cache]: <Cache Name String> // When set, current conf count is omitted
     network: <Network Name String>
+    [priority]: <Priority Number>
   }
 
   @returns via cbk
@@ -25,7 +26,7 @@ const type = 'get_block_placement';
     [previous_block]: <Previous Block Hash Hex String>
   }
 */
-module.exports = ({block, cache, network}, cbk) => {
+module.exports = ({block, cache, network, priority}, cbk) => {
   return asyncAuto({
     // Check arguments
     validate: cbk => {
@@ -46,7 +47,7 @@ module.exports = ({block, cache, network}, cbk) => {
 
     // Figure what the current chain tip is, placement is relative to the tip
     getChainTip: ['validate', ({}, cbk) => {
-      return getRecentChainTip({network}, cbk);
+      return getRecentChainTip({network, priority}, cbk);
     }],
 
     // See if the previous block hash value is cached
@@ -66,7 +67,7 @@ module.exports = ({block, cache, network}, cbk) => {
         return cbk();
       }
 
-      return getBlockHeader({block, network}, cbk);
+      return getBlockHeader({block, network, priority}, cbk);
     }],
 
     // Set placement data into the cache

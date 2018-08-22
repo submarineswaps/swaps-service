@@ -42,7 +42,7 @@ module.exports = ({}, cbk) => {
           return cbk(null, active[network]);
         }
 
-        return getRecentChainTip({network}, err => {
+        return getRecentChainTip({network, priority: 0}, err => {
           active[network] = !err;
 
           return cbk(null, active[network]);
