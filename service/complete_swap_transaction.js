@@ -2,7 +2,7 @@ const asyncAuto = require('async/auto');
 const {createAddress} = require('ln-service');
 const {createInvoice} = require('ln-service');
 const {getRoutes} = require('ln-service');
-const {payInvoice} = require('ln-service');
+const {pay} = require('ln-service');
 
 const {addressDetails} = require('./../chain');
 const {broadcastTransaction} = require('./../chain');
@@ -115,6 +115,20 @@ module.exports = ({cache, invoice, key, network, script, transaction}, cbk) => {
       }
     }],
 
+    // Parameters for a swap with an invoice
+    swapParams: ['validate', ({}, cbk) => {
+      try {
+        return cbk(null, swapParameters({network}));
+      } catch (err) {
+        return cbk([400, 'ExpectedSwapParameters', err]);
+      }
+    }],
+
+    // Get the chain tip for the invoice's network
+    getInvoiceChainTip: ['parsedInvoice', ({parsedInvoice}, cbk) => {
+      return getRecentChainTip({network: parsedInvoice.network}, cbk);
+    }],
+
     // Figure out what it will cost to do this swap
     getSwapFee: ['parsedInvoice', ({parsedInvoice}, cbk) => {
       const to = parsedInvoice.network;
@@ -132,8 +146,80 @@ module.exports = ({cache, invoice, key, network, script, transaction}, cbk) => {
       }
     }],
 
+    // Fetch routes to execute payment over
+    getRoutes: ['lnd', 'parsedInvoice', ({lnd, parsedInvoice}, cbk) => {
+      return getRoutes({
+        lnd,
+        destination: parsedInvoice.destination,
+        tokens: parsedInvoice.tokens,
+      },
+      cbk);
+    }],
+
+    // Filter routes to avoid max fee
+    routes: [
+      'getRoutes',
+      'getSwapFee',
+      'swapParams',
+      ({getRoutes, getSwapFee, swapParams}, cbk) =>
+    {
+      const routes = getRoutes.routes.filter(({fee}) => fee < getSwapFee.fee);
+
+      return cbk(null, routes);
+    }],
+
+    // Current chain state
+    chainState: [
+      'getChainTip',
+      'getFeeRate',
+      'getInvoiceChainTip',
+      'swapParams',
+      ({getChainTip, getFeeRate, getInvoiceChainTip, swapParams}, cbk) =>
+    {
+      return cbk(null, {
+        current_height: getChainTip.height,
+        destination_height: getInvoiceChainTip.height,
+        refund_height: getChainTip.height + swapParams.timeout,
+        sweep_fee: getFeeRate.fee_tokens_per_vbyte * estimatedTxVirtualSize,
+      });
+    }],
+
+    // Check to make sure the invoice can be paid
+    checkPayable: [
+      'chainState',
+      'getSwapFee',
+      'parsedInvoice',
+      'routes',
+      'swapParams',
+      ({chainState, getSwapFee, parsedInvoice, routes, swapParams}, cbk) =>
+    {
+      try {
+        const check = checkInvoicePayable({
+          network,
+          routes,
+          claim_window: swapParams.claim_window,
+          current_height: chainState.current_height,
+          destination: parsedInvoice.destination,
+          destination_height: chainState.destination_height,
+          expires_at: parsedInvoice.expires_at,
+          invoice_network: parsedInvoice.network,
+          pending_channels: [],
+          refund_height: chainState.refund_height,
+          required_confirmations: swapParams.funding_confs,
+          swap_fee: getSwapFee.fee,
+          sweep_fee: chainState.sweep_fee,
+          tokens: parsedInvoice.tokens,
+        });
+
+        return cbk();
+      } catch (err) {
+        return cbk([400, err.message]);
+      }
+    }],
+
     // Hack around the locking failure of paying invoices twice
     createLockingInvoice: [
+      'checkPayable',
       'fundingUtxos',
       'getChainTip',
       'getFeeRate',
@@ -215,11 +301,12 @@ module.exports = ({cache, invoice, key, network, script, transaction}, cbk) => {
     payInvoice: [
       'canClaim',
       'createLockingInvoice',
-      'getSwapFee',
       'lnd',
-      ({getSwapFee, lnd}, cbk) =>
+      'parsedInvoice',
+      'routes',
+      ({lnd, parsedInvoice, routes}, cbk) =>
     {
-      return payInvoice({invoice, lnd, fee: getSwapFee.converted_fee}, cbk);
+      return pay({lnd, routes, id: parsedInvoice.id}, cbk);
     }],
 
     // Create a claim transaction to sweep the swap to the destination address

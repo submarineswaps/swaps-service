@@ -16,7 +16,7 @@
     "dotenv": "6.0.0",
     "express": "4.16.3",
     "helmet": "3.13.0",
-    "ln-service": "8.3.0",
+    "ln-service": "alexbosworth/ln-service",
     "lodash": "4.17.10",
     "morgan": "1.9.0",
     "node-cache": "4.2.0",
