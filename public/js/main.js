@@ -696,7 +696,7 @@ App.init = args => {
   $('.create-swap-quote .select-currency').change(App.changedCurrencySelection);
   $('#use-paper-wallet').change(App.changedRefundPreference);
 
-  App.initActiveChains({}, err => console.log);
+  App.initActiveChains({}, err => !!err ? console.log(err) : null);
 
   App.initExchangeRates({}, (err, res) => {
     if (!!err) {
@@ -711,8 +711,6 @@ App.init = args => {
 
     return;
   });
-
-  App.initFromQueryParams({});
 
   return;
 };
@@ -787,6 +785,8 @@ App.initActiveChains = ({}, cbk) => {
           .forEach(n => $('.select-currency').val(n));
       }
 
+      App.initFromQueryParams({});
+
       return cbk();
     })
     .catch(err => cbk(err));
@@ -842,8 +842,11 @@ App.initFromQueryParams = ({}) => {
     return;
   }
 
-  $('.pay-to-lightning-invoice').val(invoice).trigger('change');
+  // Set the currency to use
   $('.select-currency').val(network).trigger('change');
+
+  // Add in the LN invoice
+  $('.pay-to-lightning-invoice').val(invoice).trigger('change');
 
   return;
 };
