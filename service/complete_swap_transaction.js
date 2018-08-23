@@ -1,4 +1,5 @@
 const asyncAuto = require('async/auto');
+const asyncDetectSeries = require('async/detectSeries');
 const {createAddress} = require('ln-service');
 const {createInvoice} = require('ln-service');
 const {getRoutes} = require('ln-service');
@@ -22,6 +23,7 @@ const {swapScriptInTransaction} = require('./../swaps');
 const dummyLockingInvoiceValue = 1;
 const dummyPreimage = '0000000000000000000000000000000000000000000000000000000000000000';
 const estimatedTxVirtualSize = 200;
+const maxAttemptedRoutes = 30;
 const paymentTimeoutMs = 1000 * 60;
 const priority = 0;
 const swapSuccessCacheMs = 1000 * 60 * 60;
@@ -147,25 +149,20 @@ module.exports = ({cache, invoice, key, network, script, transaction}, cbk) => {
     }],
 
     // Fetch routes to execute payment over
-    getRoutes: ['lnd', 'parsedInvoice', ({lnd, parsedInvoice}, cbk) => {
+    getRoutes: [
+      'getSwapFee',
+      'lnd',
+      'parsedInvoice',
+      ({getSwapFee, lnd, parsedInvoice}, cbk) =>
+    {
       return getRoutes({
         lnd,
+        fee: getSwapFee.converted_fee,
         destination: parsedInvoice.destination,
+        limit: maxAttemptedRoutes,
         tokens: parsedInvoice.tokens,
       },
       cbk);
-    }],
-
-    // Filter routes to avoid max fee
-    routes: [
-      'getRoutes',
-      'getSwapFee',
-      'swapParams',
-      ({getRoutes, getSwapFee, swapParams}, cbk) =>
-    {
-      const routes = getRoutes.routes.filter(({fee}) => fee < getSwapFee.fee);
-
-      return cbk(null, routes);
     }],
 
     // Current chain state
@@ -187,16 +184,15 @@ module.exports = ({cache, invoice, key, network, script, transaction}, cbk) => {
     // Check to make sure the invoice can be paid
     checkPayable: [
       'chainState',
+      'getRoutes',
       'getSwapFee',
       'parsedInvoice',
-      'routes',
       'swapParams',
-      ({chainState, getSwapFee, parsedInvoice, routes, swapParams}, cbk) =>
+      ({chainState, getSwapFee, parsedInvoice, getRoutes, swapParams}, cbk) =>
     {
       try {
         const check = checkInvoicePayable({
           network,
-          routes,
           claim_window: swapParams.claim_window,
           current_height: chainState.current_height,
           destination: parsedInvoice.destination,
@@ -206,6 +202,7 @@ module.exports = ({cache, invoice, key, network, script, transaction}, cbk) => {
           pending_channels: [],
           refund_height: chainState.refund_height,
           required_confirmations: swapParams.funding_confs,
+          routes: getRoutes.routes,
           swap_fee: getSwapFee.fee,
           sweep_fee: chainState.sweep_fee,
           tokens: parsedInvoice.tokens,
@@ -301,12 +298,36 @@ module.exports = ({cache, invoice, key, network, script, transaction}, cbk) => {
     payInvoice: [
       'canClaim',
       'createLockingInvoice',
+      'getRoutes',
       'lnd',
       'parsedInvoice',
-      'routes',
-      ({lnd, parsedInvoice, routes}, cbk) =>
+      ({getRoutes, lnd, parsedInvoice}, cbk) =>
     {
-      return pay({lnd, routes, id: parsedInvoice.id}, cbk);
+      const {id} = parsedInvoice;
+      let paymentSecret;
+
+      return asyncDetectSeries(getRoutes.routes, (route, cbk) => {
+        return pay({id, lnd, routes: [route]}, (err, res) => {
+          if (!!err) {
+            return cbk(null, false);
+          }
+
+          paymentSecret = res.payment_secret;
+
+          return cbk(null, true);
+        });
+      },
+      err => {
+        if (!!err) {
+          return cbk([503, 'FailedToExecutePayment', err]);
+        }
+
+        if (!paymentSecret) {
+          return cbk([503, 'RouteExecutionFailedToGetPreimage']);
+        }
+
+        return cbk(null, {payment_secret: paymentSecret});
+      });
     }],
 
     // Create a claim transaction to sweep the swap to the destination address

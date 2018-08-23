@@ -18,6 +18,7 @@ const swapParameters = require('./swap_parameters');
 const currency = 'BTC';
 const estimatedTxVirtualSize = 200;
 const fiatCurrency = 'USD';
+const tokensConfidenceMultiplier = 2;
 
 /** Get invoice details in the context of a swap
 
@@ -132,11 +133,17 @@ module.exports = ({cache, invoice, network}, cbk) => {
     }],
 
     // See if this invoice is payable
-    getRoutes: ['lnd', 'parsedInvoice', ({lnd, parsedInvoice}, cbk) => {
+    getRoutes: [
+      'getSwapFee',
+      'lnd',
+      'parsedInvoice',
+      ({getSwapFee, lnd, parsedInvoice}, cbk) =>
+    {
       const {destination} = parsedInvoice;
-      const {tokens} = parsedInvoice;
+      const fee = getSwapFee.converted_fee;
+      const tokens = parsedInvoice.tokens * tokensConfidenceMultiplier;
 
-      return getRoutes({destination, lnd, tokens}, cbk);
+      return getRoutes({destination, fee, lnd, tokens}, cbk);
     }],
 
     // Check to make sure the invoice can be paid
