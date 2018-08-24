@@ -1791,7 +1791,7 @@ App.updateInvoiceDetails = ({swap}) => {
         break;
 
       case 'InsufficientCapacityForSwap':
-        text = 'Value is too high to swap. Use a lower value invoice?';
+        text = 'No route found to execute this swap. Try a smaller amount?';
         break;
 
       case 'InvoiceExpiresTooSoon':

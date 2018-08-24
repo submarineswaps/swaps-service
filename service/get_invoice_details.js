@@ -15,8 +15,9 @@ const {parseInvoice} = require('./../lightning');
 const {returnResult} = require('./../async-util');
 const swapParameters = require('./swap_parameters');
 
-const currency = 'BTC';
 const estimatedTxVirtualSize = 200;
+const decBase = 10;
+const defaultMaxHops = 3;
 const fiatCurrency = 'USD';
 const tokensConfidenceMultiplier = 2;
 
@@ -141,9 +142,22 @@ module.exports = ({cache, invoice, network}, cbk) => {
     {
       const {destination} = parsedInvoice;
       const fee = getSwapFee.converted_fee;
+      const net = parsedInvoice.network.toUpperCase();
       const tokens = parsedInvoice.tokens * tokensConfidenceMultiplier;
 
-      return getRoutes({destination, fee, lnd, tokens}, cbk);
+      return getRoutes({destination, fee, lnd, tokens}, (err, res) => {
+        if (!!err) {
+          return cbk(err);
+        }
+
+        const configuredMaxHops = process.env[`SSS_LN_${net}_MAX_HOPS`];
+
+        const maxHops = parseInt(configuredMaxHops || defaultMaxHops, decBase);
+
+        const routes = res.routes.filter(({hops}) => hops.length <= maxHops);
+
+        return cbk(null, {routes});
+      });
     }],
 
     // Check to make sure the invoice can be paid
