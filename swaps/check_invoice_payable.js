@@ -52,7 +52,6 @@ const channelMinMargin = 1.01;
   InsufficientCapacityForSwap // Capacity only supports lower value for send
   InvoiceExpiresTooSoon // Invoice will expire before funding can confirm
   InvoiceMissingTokens // No tokens specified to swap
-  InsufficientSwapFee // The swap fee doesn't cover the server's swap fees
   RefundHeightTooClose // The refund height approaches, not safe to pay
   RouteTimeoutHeightTooClose // Window to pay invoice has closed
 */
@@ -158,10 +157,6 @@ module.exports = args => {
     if (expectedConfirmationDate.toISOString() > args.expires_at) {
       throw new Error('InvoiceExpiresTooSoon');
     }
-  }
-
-  if (args.swap_fee < args.sweep_fee + maxRoutingFee) {
-    throw new Error('InsufficientSwapFee');
   }
 
   return;
