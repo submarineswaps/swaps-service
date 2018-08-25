@@ -30,26 +30,39 @@ const tokensByteLength = 8;
   @returns
   {
     inputs: [{
-       bip32_derivations: [{
+       [bip32_derivations]: [{
         fingerprint: <Public Key Fingerprint Hex String>
         path: <BIP 32 Derivation Path Hex String>
         public_key: <Public Key Hex String>
       }]
-      final_scriptsig: <Final ScriptSig Hex String>
-      final_scriptwitness: <Final Script Witness Hex String>
-      non_witness_utxo: <Non-Witness Hex Encoded Transaction String>
-      partial_sig: {
+      [final_scriptsig]: <Final ScriptSig Hex String>
+      [final_scriptwitness]: <Final Script Witness Hex String>
+      [non_witness_utxo]: <Non-Witness Hex Encoded Transaction String>
+      [partial_sig]: {
         hash_type: <Signature Hash Type Number>
         public_key: <Public Key Hex String>
         signature: <Signature Hex String>
       }
-      redeem_script: <Hex Encoded Redeem Script String>
-      sighash_type: <Sighash Type Number>
-      witness_script: <Witness Script Hex String>
-      witness_utxo: {
+      [redeem_script]: <Hex Encoded Redeem Script String>
+      [sighash_type]: <Sighash Type Number>
+      [witness_script]: <Witness Script Hex String>
+      [witness_utxo]: {
         script_pub: <UTXO ScriptPub Hex String>
         tokens: <Tokens Number>
       }
+    }]
+    outputs: [{
+      [bip32_derivations]: [{
+        fingerprint: <Public Key Fingerprint Hex String>
+        path: <BIP 32 Derivation Path Hex String>
+        public_key: <Public Key Hex String>
+      }]
+      [redeem_script]: <Hex Encoded Redeem Script>
+      [witness_script]: <Hex Encoded Witness Script>
+    }]
+    pairs: [{
+      key: <Key Type Hex String>
+      value: <Value Hex String>
     }]
   }
 */
@@ -173,7 +186,7 @@ module.exports = ({psbt}) => {
     if (!decoded.unsigned_transaction) {
       switch (keyType.toString('hex')) {
       case types.global.unsigned_tx:
-        const tx = Transaction.fromHex(value);
+        const tx = Transaction.fromBuffer(value);
         decoded.unsigned_transaction = value.toString('hex');
 
         terminatorsExpected = tx.ins.length + tx.outs.length + [tx].length;

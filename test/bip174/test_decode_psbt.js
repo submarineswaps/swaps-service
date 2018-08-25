@@ -68,7 +68,22 @@ const tests = {
           },
         },
       ],
-      outputs: [{}, {}],
+      outputs: [
+        {
+          bip32_derivations: [{
+            fingerprint: 'd90c6a4f',
+            path: '000000800000008004000080',
+            public_key: '03a9a4c37f5996d3aa25dbac6b570af0650394492942460b354753ed9eeca58771',
+          }],
+        },
+        {
+          bip32_derivations: [{
+            fingerprint: 'd90c6a4f',
+            path: '000000800000008005000080',
+            public_key: '027f6399757d2eff55a136ad02c684b1838b6556e5f1b6b34282a94b6b50051096',
+          }],
+        },
+      ],
       pairs: [
         {
           type: '00',
@@ -182,7 +197,22 @@ const tests = {
           },
         },
       ],
-      outputs: [{}, {}],
+      outputs: [
+        {
+          bip32_derivations: [{
+            fingerprint: 'd90c6a4f',
+            path: '000000800000008004000080',
+            public_key: '03a9a4c37f5996d3aa25dbac6b570af0650394492942460b354753ed9eeca58771',
+          }],
+        },
+        {
+          bip32_derivations: [{
+            fingerprint: 'd90c6a4f',
+            path: '000000800000008005000080',
+            public_key: '027f6399757d2eff55a136ad02c684b1838b6556e5f1b6b34282a94b6b50051096',
+          }],
+        },
+      ],
       pairs: [
         {
           type: '00',
@@ -431,7 +461,7 @@ const tests = {
     args: {
       psbt: '70736274ff0100a00200000002ab0949a08c5af7c49b8212f417e2f15ab3f5c33dcf153821a8139f877a5b7be40000000000feffffffab0949a08c5af7c49b8212f417e2f15ab3f5c33dcf153821a8139f877a5b7be40100000000feffffff02603bea0b000000001976a914768a40bbd740cbe81d988e71de2a4d5c71396b1d88ac8e240000000000001976a9146f4620b553fa095e721b9ee0efe9fa039cca459788ac00000000000100df0200000001268171371edff285e937adeea4b37b78000c0566cbb3ad64641713ca42171bf6000000006a473044022070b2245123e6bf474d60c5b50c043d4c691a5d2435f09a34a7662a9dc251790a022001329ca9dacf280bdf30740ec0390422422c81cb45839457aeb76fc12edd95b3012102657d118d3357b8e0f4c2cd46db7b39f6d9c38d9a70abcb9b2de5dc8dbfe4ce31feffffff02d3dff505000000001976a914d0c59903c5bac2868760e90fd521a4665aa7652088ac00e1f5050000000017a9143545e6e33b832c47050f24d3eeb93c9c03948bc787b32e13000001012000e1f5050000000017a9143545e6e33b832c47050f24d3eeb93c9c03948bc787010416001485d13537f2e265405a34dbafa9e3dda01fb8230800220202ead596687ca806043edc3de116cdf29d5e9257c196cd055cf698c8d02bf24e9910b4a6ba670000008000000080020000800022020394f62be9df19952c5587768aeb7698061ad2c4a25c894f47d8c162b4d7213d0510b4a6ba6700000080010000800200008000',
     },
-    msg: 'PSBT with one P2PKH input and one P2SH-P2WPKH input both with non-final scriptSigs. P2SH-P2WPKH input\'s redeemScript is available. Outputs filled.',
+    msg: `PSBT with one P2PKH input and one P2SH-P2WPKH input both with non-final scriptSigs. P2SH-P2WPKH input's redeemScript is available. Outputs filled.`,
     result: {
       inputs: [
         {
@@ -445,7 +475,22 @@ const tests = {
           },
         },
       ],
-      outputs: [{}, {}],
+      outputs: [
+        {
+          bip32_derivations: [{
+            fingerprint: 'b4a6ba67',
+            path: '000000800000008002000080',
+            public_key: '02ead596687ca806043edc3de116cdf29d5e9257c196cd055cf698c8d02bf24e99',
+          }],
+        },
+        {
+          bip32_derivations: [{
+            fingerprint: 'b4a6ba67',
+            path: '000000800100008002000080',
+            public_key: '0394f62be9df19952c5587768aeb7698061ad2c4a25c894f47d8c162b4d7213d05',
+          }],
+        },
+      ],
       pairs: [
         {
           type: '00',
@@ -661,7 +706,22 @@ const tests = {
           },
         },
       ],
-      outputs: [{}, {}],
+      outputs: [
+        {
+          bip32_derivations: [{
+            fingerprint: 'd90c6a4f',
+            path: '000000800000008004000080',
+            public_key: '03a9a4c37f5996d3aa25dbac6b570af0650394492942460b354753ed9eeca58771',
+          }],
+        },
+        {
+          bip32_derivations: [{
+            fingerprint: 'd90c6a4f',
+            path: '000000800000008005000080',
+            public_key: '027f6399757d2eff55a136ad02c684b1838b6556e5f1b6b34282a94b6b50051096',
+          }],
+        },
+      ],
       pairs: [
         {
           type: '00',
@@ -778,7 +838,22 @@ const tests = {
           },
         },
       ],
-      outputs: [{}, {}],
+      outputs: [
+        {
+          bip32_derivations: [{
+            fingerprint: 'd90c6a4f',
+            path: '000000800000008004000080',
+            public_key: '03a9a4c37f5996d3aa25dbac6b570af0650394492942460b354753ed9eeca58771',
+          }],
+        },
+        {
+          bip32_derivations: [{
+            fingerprint: 'd90c6a4f',
+            path: '000000800000008005000080',
+            public_key: '027f6399757d2eff55a136ad02c684b1838b6556e5f1b6b34282a94b6b50051096',
+          }],
+        },
+      ],
       pairs: [
         {
           type: '00',
@@ -873,11 +948,19 @@ Object.keys(tests).map(t => tests[t]).forEach(({args, err, msg, result}) => {
       const expected = result.inputs[i];
 
       if (!!n.bip32_derivations || !!expected.bip32_derivations) {
-        const expectedBip32 = expected.bip32_derivations;
+        assert(!!n.bip32_derivations && expected.bip32_derivations);
 
-        equal(n.bip32_derivations.fingerprint, expectedBip32.fingerprint);
-        equal(n.bip32_derivations.path, expectedBip32.path);
-        equal(n.bip32_derivations.public_key, expectedBip32.public_key);
+        equal(n.bip32_derivations.length, expected.bip32_derivations.length);
+
+        n.bip32_derivations.forEach((n, i) => {
+          const expectedBip32 = expected.bip32_derivations[i];
+
+          equal(n.fingerprint, expectedBip32.fingerprint);
+          equal(n.path, expectedBip32.path);
+          equal(n.public_key, expectedBip32.public_key);
+
+          return;
+        });
       }
 
       equal(n.final_scriptsig, expected.final_scriptsig);
@@ -899,6 +982,31 @@ Object.keys(tests).map(t => tests[t]).forEach(({args, err, msg, result}) => {
         equal(n.witness_utxo.script_pub, expected.witness_utxo.script_pub);
         equal(n.witness_utxo.tokens, expected.witness_utxo.tokens);
       }
+
+      return;
+    });
+
+    decoded.outputs.forEach((n, i) => {
+      const expected = result.outputs[i];
+
+      if (!!n.bip32_derivations || !!expected.bip32_derivations) {
+        assert(!!n.bip32_derivations && expected.bip32_derivations);
+
+        equal(n.bip32_derivations.length, expected.bip32_derivations.length);
+
+        n.bip32_derivations.forEach((d, i) => {
+          const expectedBip32 = expected.bip32_derivations[i];
+
+          equal(d.fingerprint, expectedBip32.fingerprint);
+          equal(d.path, expectedBip32.path);
+          equal(d.public_key, expectedBip32.public_key);
+
+          return;
+        });
+      }
+
+      equal(n.redeem_script, expected.redeem_script, 'Invalid redeem script');
+      equal(n.witness_script, expected.witness_script, 'Invalid out witness');
 
       return;
     });
