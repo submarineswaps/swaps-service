@@ -105,27 +105,6 @@ const tests = {
     expected_error: 'InsufficientCapacityForSwap',
   },
 
-  // The swap fee doesn't cover the routing and sweep fee
-  insufficient_fee_to_swap: {
-    args: {
-      claim_window: fixtures.claim_window,
-      current_height: fixtures.chain_height,
-      destination: fixtures.public_key,
-      destination_height: fixtures.chain_height,
-      expires_at: fixtures.expires_at,
-      invoice_network: fixtures.network,
-      network: fixtures.network,
-      pending_channels: [],
-      refund_height: fixtures.refund_height,
-      required_confirmations: fixtures.required_confirmations,
-      routes: [fixtures.route],
-      swap_fee: 1,
-      sweep_fee: fixtures.sweep_fee,
-      tokens: fixtures.tokens,
-    },
-    expected_error: 'InsufficientSwapFee',
-  },
-
   // Ignore that invoice times out soon because the swap is fully funded
   soon_expiring_invoice_is_funded: {
     args: {
