@@ -650,7 +650,7 @@ const tests = {
 
 // Run the tests
 Object.keys(tests).map(t => tests[t]).forEach(({args, err, msg, result}) => {
-  return test(msg, ({assert, end, equal, ok, throws}) => {
+  return test(msg, ({assert, end, equal, throws}) => {
     if (!!err) {
       throws(() => decodePsbt(args), new Error(err));
 
