@@ -55,7 +55,7 @@
     "btcd_regtest": "tap test/btcd_regtest/*.js",
     "ltcd_ltcregtest": "tap test/ltcd_ltcregtest/*.js",
     "server_regtest": "tap test/server",
-    "test": "tap test/*.js test/async-util/*.js test/chain/*.js test/script/*.js test/swaps/*.js"
+    "test": "tap test/async-util/*.js test/bip174/*.js test/chain/*.js test/script/*.js test/swaps/*.js"
   },
   "version": "1.0.0"
 }
