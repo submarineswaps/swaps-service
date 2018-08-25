@@ -35,9 +35,21 @@ const tokensByteLength = 8;
         path: <BIP 32 Derivation Path Hex String>
         public_key: <Public Key Hex String>
       }]
+      final_scriptsig: <Final ScriptSig Hex String>
+      final_scriptwitness: <Final Script Witness Hex String>
       non_witness_utxo: <Non-Witness Hex Encoded Transaction String>
+      partial_sig: {
+        hash_type: <Signature Hash Type Number>
+        public_key: <Public Key Hex String>
+        signature: <Signature Hex String>
+      }
       redeem_script: <Hex Encoded Redeem Script String>
       sighash_type: <Sighash Type Number>
+      witness_script: <Witness Script Hex String>
+      witness_utxo: {
+        script_pub: <UTXO ScriptPub Hex String>
+        tokens: <Tokens Number>
+      }
     }]
   }
 */
