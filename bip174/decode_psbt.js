@@ -61,7 +61,7 @@ const tokensByteLength = 8;
       [witness_script]: <Hex Encoded Witness Script>
     }]
     pairs: [{
-      key: <Key Type Hex String>
+      type: <Key Type Hex String>
       value: <Value Hex String>
     }]
   }
