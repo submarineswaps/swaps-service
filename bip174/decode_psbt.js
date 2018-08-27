@@ -5,6 +5,7 @@ const {script} = require('bitcoinjs-lib');
 const {Transaction} = require('bitcoinjs-lib');
 const varuint = require('varuint-bitcoin')
 
+const bip32Derivation = require('./bip32_derivation');
 const checkNonWitnessUtxo = require('./check_non_witness_utxo');
 const checkWitnessUtxo = require('./check_witness_utxo');
 const decodeSignature = require('./decode_signature');
@@ -32,7 +33,7 @@ const tokensByteLength = 8;
     inputs: [{
        [bip32_derivations]: [{
         fingerprint: <Public Key Fingerprint Hex String>
-        path: <BIP 32 Derivation Path Hex String>
+        path: <BIP 32 Child / Hardened Child / Index Derivation Path String>
         public_key: <Public Key Hex String>
       }]
       [final_scriptsig]: <Final ScriptSig Hex String>
@@ -54,7 +55,7 @@ const tokensByteLength = 8;
     outputs: [{
       [bip32_derivations]: [{
         fingerprint: <Public Key Fingerprint Hex String>
-        path: <BIP 32 Derivation Path Hex String>
+        path: <BIP 32 Child/HardenedChild/Index Derivation Path Hex String>
         public_key: <Public Key Hex String>
       }]
       [redeem_script]: <Hex Encoded Redeem Script>
@@ -224,20 +225,14 @@ module.exports = ({psbt}) => {
       case types.input.bip32_derivation:
         input.bip32_derivations = input.bip32_derivations || [];
 
-        let key;
+        const derivation = value;
+        const key = keyType.slice([keyTypeCode].length);
 
-        // Derive the public key from the public key bytes
         try {
-          key = ECPair.fromPublicKey(keyType.slice([keyTypeCode].length));
+          input.bip32_derivations.push(bip32Derivation({derivation, key}));
         } catch (err) {
-          throw new Error('InvalidBip32Key');
+          throw err;
         }
-
-        input.bip32_derivations.push({
-          fingerprint: value.slice(0, fingerPrintByteLength).toString('hex'),
-          path: value.slice(fingerPrintByteLength).toString('hex'),
-          public_key: key.publicKey.toString('hex'),
-        });
         break;
 
       case types.input.final_scriptsig:
@@ -373,21 +368,14 @@ module.exports = ({psbt}) => {
       case types.output.bip32_derivation:
         output.bip32_derivations = output.bip32_derivations || [];
 
-        let bip32Key;
-        const publicKey = keyType.slice([keyTypeCode].length);
+        const derivation = value;
+        const key = keyType.slice([keyTypeCode].length);
 
-        // Make sure the output bip32 public key is valid
         try {
-          bip32Key = ECPair.fromPublicKey(publicKey);
+          output.bip32_derivations.push(bip32Derivation({derivation, key}));
         } catch (err) {
-          throw new Error('InvalidOutputBip32PublicKey');
+          throw err;
         }
-
-        output.bip32_derivations.push({
-          fingerprint: value.slice(0, fingerPrintByteLength).toString('hex'),
-          path: value.slice(fingerPrintByteLength).toString('hex'),
-          public_key: bip32Key.publicKey.toString('hex'),
-        });
         break;
 
       case types.output.redeem_script:
