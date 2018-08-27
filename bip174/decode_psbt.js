@@ -32,9 +32,9 @@ const tokensByteLength = 8;
   {
     inputs: [{
        [bip32_derivations]: [{
-        fingerprint: <Public Key Fingerprint Hex String>
-        path: <BIP 32 Child / Hardened Child / Index Derivation Path String>
-        public_key: <Public Key Hex String>
+          fingerprint: <Public Key Fingerprint Hex String>
+          path: <BIP 32 Child / Hardened Child / Index Derivation Path String>
+          public_key: <Public Key Hex String>
       }]
       [final_scriptsig]: <Final ScriptSig Hex String>
       [final_scriptwitness]: <Final Script Witness Hex String>
@@ -225,14 +225,17 @@ module.exports = ({psbt}) => {
       case types.input.bip32_derivation:
         input.bip32_derivations = input.bip32_derivations || [];
 
+        let bip32;
         const derivation = value;
         const key = keyType.slice([keyTypeCode].length);
 
         try {
-          input.bip32_derivations.push(bip32Derivation({derivation, key}));
+          bip32 = bip32Derivation({derivation, key});
         } catch (err) {
           throw err;
         }
+
+        input.bip32_derivations.push(bip32);
         break;
 
       case types.input.final_scriptsig:
@@ -342,10 +345,15 @@ module.exports = ({psbt}) => {
 
         const scriptPub = value.slice(tokensByteLength + varuint.decode.bytes);
 
-        input.witness_utxo = {
-          script_pub: scriptPub.toString('hex'),
-          tokens: new BN(value.slice(0, tokensByteLength), 'le').toNumber(),
-        };
+        let tokens;
+
+        try {
+          tokens = new BN(value.slice(0, tokensByteLength), 'le').toNumber();
+        } catch (err) {
+          throw new Error('ExpectedValidTokensNumber');
+        }
+
+        input.witness_utxo = {tokens, script_pub: scriptPub.toString('hex')};
         break;
 
       default:

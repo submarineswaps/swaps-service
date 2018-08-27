@@ -18,12 +18,12 @@ const tests = {
       ],
       utxos: [
         {
+          id: '75ddabb27b8845f5247975c8a5ba7c6f336c4570708ebe230caf6db5217ae858',
           vout: 0,
-          transaction_id: '75ddabb27b8845f5247975c8a5ba7c6f336c4570708ebe230caf6db5217ae858',
         },
         {
+          id: '1dea7cd05979072a3578cab271c02244ea8a090bbb46aa680a65ecd027048d83',
           vout: 1,
-          transaction_id: '1dea7cd05979072a3578cab271c02244ea8a090bbb46aa680a65ecd027048d83',
         },
       ],
     },

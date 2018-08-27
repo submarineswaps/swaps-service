@@ -12,7 +12,7 @@ const {global} = require('./types');
       tokens: <Sending Tokens Number>
     }]
     utxos: [{
-      transaction_id: <Transaction Id Hex String>
+      id: <Transaction Id Hex String>
       vout: <Output Index Number>
     }]
     [version]: <Transaction Version Number>
@@ -38,7 +38,7 @@ module.exports = ({outputs, utxos, version}) => {
 
   // Push all the unsigned inputs into the transaction
   utxos
-    .map(n => ({hash: Buffer.from(n.transaction_id, 'hex'), vout: n.vout}))
+    .map(n => ({hash: Buffer.from(n.id, 'hex'), vout: n.vout}))
     .forEach(({hash, vout}) => tx.addInput(hash.reverse(), vout));
 
   // Append all the outputs to the transaction

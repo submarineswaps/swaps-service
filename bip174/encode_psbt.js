@@ -30,21 +30,32 @@ module.exports = ({pairs}) => {
 
   const components = [magicBytes, globalSeparator];
 
+  let lastType = null;
+
   const encodedPairs = Buffer.concat(pairs.map(({type, value}) => {
     if (!type) {
       return terminator;
     }
 
+    const isFinishedItem = (!!lastType && type.toString('hex') <= lastType.toString('hex'));
+
+    lastType = type;
+
     return Buffer.concat([
+      isFinishedItem ? terminator : Buffer.from([]),
       varuint.encode(type.length),
       type,
       varuint.encode(value.length),
       value,
-      terminator,
     ]);
   }));
 
-  const psbt = Buffer.concat([magicBytes, globalSeparator, encodedPairs]);
+  const psbt = Buffer.concat([
+    magicBytes,
+    globalSeparator,
+    encodedPairs,
+    terminator,
+  ]);
 
   return {psbt: psbt.toString('hex')};
 };
