@@ -39,11 +39,11 @@ const tokensByteLength = 8;
       [final_scriptsig]: <Final ScriptSig Hex String>
       [final_scriptwitness]: <Final Script Witness Hex String>
       [non_witness_utxo]: <Non-Witness Hex Encoded Transaction String>
-      [partial_sig]: {
+      [partial_sig]: [{
         hash_type: <Signature Hash Type Number>
         public_key: <Public Key Hex String>
         signature: <Signature Hex String>
-      }
+      }]
       [redeem_script]: <Hex Encoded Redeem Script String>
       [sighash_type]: <Sighash Type Number>
       [witness_script]: <Witness Script Hex String>
@@ -293,11 +293,13 @@ module.exports = ({psbt}) => {
           throw new Error('InvalidPublicKeyForPartialSig');
         }
 
-        input.partial_sig = {
+        input.partial_sig = input.partial_sig || [];
+
+        input.partial_sig.push({
           hash_type: signature.hash_type,
           public_key: sigPubKey.publicKey.toString('hex'),
           signature: signature.signature.toString('hex'),
-        };
+        });
         break;
 
       case types.input.redeem_script:

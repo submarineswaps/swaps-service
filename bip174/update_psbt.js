@@ -32,12 +32,23 @@ const tokensByteLength = 8;
       sighash: <Sighash Flag Number>
       vout: <Spending Output Index Number>
     }]
+    [signatures]: [{
+      vin: <Signature Input Index Number>
+      hash_type: <Signature Hash Type Number>
+      public_key: <BIP 32 Public Key String>
+      signature: <Signature Hex String>
+    }]
     [transactions]: [<Hex Encoding Transaction String>]
     [witness_scripts]: [<Witness Script String>]
   }
 
   @throws
   <Update PSBT Error>
+
+  @returns
+  {
+    psbt: <Hex Encoded Partially Signed Bitcoin Transaction String>
+  }
 */
 module.exports = args => {
   if (!args.psbt) {
@@ -55,6 +66,7 @@ module.exports = args => {
   const redeems = {};
   const scriptPubs = {};
   const sighashes = {};
+  const signatures = {};
   const transactions = args.transactions || [];
   const txs = {};
   const witnessScripts = args.witness_scripts || [];
@@ -81,6 +93,12 @@ module.exports = args => {
   // Index sighashes by spending outpoint
   if (Array.isArray(args.sighashes)) {
     args.sighashes.forEach(n => sighashes[`${n.id}:${n.vout}`] = n.sighash);
+  }
+
+  // Index signatures by vin
+  if (Array.isArray(args.signatures)) {
+    args.signatures.forEach(n => signatures[n.vin] = signatures[n.vin] || []);
+    args.signatures.forEach(n => signatures[n.vin].push(n));
   }
 
   // Index transactions by id
@@ -127,11 +145,16 @@ module.exports = args => {
   });
 
   // Iterate through transaction inputs and fill in values
-  tx.ins.forEach((input, vout) => {
-    const utxo = decoded.inputs[vout] || {};
+  tx.ins.forEach((input, vin) => {
+    const utxo = decoded.inputs[vin] || {};
     const spendsTxId = input.hash.reverse().toString('hex');
 
-    utxo.sighash_type = sighashes[`${spendsTxId}:${vout}`];
+    utxo.sighash_type = sighashes[`${spendsTxId}:${input.index}`];
+
+    if (Array.isArray(signatures[vin])) {
+      utxo.partial_sig = signatures[vin];
+      signatures[vin].forEach(n => utxo.sighash_type = n.hash_type);
+    }
 
     const spends = txs[spendsTxId];
 
@@ -212,6 +235,21 @@ module.exports = args => {
       pairs.push({
         type: Buffer.from(types.input.witness_utxo, 'hex'),
         value: Buffer.concat([tokens, varuint.encode(script.length), script]),
+      });
+    }
+
+    // Partial signature
+    if (!!n.partial_sig) {
+      n.partial_sig.sort((a, b) => a.public_key < b.public_key ? -1 : 1);
+
+      n.partial_sig.forEach(n => {
+        return pairs.push({
+          type: Buffer.concat([
+            Buffer.from(types.input.partial_sig, 'hex'),
+            Buffer.from(n.public_key, 'hex'),
+          ]),
+          value: Buffer.from(n.signature, 'hex'),
+        });
       });
     }
 
