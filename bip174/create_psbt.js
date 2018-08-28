@@ -51,10 +51,10 @@ module.exports = ({outputs, utxos, version}) => {
     value: tx.toBuffer(),
   };
 
-  const pairs = [unsignedTransactionPair];
+  const pairs = [unsignedTransactionPair, {separator: true}];
 
   // Each input and output is represented as an empty key value pair
-  outputs.concat(utxos).forEach(({}) => pairs.push({}));
+  outputs.concat(utxos).forEach(({}) => pairs.push({separator: true}));
 
   return encodePsbt({pairs});
 };

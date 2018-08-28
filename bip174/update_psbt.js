@@ -80,6 +80,8 @@ module.exports = args => {
     value: tx.toBuffer(),
   });
 
+  pairs.push({separator: true});
+
   // Index public keys and public key hashes for lookup
   bip32Derivations.forEach(n => {
     const pkHash = hash160(Buffer.from(n.public_key, 'hex')).toString('hex');
@@ -159,7 +161,7 @@ module.exports = args => {
     const spends = txs[spendsTxId];
 
     if (!spends) {
-      return;
+      return inputs.push(null);
     }
 
     const spendsTx = Transaction.fromHex(spends);
@@ -216,7 +218,9 @@ module.exports = args => {
   });
 
   // Encode inputs into key value pairs
-  decoded.inputs.concat(inputs).forEach(n => {
+  tx.ins.forEach((txIn, vin) => {
+    const n = inputs[vin] || decoded.inputs[vin];
+
     // Legacy UTXO being spent by this input
     if (!!n.non_witness_utxo) {
       pairs.push({
@@ -240,8 +244,6 @@ module.exports = args => {
 
     // Partial signature
     if (!!n.partial_sig) {
-      n.partial_sig.sort((a, b) => a.public_key < b.public_key ? -1 : 1);
-
       n.partial_sig.forEach(n => {
         return pairs.push({
           type: Buffer.concat([
@@ -297,34 +299,46 @@ module.exports = args => {
         });
       });
     }
+
+    return pairs.push({separator: true});
   });
 
   // Iterate through outputs to update output data
   tx.outs.forEach(({script}) => {
+    const out = {};
+
     const foundKeys = decompile(script)
       .filter(Buffer.isBuffer)
       .map(n => pubKeyHashes[n.toString('hex')])
       .filter(n => !!n);
 
-    outputs.push({bip32_derivations: foundKeys});
+    if (!!foundKeys && !!foundKeys.length) {
+      out.bip32_derivations = foundKeys;
+    }
+
+    return outputs.push(!Object.keys(out).length ? null : out);
   });
 
   // Iterate through outputs to add pairs as appropriate
-  decoded.outputs.concat(outputs).forEach(n => {
-    if (!!n.bip32_derivations) {
-      n.bip32_derivations.forEach(n => {
-        pairs.push({
+  tx.outs.forEach((out, vout) => {
+    const output = outputs[vout] || decoded.outputs[vout];
+
+    if (!!output.bip32_derivations) {
+      output.bip32_derivations.forEach(bip32 => {
+        return pairs.push({
           type: Buffer.concat([
             Buffer.from(types.output.bip32_derivation, 'hex'),
-            Buffer.from(n.public_key, 'hex'),
+            Buffer.from(bip32.public_key, 'hex'),
           ]),
           value: Buffer.concat([
-            Buffer.from(n.fingerprint, 'hex'),
-            bip32Path({path: n.path}),
+            Buffer.from(bip32.fingerprint, 'hex'),
+            bip32Path({path: bip32.path}),
           ]),
         });
       });
     }
+
+    return pairs.push({separator: true});
   });
 
   return encodePsbt({pairs});

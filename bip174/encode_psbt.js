@@ -10,8 +10,8 @@ const terminator = Buffer.from('00', 'hex');
 
   {
     pairs: [{
-      value: <Value Buffer Object>
-      type: <Type Buffer Object>
+      [value]: <Value Buffer Object>
+      [type]: <Type Buffer Object>
     }]
   }
 
@@ -37,12 +37,7 @@ module.exports = ({pairs}) => {
       return terminator;
     }
 
-    const isFinishedItem = (!!lastType && type.toString('hex') <= lastType.toString('hex'));
-
-    lastType = type;
-
     return Buffer.concat([
-      isFinishedItem ? terminator : Buffer.from([]),
       varuint.encode(type.length),
       type,
       varuint.encode(value.length),
@@ -54,7 +49,6 @@ module.exports = ({pairs}) => {
     magicBytes,
     globalSeparator,
     encodedPairs,
-    terminator,
   ]);
 
   return {psbt: psbt.toString('hex')};
