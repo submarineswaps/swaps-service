@@ -33,11 +33,18 @@ const tests = {
             },
           ],
           non_witness_utxo: '0200000001aad73931018bd25f84ae400b68848be09db706eac2ac18298babee71ab656f8b0000000048473044022058f6fc7c6a33e1b31548d481c826c015bd30135aad42cd67790dab66d2ad243b02204a1ced2604c6735b6393e5b41691dd78b00f0c5942fb9f751856faa938157dba01feffffff0280f0fa020000000017a9140fb9463421696b82c833af241c78c17ddbde493487d0f20a270100000017a91429ca74f8a08f81999428185c97b5d852e4063f618765000000',
-          partial_sig: {
-            hash_type: 1,
-            public_key: '02dab61ff49a14db6a7d02b0cd1fbb78fc4b18312b5b4e54dae4dba2fbfef536d7',
-            signature: 'f61038b308dc1da865a34852746f015772934208c6d24454393cd99bdf221777056e675a675a6d0a02b85b14e5e29074d8a25a9b5760bea2816f661910a006ea',
-          },
+          partial_sig: [
+            {
+              hash_type: 1,
+              public_key: '029583bf39ae0a609747ad199addd634fa6108559d6c5cd39b4c2183f1ab96e07f',
+              signature: '74018ad4180097b873323c0015720b3684cc8123891048e7dbcd9b55ad679c9973d369b740e3eb53dcefa33823c8070514ca55a7dd9544f157c167913261118c',
+            },
+            {
+              hash_type: 1,
+              public_key: '02dab61ff49a14db6a7d02b0cd1fbb78fc4b18312b5b4e54dae4dba2fbfef536d7',
+              signature: 'f61038b308dc1da865a34852746f015772934208c6d24454393cd99bdf221777056e675a675a6d0a02b85b14e5e29074d8a25a9b5760bea2816f661910a006ea',
+            },
+          ],
           redeem_script: '5221029583bf39ae0a609747ad199addd634fa6108559d6c5cd39b4c2183f1ab96e07f2102dab61ff49a14db6a7d02b0cd1fbb78fc4b18312b5b4e54dae4dba2fbfef536d752ae',
           sighash_type: 1,
         },
@@ -54,11 +61,18 @@ const tests = {
               public_key: '03089dc10c7ac6db54f91329af617333db388cead0c231f723379d1b99030b02dc',
             },
           ],
-          partial_sig: {
-            hash_type: 1,
-            public_key: '023add904f3d6dcf59ddb906b0dee23529b7ffb9ed50e5e86151926860221f0e73',
-            signature: '65f45ba5998b59a27ffe1a7bed016af1f1f90d54b3aa8f7450aa5f56a25103bd7f724703ad1edb96680b284b56d4ffcb88f7fb759eabbe08aa30f29b851383d2',
-          },
+          partial_sig: [
+            {
+              hash_type: 1,
+              public_key: '03089dc10c7ac6db54f91329af617333db388cead0c231f723379d1b99030b02dc',
+              signature: '62eb7a556107a7c73f45ac4ab5a1dddf6f7075fb1275969a7f383efff784bcb20c05dbb7470dbf2f08557dd356c7325c1ed30913e996cd3840945db12228da5f',
+            },
+            {
+              hash_type: 1,
+              public_key: '023add904f3d6dcf59ddb906b0dee23529b7ffb9ed50e5e86151926860221f0e73',
+              signature: '65f45ba5998b59a27ffe1a7bed016af1f1f90d54b3aa8f7450aa5f56a25103bd7f724703ad1edb96680b284b56d4ffcb88f7fb759eabbe08aa30f29b851383d2',
+            },
+          ],
           redeem_script: '00208c2353173743b595dfb4a07b72ba8e42e3797da74e87fe7d9d7497e3b2028903',
           sighash_type: 1,
           witness_script: '522103089dc10c7ac6db54f91329af617333db388cead0c231f723379d1b99030b02dc21023add904f3d6dcf59ddb906b0dee23529b7ffb9ed50e5e86151926860221f0e7352ae',
@@ -567,11 +581,11 @@ const tests = {
             public_key: '03de55d1e1dac805e3f8a58c1fbf9b94c02f3dbaafe127fefca4995f26f82083bd',
           },
         ],
-        partial_sig: {
+        partial_sig: [{
           hash_type: 1,
           public_key: '03b1341ccba7683b6af4f1238cd6e97e7167d569fac47f1e48d47541844355bd46',
           signature: '0424b58effaaa694e1559ea5c93bbfd4a89064224055cdf070b6771469442d07005c8eb0fea6516d60b8acb33ad64ede60e8785bfb3aa94b99bdf86151db9a9a',
-        },
+        }],
         redeem_script: '0020771fd18ad459666dd49f3d564e3dbc42f4c84774e360ada16816a8ed488d5681',
         witness_script: '522103b1341ccba7683b6af4f1238cd6e97e7167d569fac47f1e48d47541844355bd462103de55d1e1dac805e3f8a58c1fbf9b94c02f3dbaafe127fefca4995f26f82083bd52ae',
         witness_utxo: {
@@ -671,11 +685,11 @@ const tests = {
             },
           ],
           non_witness_utxo: '0200000001aad73931018bd25f84ae400b68848be09db706eac2ac18298babee71ab656f8b0000000048473044022058f6fc7c6a33e1b31548d481c826c015bd30135aad42cd67790dab66d2ad243b02204a1ced2604c6735b6393e5b41691dd78b00f0c5942fb9f751856faa938157dba01feffffff0280f0fa020000000017a9140fb9463421696b82c833af241c78c17ddbde493487d0f20a270100000017a91429ca74f8a08f81999428185c97b5d852e4063f618765000000',
-          partial_sig: {
+          partial_sig: [{
             hash_type: 1,
             public_key: '029583bf39ae0a609747ad199addd634fa6108559d6c5cd39b4c2183f1ab96e07f',
             signature: '74018ad4180097b873323c0015720b3684cc8123891048e7dbcd9b55ad679c9973d369b740e3eb53dcefa33823c8070514ca55a7dd9544f157c167913261118c',
-          },
+          }],
           redeem_script: '5221029583bf39ae0a609747ad199addd634fa6108559d6c5cd39b4c2183f1ab96e07f2102dab61ff49a14db6a7d02b0cd1fbb78fc4b18312b5b4e54dae4dba2fbfef536d752ae',
           sighash_type: 1,
         },
@@ -692,11 +706,11 @@ const tests = {
               public_key: '03089dc10c7ac6db54f91329af617333db388cead0c231f723379d1b99030b02dc',
             },
           ],
-          partial_sig: {
+          partial_sig: [{
             hash_type: 1,
             public_key: '03089dc10c7ac6db54f91329af617333db388cead0c231f723379d1b99030b02dc',
             signature: '62eb7a556107a7c73f45ac4ab5a1dddf6f7075fb1275969a7f383efff784bcb20c05dbb7470dbf2f08557dd356c7325c1ed30913e996cd3840945db12228da5f',
-          },
+          }],
           redeem_script: '00208c2353173743b595dfb4a07b72ba8e42e3797da74e87fe7d9d7497e3b2028903',
           sighash_type: 1,
           witness_script: '522103089dc10c7ac6db54f91329af617333db388cead0c231f723379d1b99030b02dc21023add904f3d6dcf59ddb906b0dee23529b7ffb9ed50e5e86151926860221f0e7352ae',
@@ -967,11 +981,14 @@ Object.keys(tests).map(t => tests[t]).forEach(({args, err, msg, result}) => {
       equal(n.final_scriptsig, expected.final_scriptsig);
       equal(n.final_scriptwitness, expected.final_scriptwitness);
       equal(n.non_witness_utxo, expected.non_witness_utxo);
+      equal((n.partial_sig || []).length, (expected.partial_sig || []).length);
 
       if (!!n.partial_sig || !!expected.partial_sig) {
-        equal(n.partial_sig.hash_type, expected.partial_sig.hash_type);
-        equal(n.public_key, expected.public_key);
-        equal(n.signature, expected.signature);
+        n.partial_sig.forEach((partial, j) => {
+          equal(partial.hash_type, expected.partial_sig[j].hash_type);
+          equal(partial.public_key, expected.partial_sig[j].public_key);
+          equal(partial.signature, expected.partial_sig[j].signature);
+        });
       }
 
       equal(n.redeem_script, expected.redeem_script);

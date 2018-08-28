@@ -97,7 +97,8 @@ module.exports = args => {
 
   // Index signatures by vin
   if (Array.isArray(args.signatures)) {
-    args.signatures.forEach(n => signatures[n.vin] = n);
+    args.signatures.forEach(n => signatures[n.vin] = signatures[n.vin] || []);
+    args.signatures.forEach(n => signatures[n.vin].push(n));
   }
 
   // Index transactions by id
@@ -148,12 +149,11 @@ module.exports = args => {
     const utxo = decoded.inputs[vin] || {};
     const spendsTxId = input.hash.reverse().toString('hex');
 
-    utxo.partial_sig = signatures[vin];
     utxo.sighash_type = sighashes[`${spendsTxId}:${input.index}`];
 
-    if (signatures[vin]) {
+    if (Array.isArray(signatures[vin])) {
       utxo.partial_sig = signatures[vin];
-      utxo.sighash_type = signatures[vin].hash_type;
+      signatures[vin].forEach(n => utxo.sighash_type = n.hash_type);
     }
 
     const spends = txs[spendsTxId];
@@ -240,12 +240,16 @@ module.exports = args => {
 
     // Partial signature
     if (!!n.partial_sig) {
-      pairs.push({
-        type: Buffer.concat([
-          Buffer.from(types.input.partial_sig, 'hex'),
-          Buffer.from(n.partial_sig.public_key, 'hex'),
-        ]),
-        value: Buffer.from(n.partial_sig.signature, 'hex'),
+      n.partial_sig.sort((a, b) => a.public_key < b.public_key ? -1 : 1);
+
+      n.partial_sig.forEach(n => {
+        return pairs.push({
+          type: Buffer.concat([
+            Buffer.from(types.input.partial_sig, 'hex'),
+            Buffer.from(n.public_key, 'hex'),
+          ]),
+          value: Buffer.from(n.signature, 'hex'),
+        });
       });
     }
 
