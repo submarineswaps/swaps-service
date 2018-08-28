@@ -22,8 +22,6 @@ const tests = {
 // Run the tests
 Object.keys(tests).map(t => tests[t]).forEach(({args, err, msg, result}) => {
   return test(msg, ({end, equal}) => {
-    return end();
-
     const expected = decodePsbt({psbt: result.psbt});
     const {psbt} = combinePsbts(args);
 
