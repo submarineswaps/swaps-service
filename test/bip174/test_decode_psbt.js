@@ -84,18 +84,18 @@ const tests = {
       ],
       outputs: [
         {
-          bip32_derivations: [{
+          bip32_derivation: {
             fingerprint: 'd90c6a4f',
             path: `m/0'/0'/4'`,
             public_key: '03a9a4c37f5996d3aa25dbac6b570af0650394492942460b354753ed9eeca58771',
-          }],
+          },
         },
         {
-          bip32_derivations: [{
+          bip32_derivation: {
             fingerprint: 'd90c6a4f',
             path: `m/0'/0'/5'`,
             public_key: '027f6399757d2eff55a136ad02c684b1838b6556e5f1b6b34282a94b6b50051096',
-          }],
+          },
         },
       ],
       pairs: [
@@ -213,18 +213,18 @@ const tests = {
       ],
       outputs: [
         {
-          bip32_derivations: [{
+          bip32_derivation: {
             fingerprint: 'd90c6a4f',
             path: `m/0'/0'/4'`,
             public_key: '03a9a4c37f5996d3aa25dbac6b570af0650394492942460b354753ed9eeca58771',
-          }],
+          },
         },
         {
-          bip32_derivations: [{
+          bip32_derivation: {
             fingerprint: 'd90c6a4f',
             path: `m/0'/0'/5'`,
             public_key: '027f6399757d2eff55a136ad02c684b1838b6556e5f1b6b34282a94b6b50051096',
-          }],
+          },
         },
       ],
       pairs: [
@@ -491,18 +491,18 @@ const tests = {
       ],
       outputs: [
         {
-          bip32_derivations: [{
+          bip32_derivation: {
             fingerprint: 'b4a6ba67',
             path: `m/0'/0'/2'`,
             public_key: '02ead596687ca806043edc3de116cdf29d5e9257c196cd055cf698c8d02bf24e99',
-          }],
+          },
         },
         {
-          bip32_derivations: [{
+          bip32_derivation: {
             fingerprint: 'b4a6ba67',
             path: `m/0'/1'/2'`,
             public_key: '0394f62be9df19952c5587768aeb7698061ad2c4a25c894f47d8c162b4d7213d05',
-          }],
+          },
         },
       ],
       pairs: [
@@ -722,18 +722,18 @@ const tests = {
       ],
       outputs: [
         {
-          bip32_derivations: [{
+          bip32_derivation: {
             fingerprint: 'd90c6a4f',
             path: `m/0'/0'/4'`,
             public_key: '03a9a4c37f5996d3aa25dbac6b570af0650394492942460b354753ed9eeca58771',
-          }],
+          },
         },
         {
-          bip32_derivations: [{
+          bip32_derivation: {
             fingerprint: 'd90c6a4f',
             path: `m/0'/0'/5'`,
             public_key: '027f6399757d2eff55a136ad02c684b1838b6556e5f1b6b34282a94b6b50051096',
-          }],
+          },
         },
       ],
       pairs: [
@@ -854,18 +854,18 @@ const tests = {
       ],
       outputs: [
         {
-          bip32_derivations: [{
+          bip32_derivation: {
             fingerprint: 'd90c6a4f',
             path: `m/0'/0'/4'`,
             public_key: '03a9a4c37f5996d3aa25dbac6b570af0650394492942460b354753ed9eeca58771',
-          }],
+          },
         },
         {
-          bip32_derivations: [{
+          bip32_derivation: {
             fingerprint: 'd90c6a4f',
             path: `m/0'/0'/5'`,
             public_key: '027f6399757d2eff55a136ad02c684b1838b6556e5f1b6b34282a94b6b50051096',
-          }],
+          },
         },
       ],
       pairs: [
@@ -1006,20 +1006,12 @@ Object.keys(tests).map(t => tests[t]).forEach(({args, err, msg, result}) => {
     decoded.outputs.forEach((n, i) => {
       const expected = result.outputs[i];
 
-      if (!!n.bip32_derivations || !!expected.bip32_derivations) {
-        assert(!!n.bip32_derivations && expected.bip32_derivations);
+      if (!!n.bip32_derivation || !!expected.bip32_derivation) {
+        const expectedBip32 = expected.bip32_derivation;
 
-        equal(n.bip32_derivations.length, expected.bip32_derivations.length);
-
-        n.bip32_derivations.forEach((d, i) => {
-          const expectedBip32 = expected.bip32_derivations[i];
-
-          equal(d.fingerprint, expectedBip32.fingerprint);
-          equal(d.path, expectedBip32.path);
-          equal(d.public_key, expectedBip32.public_key);
-
-          return;
-        });
+        equal(n.bip32_derivation.fingerprint, expectedBip32.fingerprint);
+        equal(n.bip32_derivation.path, expectedBip32.path);
+        equal(n.bip32_derivation.public_key, expectedBip32.public_key);
       }
 
       equal(n.redeem_script, expected.redeem_script, 'Invalid redeem script');

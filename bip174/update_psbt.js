@@ -374,13 +374,13 @@ module.exports = args => {
   tx.outs.forEach(({script}) => {
     const out = {};
 
-    const foundKeys = decompile(script)
+    const [foundKey] = decompile(script)
       .filter(Buffer.isBuffer)
       .map(n => pubKeyHashes[n.toString('hex')])
       .filter(n => !!n);
 
-    if (!!foundKeys && !!foundKeys.length) {
-      out.bip32_derivations = foundKeys;
+    if (!!foundKey) {
+      out.bip32_derivation = foundKey;
     }
 
     return outputs.push(!Object.keys(out).length ? null : out);
@@ -390,18 +390,16 @@ module.exports = args => {
   tx.outs.forEach((out, vout) => {
     const output = outputs[vout] || decoded.outputs[vout];
 
-    if (!!output.bip32_derivations) {
-      output.bip32_derivations.forEach(bip32 => {
-        return pairs.push({
-          type: Buffer.concat([
-            Buffer.from(types.output.bip32_derivation, 'hex'),
-            Buffer.from(bip32.public_key, 'hex'),
-          ]),
-          value: Buffer.concat([
-            Buffer.from(bip32.fingerprint, 'hex'),
-            bip32Path({path: bip32.path}),
-          ]),
-        });
+    if (!!output.bip32_derivation) {
+      pairs.push({
+        type: Buffer.concat([
+          Buffer.from(types.output.bip32_derivation, 'hex'),
+          Buffer.from(output.bip32_derivation.public_key, 'hex'),
+        ]),
+        value: Buffer.concat([
+          Buffer.from(output.bip32_derivation.fingerprint, 'hex'),
+          bip32Path({path: output.bip32_derivation.path}),
+        ]),
       });
     }
 

@@ -1,7 +1,7 @@
 const {test} = require('tap');
 
-const {finalizePsbt} = require('./../../bip174');
 const {decodePsbt} = require('./../../bip174');
+const {finalizePsbt} = require('./../../bip174');
 
 // Test scenarios
 const tests = {

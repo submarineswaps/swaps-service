@@ -53,11 +53,11 @@ const tokensByteLength = 8;
       }
     }]
     outputs: [{
-      [bip32_derivations]: [{
+      [bip32_derivation]: {
         fingerprint: <Public Key Fingerprint Hex String>
         path: <BIP 32 Child/HardenedChild/Index Derivation Path Hex String>
         public_key: <Public Key Hex String>
-      }]
+      }
       [redeem_script]: <Hex Encoded Redeem Script>
       [witness_script]: <Hex Encoded Witness Script>
     }]
@@ -376,13 +376,11 @@ module.exports = ({psbt}) => {
 
       switch (keyTypeCode) {
       case types.output.bip32_derivation:
-        output.bip32_derivations = output.bip32_derivations || [];
-
         const derivation = value;
         const key = keyType.slice([keyTypeCode].length);
 
         try {
-          output.bip32_derivations.push(bip32Derivation({derivation, key}));
+          output.bip32_derivation = bip32Derivation({derivation, key});
         } catch (err) {
           throw err;
         }
