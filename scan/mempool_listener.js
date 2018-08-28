@@ -6,6 +6,7 @@ const difference = require('lodash/difference');
 
 const {getMempool} = require('./../chain');
 
+const emitDelayMs = 300;
 const event = 'transaction';
 const maxMempoolIdsCount = 30000;
 const pollingDelayMs = 3000;
@@ -51,7 +52,9 @@ module.exports = ({network}) => {
         const freshIds = getMempool.transaction_ids;
 
         // Emit all transactions new to the mempool
-        difference(freshIds, ids).forEach(id => listener.emit(event, {id}));
+        difference(freshIds, ids).forEach((id, i) => {
+          return setTimeout(() => listener.emit(event, {id}), i * emitDelayMs);
+        });
 
         ids = freshIds;
 
