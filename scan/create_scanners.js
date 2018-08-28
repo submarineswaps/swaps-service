@@ -1,5 +1,7 @@
 const swapScanner = require('./swap_scanner');
 
+const chainStartDelay = 1000 * 10;
+
 /** Create swap scanners
 
   {
@@ -32,7 +34,7 @@ module.exports = ({cache, found, log, networks}) => {
     throw new Error('ExpectedNetworksToCreate');
   }
 
-  return networks.map(network => {
+  return networks.map((network, i) => {
     let scanner;
 
     const startScanner = () => {
@@ -42,7 +44,7 @@ module.exports = ({cache, found, log, networks}) => {
       scanner.on('error', err => {
         log(err);
 
-        return setTimeout(startScanner, 1000);
+        return setTimeout(startScanner, chainStartDelay);
       });
       scanner.on('funding', swap => found({swap}));
       scanner.on('refund', swap => found({swap}));
@@ -50,7 +52,7 @@ module.exports = ({cache, found, log, networks}) => {
       return;
     };
 
-    startScanner();
+    setTimeout(() => startScanner(), i * chainStartDelay);
 
     return scanner;
   });

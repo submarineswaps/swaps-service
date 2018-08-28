@@ -20,17 +20,21 @@ const cache = 'redis';
 const isProduction = NODE_ENV === 'production';
 const logOnErr = err => !!err ? log(err) : null;
 const port = PORT || SSS_PORT || 9889;
+const scannersStartDelay = 1000 * 10;
 
-try {
-  const scanners = createScanners({
-    cache,
-    found: ({swap}) => addSwapToPool({cache, swap}, logOnErr),
-    log: logOnErr,
-    networks: Object.keys(networks).filter(network => isConfigured({network})),
-  });
-} catch (err) {
-  log(err);
-}
+setTimeout(() => {
+  try {
+    const scanners = createScanners({
+      cache,
+      found: ({swap}) => addSwapToPool({cache, swap}, logOnErr),
+      log: logOnErr,
+      networks: Object.keys(networks).filter(network => isConfigured({network})),
+    });
+  } catch (err) {
+    log(err);
+  }
+},
+scannersStartDelay);
 
 const app = createServer({});
 
