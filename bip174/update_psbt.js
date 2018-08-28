@@ -1,5 +1,6 @@
 const BN = require('bn.js');
 const {crypto} = require('bitcoinjs-lib');
+const {OP_0} = require('bitcoin-ops');
 const {script} = require('bitcoinjs-lib');
 const {Transaction} = require('bitcoinjs-lib');
 const varuint = require('varuint-bitcoin')
@@ -11,8 +12,10 @@ const types = require('./types');
 
 const decBase = 10;
 const {decompile} = script;
+const encodeSig = script.signature.encode;
 const endianness = 'le';
 const {hash160} = crypto;
+const hexBase = 16;
 const {sha256} = crypto;
 const sighashByteLength = 4;
 const tokensByteLength = 8;
@@ -243,7 +246,7 @@ module.exports = args => {
     }
 
     // Partial signature
-    if (!!n.partial_sig) {
+    if (!args.is_final && !!n.partial_sig) {
       n.partial_sig.forEach(n => {
         return pairs.push({
           type: Buffer.concat([
@@ -256,7 +259,7 @@ module.exports = args => {
     }
 
     // Sighash used to sign this input
-    if (!!n.sighash_type) {
+    if (!args.is_final && !!n.sighash_type) {
       const sighash = new BN(n.sighash_type, decBase);
 
       pairs.push({
@@ -266,7 +269,7 @@ module.exports = args => {
     }
 
     // Redeem script used in the scriptsig of this input
-    if (!!n.redeem_script) {
+    if (!args.is_final && !!n.redeem_script) {
       pairs.push({
         type: Buffer.from(types.input.redeem_script, 'hex'),
         value: Buffer.from(n.redeem_script, 'hex'),
@@ -274,7 +277,7 @@ module.exports = args => {
     }
 
     // Witness script used in this input
-    if (!!n.witness_script) {
+    if (!args.is_final && !!n.witness_script) {
       pairs.push({
         type: Buffer.from(types.input.witness_script, 'hex'),
         value: Buffer.from(n.witness_script, 'hex'),
@@ -282,7 +285,7 @@ module.exports = args => {
     }
 
     // Bip 32 derivations for this input
-    if (!!n.bip32_derivations) {
+    if (!args.is_final && !!n.bip32_derivations) {
       // Sort in-place the derivations by pubkey ascending
       n.bip32_derivations.sort((a, b) => a.public_key < b.public_key ? -1 : 1);
 
@@ -298,6 +301,70 @@ module.exports = args => {
           ]),
         });
       });
+    }
+
+    // Final scriptsig for this input
+    if (!!args.is_final && !!n.partial_sig.length) {
+      const [signature] = n.partial_sig;
+
+      const sigs = n.partial_sig.map(n => {
+        const sig = encodeSig(Buffer.from(n.signature, 'hex'), n.hash_type);
+
+        return Buffer.concat([varuint.encode(sig.length), sig]);
+      });
+
+      // Non-witness Multi-sig?
+      if (sigs.length > [signature].length && !n.witness_script) {
+        const nullDummy = new BN(OP_0, decBase).toArrayLike(Buffer);
+        const redeemScript = Buffer.from(n.redeem_script, 'hex');
+
+        const redeemScriptPush = Buffer.concat([
+          varuint.encode(redeemScript.length),
+          redeemScript,
+        ]);
+
+        const components = [nullDummy].concat(sigs).concat([redeemScriptPush]);
+
+        pairs.push({
+          type: Buffer.from(types.input.final_scriptsig, 'hex'),
+          value: Buffer.concat(components),
+        });
+      }
+
+      // Witness P2SH Nested?
+      if (!!n.witness_utxo && !!n.redeem_script) {
+        const redeemScript = Buffer.from(n.redeem_script, 'hex');
+
+        const redeemScriptPush = Buffer.concat([
+          varuint.encode(redeemScript.length),
+          redeemScript,
+        ]);
+
+        pairs.push({
+          type: Buffer.from(types.input.final_scriptsig, 'hex'),
+          value: redeemScriptPush,
+        });
+      }
+
+      // Non-witness Multi-sig?
+      if (sigs.length > [signature].length && !!n.witness_script) {
+        const nullDummy = new BN(OP_0, decBase).toArrayLike(Buffer);
+        const witnessScript = Buffer.from(n.witness_script, 'hex');
+
+        const witnessScriptPush = Buffer.concat([
+          varuint.encode(witnessScript.length),
+          witnessScript,
+        ]);
+
+        const components = [nullDummy].concat(sigs).concat(witnessScriptPush);
+
+        const values = Buffer.concat(components);
+
+        pairs.push({
+          type: Buffer.from(types.input.final_scriptwitness, 'hex'),
+          value: Buffer.concat([varuint.encode(components.length), values]),
+        });
+      }
     }
 
     return pairs.push({separator: true});

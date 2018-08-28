@@ -1,6 +1,8 @@
+const BN = require('bn.js');
+
 const {encode} = require('varuint-bitcoin');
 
-const hexBase = 16;
+const decBase = 10;
 
 /** Convert an array of script buffer elements to a fully formed script
 
@@ -20,7 +22,7 @@ module.exports = scriptElements => {
       if (Buffer.isBuffer(element)) {
         return Buffer.concat([encode(element.length), element]);
       } else {
-        return Buffer.from(element.toString(hexBase), 'hex');
+        return new BN(element, decBase).toArrayLike(Buffer);
       }
     })
     .reduce((element, script) => Buffer.concat([element, script]));

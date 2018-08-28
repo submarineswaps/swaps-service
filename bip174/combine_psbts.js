@@ -11,6 +11,7 @@ const encodeSig = script.signature.encode;
   }
   @throws
   <Combine PSBT Error>
+
   @returns
   {
     psbt: <BIP 174 Encoded PSBT Hex String>
