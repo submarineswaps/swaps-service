@@ -37,7 +37,6 @@ module.exports = ({cache, network}, cbk) => {
 
     // Get the cached result
     getCached: ['validate', ({}, cbk) => {
-      return cbk();
       return getJsonFromCache({cache, type, key: network}, cbk);
     }],
 
