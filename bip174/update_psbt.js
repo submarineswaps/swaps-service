@@ -23,6 +23,12 @@ const tokensByteLength = 8;
 /** Update a PSBT
 
   {
+    [additional_attributes]: [{
+      type: <Type Hex String>
+      value: <Value Hex String>
+      vin: <Input Index Number>
+      vout: <Output Index Number>
+    }]
     [bip32_derivations]: [{
       fingerprint: <BIP 32 Fingerprint of Parent's Key Hex String>
       path: <BIP 32 Derivation Path String>
@@ -58,6 +64,7 @@ module.exports = args => {
     throw new Error('ExpectedPsbtToUpdate');
   }
 
+  const addAttributes = args.additional_attributes || [];
   const bip32Derivations = args.bip32_derivations || [];
   const decoded = decodePsbt({psbt: args.psbt});
   const inputs = [];
@@ -81,6 +88,17 @@ module.exports = args => {
   pairs.push({
     type: Buffer.from(types.global.unsigned_tx, 'hex'),
     value: tx.toBuffer(),
+  });
+
+  addAttributes.forEach(({type, value, vin, vout}) => {
+    if (vin !== undefined || vout !== undefined) {
+      return;
+    }
+
+    return pairs.push({
+      type: Buffer.from(type, 'hex'),
+      value: Buffer.from(value, 'hex'),
+    });
   });
 
   pairs.push({separator: true});
@@ -367,6 +385,13 @@ module.exports = args => {
       }
     }
 
+    addAttributes.filter(n => n.vin === vin).forEach(({type, value}) => {
+      return pairs.push({
+        type: Buffer.from(type, 'hex'),
+        value: Buffer.from(value, 'hex'),
+      });
+    });
+
     return pairs.push({separator: true});
   });
 
@@ -402,6 +427,13 @@ module.exports = args => {
         ]),
       });
     }
+
+    addAttributes.filter(n => n.vout === vout).forEach(({type, value}) => {
+      return pairs.push({
+        type: Buffer.from(type, 'hex'),
+        value: Buffer.from(value, 'hex'),
+      });
+    });
 
     return pairs.push({separator: true});
   });
