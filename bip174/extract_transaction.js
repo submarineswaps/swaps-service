@@ -1,14 +1,8 @@
-const BN = require('bn.js');
-const {crypto} = require('bitcoinjs-lib');
-const {OP_0} = require('bitcoin-ops');
 const {script} = require('bitcoinjs-lib');
 const {Transaction} = require('bitcoinjs-lib');
-const varuint = require('varuint-bitcoin');
 
-const decBase = 10;
 const decodePsbt = require('./decode_psbt');
 const {decompile} = script;
-const {hash160} = crypto;
 
 /** Extract a transaction from a finalized PSBT
 
@@ -48,22 +42,6 @@ module.exports = ({psbt}) => {
       });
 
       tx.setWitness(vin, decompile(witnessElements));
-    }
-
-    return;
-  });
-
-  decoded.outputs.forEach((n, vout) => {
-    if (!!n.bip32_derivation) {
-      const pkHash = hash160(Buffer.from(n.bip32_derivation.public_key, 'hex'));
-
-      const scriptPub = Buffer.concat([
-        new BN(OP_0, decBase).toArrayLike(Buffer),
-        varuint.encode(pkHash.length),
-        pkHash,
-      ]);
-
-      tx.outs[vout].script = scriptPub;
     }
 
     return;
