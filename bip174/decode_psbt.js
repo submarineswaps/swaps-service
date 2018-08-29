@@ -13,10 +13,11 @@ const types = require('./types');
 
 const {decompile} = script;
 const fingerPrintByteLength = 4;
+const globalSeparatorCode = parseInt(types.global.separator, 16);
 const keyCodeByteLength = 1;
 const magicBytes = Buffer.from(types.global.magic);
 const {ripemd160} = crypto;
-const globalSeparatorCode = parseInt(types.global.separator, 16);
+const sigHashTypeByteLength = 4;
 const tokensByteLength = 8;
 
 /** Decode a BIP 174 encoded PSBT
@@ -88,6 +89,7 @@ module.exports = ({psbt}) => {
   const decoded = {inputs: [], outputs: [], pairs: []};
   const foundInputs = [];
   const foundOutputs = [];
+  const globalKeys = {};
   let input;
   let inputKeys = {};
   let offset = 0;
@@ -212,6 +214,10 @@ module.exports = ({psbt}) => {
             throw new Error('ExpectedEmptyScriptSigs')
           }
 
+          if (!!n.witness.length) {
+            throw new Error('ExpectedEmptyWitnesses');
+          }
+
           foundInputs.push(n);
         });
 
@@ -224,6 +230,14 @@ module.exports = ({psbt}) => {
       }
     } else if (isGlobal) {
       decoded.unrecognized_attributes = decoded.unrecognized_attributes || [];
+
+      const type = keyType.toString('hex');
+
+      if (!!globalKeys[type] || type === types.global.unsigned_tx) {
+        throw new Error('UnexpectedDuplicateGlobalKey');
+      }
+
+      globalKeys[type] = true;
 
       decoded.unrecognized_attributes.push({
         type: keyType.toString('hex'),
@@ -261,6 +275,7 @@ module.exports = ({psbt}) => {
         break;
 
       case types.input.final_scriptsig:
+        // The key must only contain the 1 byte type.
         if (keyType.length > keyCodeByteLength) {
           throw new Error('InvalidFinalScriptSigKey');
         }
@@ -274,6 +289,7 @@ module.exports = ({psbt}) => {
         break;
 
       case types.input.final_scriptwitness:
+        // The key must only contain the 1 byte type.
         if (keyType.length > keyCodeByteLength) {
           throw new Error('InvalidScriptWitnessTypeKey');
         }
@@ -291,6 +307,7 @@ module.exports = ({psbt}) => {
         break;
 
       case types.input.non_witness_utxo:
+        // The key must only contain the 1 byte type.
         if (keyType.length > keyCodeByteLength) {
           throw new Error('InvalidNonWitnessUtxoTypeKey');
         }
@@ -301,12 +318,22 @@ module.exports = ({psbt}) => {
           throw new Error('ExpectedValidTransactionForNonWitnessUtxo');
         }
 
+        if (input.witness_utxo) {
+          throw new Error('UnexpectedDuplicateSpendForInput');
+        }
+
         input.non_witness_utxo = value.toString('hex');
         break;
 
       case types.input.partial_sig:
         let sigPubKey;
-        const signature = decodeSignature({signature: value});
+        let signature;
+
+        try {
+          signature = decodeSignature({signature: value});
+        } catch (err) {
+          throw new Error('ExpectedValidPartialSignature');
+        }
 
         // Make sure the partial signature public key is a valid pubkey
         try {
@@ -325,6 +352,7 @@ module.exports = ({psbt}) => {
         break;
 
       case types.input.redeem_script:
+        // The key must only contain the 1 byte type.
         if (keyType.length > keyCodeByteLength) {
           throw new Error('InvalidRedeemScriptTypeKey');
         }
@@ -339,14 +367,20 @@ module.exports = ({psbt}) => {
         break;
 
       case types.input.sighash_type:
+        // The key must only contain the 1 byte type.
         if (keyType.length > keyCodeByteLength) {
           throw new Error('InvalidSigHashTypeKey');
+        }
+
+        if (value.length !== sigHashTypeByteLength) {
+          throw new Error('UnexpectedSigHashTypeByteLength');
         }
 
         input.sighash_type = value.readUInt32LE();
         break;
 
       case types.input.witness_script:
+        // The key must only contain the 1 byte type.
         if (keyType.length > keyCodeByteLength) {
           throw new Error('InvalidWitnessScriptTypeKey');
         }
@@ -356,11 +390,16 @@ module.exports = ({psbt}) => {
           throw new Error('InvalidWitnessScript');
         }
 
+        if (!!input.non_witness_utxo) {
+          throw new Error('UnexpectedDuplicateUtxoSpend');
+        }
+
         input.witness_script = value.toString('hex');
         input.witness_script_hash = crypto.sha256(value);
         break;
 
       case types.input.witness_utxo:
+        // The key must only contain the 1 byte type.
         if (keyType.length > keyCodeByteLength) {
           throw new Error('InvalidInputWitnessUtxoTypeKey');
         }
@@ -415,6 +454,7 @@ module.exports = ({psbt}) => {
         break;
 
       case types.output.redeem_script:
+        // The key must only contain the 1 byte type.
         if (keyType.length > keyCodeByteLength) {
           throw new Error('InvalidOutputRedeemScriptTypeKey');
         }
@@ -428,6 +468,7 @@ module.exports = ({psbt}) => {
         break;
 
       case types.output.witness_script:
+        // The key must only contain the 1 byte type.
         if (keyType.length > keyCodeByteLength) {
           throw new Error('InvalidOutputWitnessScriptTypeKey');
         }

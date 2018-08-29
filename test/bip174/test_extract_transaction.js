@@ -26,3 +26,4 @@ Object.keys(tests).map(t => tests[t]).forEach(({args, err, msg, result}) => {
     return end();
   });
 });
+
