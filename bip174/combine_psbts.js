@@ -23,7 +23,7 @@ module.exports = ({psbts}) => {
 
   psbts.map(psbt => decodePsbt({psbt})).forEach(decoded => {
     return decoded.inputs.forEach((input, vin) => {
-      return input.partial_sig.forEach(partial => {
+      return (input.partial_sig || []).forEach(partial => {
         const sig = Buffer.from(partial.signature, 'hex');
 
         return signatures.push({

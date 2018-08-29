@@ -46,6 +46,10 @@ const tokensByteLength = 8;
       }]
       [redeem_script]: <Hex Encoded Redeem Script String>
       [sighash_type]: <Sighash Type Number>
+      [unrecognized_attributes]: [{
+        type: <Key Type Hex String>
+        value: <Value Hex String>
+      }]
       [witness_script]: <Witness Script Hex String>
       [witness_utxo]: {
         script_pub: <UTXO ScriptPub Hex String>
@@ -59,11 +63,19 @@ const tokensByteLength = 8;
         public_key: <Public Key Hex String>
       }
       [redeem_script]: <Hex Encoded Redeem Script>
+      [unrecognized_attributes]: [{
+        type: <Key Type Hex String>
+        value: <Value Hex String>
+      }]
       [witness_script]: <Hex Encoded Witness Script>
     }]
     pairs: [{
       type: <Key Type Hex String>
       value: <Value Hex String>
+    }]
+    [unrecognized_attributes]: [{
+      type: <Global Key Type Hex String>
+      value: <Global Value Hex String>
     }]
   }
 */
@@ -111,6 +123,8 @@ module.exports = ({psbt}) => {
     throw new Error('ExpectedGlobalSeparator');
   }
 
+  let isGlobal = true;
+
   // Read through key/value pairs
   while (offset < buffer.length) {
     // KeyType bytes are variable length
@@ -123,6 +137,7 @@ module.exports = ({psbt}) => {
 
     // End markers are zero
     if (!keyTypeLength) {
+      isGlobal = false;
       terminatorsFound++;
 
       // Check non-witness UTXO input redeem scripts
@@ -207,6 +222,13 @@ module.exports = ({psbt}) => {
         throw new Error('InvalidGlobalTransactionKeyType');
         break;
       }
+    } else if (isGlobal) {
+      decoded.unrecognized_attributes = decoded.unrecognized_attributes || [];
+
+      decoded.unrecognized_attributes.push({
+        type: keyType.toString('hex'),
+        value: value.toString('hex'),
+      });
     } else if (!!foundInputs.length || !!input) {
       // Start of a new input?
       if (!input) {
@@ -359,6 +381,12 @@ module.exports = ({psbt}) => {
         break;
 
       default:
+        input.unrecognized_attributes = input.unrecognized_attributes || [];
+
+        input.unrecognized_attributes.push({
+          type: keyType.toString('hex'),
+          value: value.toString('hex'),
+        });
         break;
       }
     } else if (!!foundOutputs.length || !!output) {
@@ -413,6 +441,12 @@ module.exports = ({psbt}) => {
         break;
 
       default:
+        output.unrecognized_attributes = output.unrecognized_attributes || [];
+
+        output.unrecognized_attributes.push({
+          type: keyType.toString('hex'),
+          value: value.toString('hex'),
+        });
         break;
       }
     }
