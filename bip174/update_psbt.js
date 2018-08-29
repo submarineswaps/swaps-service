@@ -15,7 +15,7 @@ const {decompile} = script;
 const encodeSig = script.signature.encode;
 const endianness = 'le';
 const {hash160} = crypto;
-const hexBase = 16;
+const opNumberOffset = 80;
 const {sha256} = crypto;
 const sighashByteLength = 4;
 const tokensByteLength = 8;
@@ -321,6 +321,14 @@ module.exports = args => {
       });
     }
 
+    if (!!args.is_final && !n.partial_sig.length) {
+      throw new Error('ExpectedSignaturesForFinalizedTransaction');
+    }
+
+    if (!!args.is_final && !n.redeem_script && !n.witness_script) {
+      throw new Error('ExpectedSpendScriptForFinalizedTransaction');
+    }
+
     // Final scriptsig for this input
     if (!!args.is_final && !!n.partial_sig.length) {
       const [signature] = n.partial_sig;
@@ -335,6 +343,14 @@ module.exports = args => {
       if (sigs.length > [signature].length && !n.witness_script) {
         const nullDummy = new BN(OP_0, decBase).toArrayLike(Buffer);
         const redeemScript = Buffer.from(n.redeem_script, 'hex');
+
+        const [sigsRequired] = decompile(redeemScript);
+
+        const requiredSignatureCount = sigsRequired - opNumberOffset;
+
+        if (sigs.length !== requiredSignatureCount) {
+          throw new Error('ExpectedAdditionalSignatures');
+        }
 
         const redeemScriptPush = Buffer.concat([
           varuint.encode(redeemScript.length),
@@ -368,6 +384,14 @@ module.exports = args => {
       if (sigs.length > [signature].length && !!n.witness_script) {
         const nullDummy = new BN(OP_0, decBase).toArrayLike(Buffer);
         const witnessScript = Buffer.from(n.witness_script, 'hex');
+
+        const [sigsRequired] = decompile(witnessScript);
+
+        const requiredSignatureCount = sigsRequired - opNumberOffset;
+
+        if (sigs.length !== requiredSignatureCount) {
+          throw new Error('ExpectedAdditionalSignatures');
+        }
 
         const witnessScriptPush = Buffer.concat([
           varuint.encode(witnessScript.length),

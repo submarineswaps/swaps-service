@@ -10,8 +10,9 @@ const terminator = Buffer.from('00', 'hex');
 
   {
     pairs: [{
-      [value]: <Value Buffer Object>
+      [separator]: <Is Separator Bool>
       [type]: <Type Buffer Object>
+      [value]: <Value Buffer Object>
     }]
   }
 
@@ -32,7 +33,11 @@ module.exports = ({pairs}) => {
 
   let lastType = null;
 
-  const encodedPairs = Buffer.concat(pairs.map(({type, value}) => {
+  const encodedPairs = Buffer.concat(pairs.map(({separator, type, value}) => {
+    if ((!type || !value) && !separator) {
+      throw new Error('ExpectedSeparator');
+    }
+
     if (!type) {
       return terminator;
     }

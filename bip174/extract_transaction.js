@@ -30,6 +30,10 @@ module.exports = ({psbt}) => {
   const tx = Transaction.fromHex(decoded.unsigned_transaction);
 
   decoded.inputs.forEach((n, vin) => {
+    if (!n.final_scriptsig && !n.final_scriptwitness) {
+      throw new Error('ExpectedFinalScriptSigsAndWitnesses');
+    }
+
     if (!!n.final_scriptsig) {
       tx.setInputScript(vin, Buffer.from(n.final_scriptsig, 'hex'));
     }

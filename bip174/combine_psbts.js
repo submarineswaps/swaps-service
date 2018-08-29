@@ -24,8 +24,15 @@ module.exports = ({psbts}) => {
   const outputAttributes = [];
   const [referencePsbt] = psbts;
   const signatures = [];
+  let tx;
 
   psbts.map(psbt => decodePsbt({psbt})).forEach(decoded => {
+    if (!tx) {
+      tx = decoded.unsigned_transaction;
+    } else if (tx !== decoded.unsigned_transaction) {
+      throw new Error('ExpectedUniqueTransaction');
+    }
+
     (decoded.unrecognized_attributes || []).forEach(({type, value}) => {
       return globalAttributes[type] = value;
     });
