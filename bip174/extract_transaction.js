@@ -1,6 +1,8 @@
+const BN = require('bn.js');
 const {script} = require('bitcoinjs-lib');
 const {Transaction} = require('bitcoinjs-lib');
 
+const decBase = 10;
 const decodePsbt = require('./decode_psbt');
 const {decompile} = script;
 
@@ -42,7 +44,15 @@ module.exports = ({psbt}) => {
       const finalScriptWitness = Buffer.from(n.final_scriptwitness, 'hex');
 
       const witnessElements = decompile(finalScriptWitness).map(n => {
-        return !n ? Buffer.from([]) : n;
+        if (!n) {
+          return Buffer.from([]);
+        }
+
+        if (Buffer.isBuffer(n)) {
+          return n;
+        }
+
+        return new BN(n, decBase).toArrayLike(Buffer);
       });
 
       tx.setWitness(vin, decompile(witnessElements));

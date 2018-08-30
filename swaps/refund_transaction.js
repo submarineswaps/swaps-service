@@ -108,7 +108,7 @@ module.exports = args => {
   // Add redeem scripts for nested p2sh
   try {
     nestedSegWitUtxos({utxos, network: args.network})
-      .map(({redeem, vin}) => ({vin, redeem: nestedSegWitScript({redeem})}))
+      .map(({redeem, vin}) => ({vin, redeem: nestedSegWitScript({witness: redeem})}))
       .map(({redeem, vin}) => ({vin, redeem: Buffer.from(redeem, 'hex')}))
       .forEach(({redeem, vin}) => tx.setInputScript(vin, redeem));
   } catch (err) {

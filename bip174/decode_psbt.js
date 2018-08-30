@@ -18,6 +18,7 @@ const keyCodeByteLength = 1;
 const magicBytes = Buffer.from(types.global.magic);
 const {ripemd160} = crypto;
 const sigHashTypeByteLength = 4;
+const stackIndexByteLength = 4;
 const tokensByteLength = 8;
 
 /** Decode a BIP 174 encoded PSBT
@@ -258,6 +259,22 @@ module.exports = ({psbt}) => {
       inputKeys[keyType.toString('hex')] = true;
 
       switch (keyTypeCode) {
+      case types.input.additional_stack_element:
+        if (keyType.length !== keyCodeByteLength + stackIndexByteLength) {
+          throw new Error('UnexpectedAdditionalWitnessElementTypeLength');
+        }
+
+        input.add_stack_elements = input.add_stack_elements || [];
+
+        const index = keyType.slice(keyCodeByteLength).readUInt32LE();
+
+        const valueLength = varuint.decode(value);
+
+        const val = value.slice(varuint.decode.bytes);
+
+        input.add_stack_elements.push({index, value: val.toString('hex')});
+        break;
+
       case types.input.bip32_derivation:
         input.bip32_derivations = input.bip32_derivations || [];
 

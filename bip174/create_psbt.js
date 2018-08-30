@@ -13,6 +13,7 @@ const {global} = require('./types');
     }]
     utxos: [{
       id: <Transaction Id Hex String>
+      [sequence]: <Sequence Number>
       vout: <Output Index Number>
     }]
     [version]: <Transaction Version Number>
@@ -40,6 +41,11 @@ module.exports = ({outputs, utxos, version}) => {
   utxos
     .map(n => ({hash: Buffer.from(n.id, 'hex'), vout: n.vout}))
     .forEach(({hash, vout}) => tx.addInput(hash.reverse(), vout));
+
+  // Set sequence numbers as necessary
+  utxos
+    .filter(({sequence}) => sequence !== undefined)
+    .forEach(({sequence}, vin) => tx.ins[vin].sequence = sequence);
 
   // Append all the outputs to the transaction
   outputs

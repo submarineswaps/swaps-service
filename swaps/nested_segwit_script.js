@@ -9,7 +9,7 @@ const {sha256} = crypto;
 /** Make the nested input redeem script for a nested segwit input
 
   {
-    redeem: <Redeem Script Hex String>
+    witness: <Witness Redeem Script Hex String>
   }
 
   @throws Error on invalid arguments
@@ -17,14 +17,14 @@ const {sha256} = crypto;
   @returns
   <P2SH Nested SegWit Input Redeem Script Hex String>
 */
-module.exports = ({redeem}) => {
-  if (!redeem) {
+module.exports = ({witness}) => {
+  if (!witness) {
     throw new Error('ExpectedRedeemScriptForDummyInputScriptCreation');
   }
 
   const witnessVersion = encode(OP_0).toString('hex');
 
-  const nestComponents = [witnessVersion, sha256(Buffer.from(redeem, 'hex'))];
+  const nestComponents = [witnessVersion, sha256(Buffer.from(witness, 'hex'))];
 
   const nest = Buffer.from(scriptBuffersAsScript(nestComponents), 'hex');
 

@@ -8,6 +8,8 @@ const varuint = require('varuint-bitcoin')
 const bip32Path = require('./bip32_path');
 const decodePsbt = require('./decode_psbt');
 const encodePsbt = require('./encode_psbt');
+const isMultisig = require('./is_multisig');
+const pushData = require('./push_data');
 const types = require('./types');
 
 const decBase = 10;
@@ -18,6 +20,7 @@ const {hash160} = crypto;
 const opNumberOffset = 80;
 const {sha256} = crypto;
 const sighashByteLength = 4;
+const stackIndexByteLength = 4;
 const tokensByteLength = 8;
 
 /** Update a PSBT
@@ -28,6 +31,12 @@ const tokensByteLength = 8;
       value: <Value Hex String>
       vin: <Input Index Number>
       vout: <Output Index Number>
+    }]
+    [additional_stack_elements]: [{
+      [data_push]: <Script Data Push Hex String>
+      [op_code]: <Script Op Code Number>
+      stack_index: <Witness Stack Index Number>
+      vin: <Input Index Number>
     }]
     [bip32_derivations]: [{
       fingerprint: <BIP 32 Fingerprint of Parent's Key Hex String>
@@ -77,6 +86,7 @@ module.exports = args => {
   const scriptPubs = {};
   const sighashes = {};
   const signatures = {};
+  const stackElements = {};
   const transactions = args.transactions || [];
   const txs = {};
   const witnessScripts = args.witness_scripts || [];
@@ -112,6 +122,15 @@ module.exports = args => {
 
     return;
   });
+
+  // Index additional stack elements by vin
+  if (Array.isArray(args.additional_stack_elements)) {
+    args.additional_stack_elements.forEach(n => {
+      stackElements[n.vin] = stackElements[n.vin] || [];
+
+      return stackElements[n.vin].push(n);
+    });
+  }
 
   // Index sighashes by spending outpoint
   if (Array.isArray(args.sighashes)) {
@@ -158,6 +177,7 @@ module.exports = args => {
 
     const foundKeys = decompiledBuffers.map(n => pubKeys[n.toString('hex')]);
 
+    // Index using the nested scriptPub hash
     witnesses[hash160(redeemScript).toString('hex')] = {
       derivations: foundKeys.filter(n => !!n),
       redeem: redeemScript,
@@ -189,20 +209,25 @@ module.exports = args => {
 
     // Input is a witness spend
     if (spendsTx.hasWitnesses()) {
+      // Find the output in the spending transaction that matches the input
       const out = spendsTx.outs
         .map(({script, value}) => {
-          // Get the hash being spent, either a P2SH or a P2WPKH or a P2WSH
-          const [, hash] = decompile(script);
+          // Get the hash being spent, either a P2SH or a P2WSH
+          const [, scriptHash] = decompile(script);
 
-          const index = hash.toString('hex');
+          if (!scriptHash) {
+            return;
+          }
 
-          const matchingWitness = witnesses[index] || {};
+          const hash = scriptHash.toString('hex');
+
+          const matchingWitness = witnesses[hash] || {};
 
           const {derivations, redeem, witness} = matchingWitness;
 
-          return {derivations, index, redeem, script, value, witness};
+          return {derivations, hash, redeem, script, value, witness};
         })
-        .find(({index}) => !!witnesses[index]);
+        .find(({hash}) => !!witnesses[hash]);
 
       utxo.bip32_derivations = out.derivations;
       utxo.redeem_script = out.redeem.toString('hex');
@@ -340,10 +365,11 @@ module.exports = args => {
       });
 
       // Non-witness Multi-sig?
-      if (sigs.length > [signature].length && !n.witness_script) {
+      if (isMultisig({script: n.redeem_script})) {
         const nullDummy = new BN(OP_0, decBase).toArrayLike(Buffer);
         const redeemScript = Buffer.from(n.redeem_script, 'hex');
 
+        const redeemScriptPush = pushData({data: redeemScript});
         const [sigsRequired] = decompile(redeemScript);
 
         const requiredSignatureCount = sigsRequired - opNumberOffset;
@@ -351,11 +377,6 @@ module.exports = args => {
         if (sigs.length !== requiredSignatureCount) {
           throw new Error('ExpectedAdditionalSignatures');
         }
-
-        const redeemScriptPush = Buffer.concat([
-          varuint.encode(redeemScript.length),
-          redeemScript,
-        ]);
 
         const components = [nullDummy].concat(sigs).concat([redeemScriptPush]);
 
@@ -367,36 +388,25 @@ module.exports = args => {
 
       // Witness P2SH Nested?
       if (!!n.witness_utxo && !!n.redeem_script) {
-        const redeemScript = Buffer.from(n.redeem_script, 'hex');
-
-        const redeemScriptPush = Buffer.concat([
-          varuint.encode(redeemScript.length),
-          redeemScript,
-        ]);
-
         pairs.push({
           type: Buffer.from(types.input.final_scriptsig, 'hex'),
-          value: redeemScriptPush,
+          value: pushData({encode: n.redeem_script}),
         });
       }
 
-      // Non-witness Multi-sig?
-      if (sigs.length > [signature].length && !!n.witness_script) {
+      // Witness Multi-sig?
+      if (isMultisig({script: n.witness_script})) {
         const nullDummy = new BN(OP_0, decBase).toArrayLike(Buffer);
         const witnessScript = Buffer.from(n.witness_script, 'hex');
 
         const [sigsRequired] = decompile(witnessScript);
+        const witnessScriptPush = pushData({data: witnessScript});
 
         const requiredSignatureCount = sigsRequired - opNumberOffset;
 
         if (sigs.length !== requiredSignatureCount) {
           throw new Error('ExpectedAdditionalSignatures');
         }
-
-        const witnessScriptPush = Buffer.concat([
-          varuint.encode(witnessScript.length),
-          witnessScript,
-        ]);
 
         const components = [nullDummy].concat(sigs).concat(witnessScriptPush);
 
@@ -407,6 +417,62 @@ module.exports = args => {
           value: Buffer.concat([varuint.encode(components.length), values]),
         });
       }
+
+      // Witness but non-multisig
+      if (!!n.witness_script && !isMultisig({script: n.witness_script})) {
+        const witnessScriptPush = pushData({encode: n.witness_script});
+
+        const components = [].concat(sigs).concat(witnessScriptPush);
+
+        if (Array.isArray(n.add_stack_elements)) {
+          n.add_stack_elements.sort((a, b) => (a.index < b.index ? -1 : 1));
+
+          n.add_stack_elements.forEach(({index, value}) => {
+            const pushValue = Buffer.from(value, 'hex');
+
+            const pushDataValue = Buffer.concat([
+              varuint.encode(pushValue.length),
+              pushValue,
+            ]);
+
+            return components.splice(index, 0, pushDataValue);
+          });
+        }
+
+        const value = Buffer.concat([
+          varuint.encode(components.length),
+          Buffer.concat(components),
+        ]);
+
+        pairs.push({
+          value,
+          type: Buffer.from(types.input.final_scriptwitness, 'hex'),
+        });
+      }
+    }
+
+    // Additional stack elements
+    if (!args.is_final && Array.isArray(stackElements[vin])) {
+      stackElements[vin].forEach(n => {
+        const stackIndex = new BN(n.stack_index, decBase);
+        let value;
+
+        if (n.data_push !== undefined) {
+          value = Buffer.from(n.data_push, 'hex');
+        } else if (n.op_code !== undefined) {
+          value = new BN(n.op_code, decBase).toArrayLike(Buffer);
+        } else {
+          throw new Error('UnknownStackElementType');
+        }
+
+        return pairs.push({
+          type: Buffer.concat([
+            Buffer.from(types.input.additional_stack_element, 'hex'),
+            stackIndex.toArrayLike(Buffer, endianness, stackIndexByteLength),
+          ]),
+          value: Buffer.concat([varuint.encode(value.length), value]),
+        });
+      });
     }
 
     addAttributes.filter(n => n.vin === vin).forEach(({type, value}) => {
@@ -437,7 +503,7 @@ module.exports = args => {
 
   // Iterate through outputs to add pairs as appropriate
   tx.outs.forEach((out, vout) => {
-    const output = outputs[vout] || decoded.outputs[vout];
+    const output = outputs[vout] || decoded.outputs[vout] || {};
 
     if (!!output.bip32_derivation) {
       pairs.push({

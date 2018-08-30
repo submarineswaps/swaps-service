@@ -112,8 +112,8 @@ module.exports = ({block, cache, id, invoice, network, script}, cbk) => {
 
       try {
         return cbk(null, serverSwapKeyPair({index, network}));
-      } catch (e) {
-        return cbk([500, 'ExpectedValidKeyPair', e]);
+      } catch (err) {
+        return cbk([500, 'ExpectedValidKeyPair', err]);
       }
     }],
 
