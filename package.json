@@ -26,6 +26,7 @@
     "redis": "2.8.0",
     "request": "2.88.0",
     "serve-favicon": "2.5.0",
+    "uuid": "3.3.2",
     "varuint-bitcoin": "1.1.0",
     "walnut": "0.0.4"
   },
