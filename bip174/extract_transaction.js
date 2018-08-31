@@ -1,9 +1,10 @@
 const BN = require('bn.js');
-const {script} = require('bitcoinjs-lib');
-const {Transaction} = require('bitcoinjs-lib');
+
+const decodePsbt = require('./decode_psbt');
+const {script} = require('./../tokenslib');
+const {Transaction} = require('./../tokenslib');
 
 const decBase = 10;
-const decodePsbt = require('./decode_psbt');
 const {decompile} = script;
 
 /** Extract a transaction from a finalized PSBT

@@ -1,14 +1,14 @@
 const BN = require('bn.js');
-const {crypto} = require('bitcoinjs-lib');
-const {ECPair} = require('bitcoinjs-lib');
-const {script} = require('bitcoinjs-lib');
-const {Transaction} = require('bitcoinjs-lib');
 const varuint = require('varuint-bitcoin')
 
 const bip32Derivation = require('./bip32_derivation');
 const checkNonWitnessUtxo = require('./check_non_witness_utxo');
 const checkWitnessUtxo = require('./check_witness_utxo');
+const {crypto} = require('./../tokenslib');
 const decodeSignature = require('./decode_signature');
+const {ECPair} = require('./../tokenslib');
+const {script} = require('./../tokenslib');
+const {Transaction} = require('./../tokenslib');
 const types = require('./types');
 
 const {decompile} = script;
@@ -79,6 +79,7 @@ const tokensByteLength = 8;
       type: <Global Key Type Hex String>
       value: <Global Value Hex String>
     }]
+    unsigned_transaction: <Unsigned Transaction Hex String>
   }
 */
 module.exports = ({psbt}) => {
@@ -405,10 +406,6 @@ module.exports = ({psbt}) => {
         // Make sure that the witness script is a reasonable script
         if (!decompile(value)) {
           throw new Error('InvalidWitnessScript');
-        }
-
-        if (!!input.non_witness_utxo) {
-          throw new Error('UnexpectedDuplicateUtxoSpend');
         }
 
         input.witness_script = value.toString('hex');

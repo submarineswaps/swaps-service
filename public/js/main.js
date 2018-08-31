@@ -1181,8 +1181,6 @@ App.submitCreateSwapQuote = function(event) {
         transaction_output_index: txDetails.transaction_output_index,
       };
 
-      refundData.base64 = btoa(JSON.stringify(refundData));
-
       const text = JSON.stringify(
         refundData,
         null,

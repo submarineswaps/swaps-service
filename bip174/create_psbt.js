@@ -1,8 +1,8 @@
-const {Transaction} = require('bitcoinjs-lib');
-
-const defaultTransactionVersionNumber = 2;
 const encodePsbt = require('./encode_psbt');
 const {global} = require('./types');
+const {Transaction} = require('./../tokenslib');
+
+const defaultTransactionVersionNumber = 2;
 
 /** Create a PSBT
 
@@ -16,6 +16,7 @@ const {global} = require('./types');
       [sequence]: <Sequence Number>
       vout: <Output Index Number>
     }]
+    [timelock]: <Set Lock Time on Transaction To Number>
     [version]: <Transaction Version Number>
   }
 
@@ -24,7 +25,7 @@ const {global} = require('./types');
     psbt: <Partially Signed Bitcoin Transaction Hex Encoded String>
   }
 */
-module.exports = ({outputs, utxos, version}) => {
+module.exports = ({outputs, timelock, utxos, version}) => {
   if (!Array.isArray(outputs)) {
     throw new Error('ExpectedTransactionOutputsForNewPsbt');
   }
@@ -34,6 +35,10 @@ module.exports = ({outputs, utxos, version}) => {
   }
 
   const tx = new Transaction();
+
+  if (!!timelock) {
+    tx.locktime = timelock;
+  }
 
   tx.version = version || defaultTransactionVersionNumber;
 

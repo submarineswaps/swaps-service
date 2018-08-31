@@ -1,15 +1,15 @@
 const BN = require('bn.js');
-const {crypto} = require('bitcoinjs-lib');
 const {OP_0} = require('bitcoin-ops');
-const {script} = require('bitcoinjs-lib');
-const {Transaction} = require('bitcoinjs-lib');
-const varuint = require('varuint-bitcoin')
+const varuint = require('varuint-bitcoin');
 
 const bip32Path = require('./bip32_path');
+const {crypto} = require('./../tokenslib');
 const decodePsbt = require('./decode_psbt');
 const encodePsbt = require('./encode_psbt');
 const isMultisig = require('./is_multisig');
 const pushData = require('./push_data');
+const {script} = require('./../tokenslib');
+const {Transaction} = require('./../tokenslib');
 const types = require('./types');
 
 const decBase = 10;
@@ -150,7 +150,9 @@ module.exports = args => {
   redeemScripts.map(n => Buffer.from(n, 'hex')).forEach(script => {
     const scriptBuffers = decompile(script).filter(Buffer.isBuffer);
 
-    scriptBuffers.map(n => n.toString('hex')).forEach(n => redeems[n] = script);
+    scriptBuffers
+      .map(n => n.toString('hex'))
+      .forEach(n => redeems[n] = script);
 
     const foundKeys = scriptBuffers.map(n => pubKeys[n.toString('hex')]);
 
@@ -207,58 +209,60 @@ module.exports = args => {
 
     const spendsTx = Transaction.fromHex(spends);
 
-    // Input is a witness spend
-    if (spendsTx.hasWitnesses()) {
-      // Find the output in the spending transaction that matches the input
-      const out = spendsTx.outs
-        .map(({script, value}) => {
-          // Get the hash being spent, either a P2SH or a P2WSH
-          const [, scriptHash] = decompile(script);
+    // Find the non-witness output
+    const out = spendsTx.outs
+      .map(({script}) => {
+        const [, hash] = decompile(script);
 
-          if (!scriptHash) {
-            return;
-          }
+        const index = hash.toString('hex');
 
-          const hash = scriptHash.toString('hex');
+        const redeem = redeems[index] || {};
 
-          const matchingWitness = witnesses[hash] || {};
+        return {
+          index,
+          derivations: redeem.bip32_derivations,
+          redeem: redeem.script,
+        };
+      })
+      .find(({index}) => !!redeems[index]);
 
-          const {derivations, redeem, witness} = matchingWitness;
+    // Find the output in the spending transaction that matches the input
+    const outW = spendsTx.outs
+      .map(({script, value}) => {
+        // Get the hash being spent, either a P2SH or a P2WSH
+        const [, scriptHash] = decompile(script);
 
-          return {derivations, hash, redeem, script, value, witness};
-        })
-        .find(({hash}) => !!witnesses[hash]);
+        if (!scriptHash) {
+          return;
+        }
 
-      utxo.bip32_derivations = out.derivations;
-      utxo.redeem_script = out.redeem.toString('hex');
-      utxo.witness_script = out.witness.toString('hex');
+        const hash = scriptHash.toString('hex');
 
+        const matchingWitness = witnesses[hash] || {};
+
+        const {derivations, redeem, witness} = matchingWitness;
+
+        return {derivations, hash, redeem, script, value, witness};
+      })
+      .find(({hash}) => !!witnesses[hash]);
+
+    if (!!outW && !!outW.witness) {
+      utxo.witness_script = outW.witness.toString('hex');
+    }
+
+    if (!!spendsTx.hasWitnesses()) {
       utxo.witness_utxo = {
-        script_pub: out.script.toString('hex'),
-        tokens: out.value,
+        script_pub: outW.script.toString('hex'),
+        tokens: outW.value,
       };
     } else {
-      // Input is a non-witness spend
-      const out = spendsTx.outs
-        .map(({script}) => {
-          const [, hash] = decompile(script);
-
-          const index = hash.toString('hex');
-
-          const redeem = redeems[index] || {};
-
-          return {
-            index,
-            bip32_derivations: redeem.bip32_derivations,
-            redeem: redeem.script,
-          };
-        })
-        .find(({index}) => !!redeems[index]);
-
-      utxo.bip32_derivations = out.bip32_derivations;
       utxo.non_witness_utxo = spends.toString('hex');
-      utxo.redeem_script = out.redeem.toString('hex');
     }
+
+    const outBip32 = (out || {}).derivations.concat((outW || {}).derivations);
+
+    utxo.bip32_derivations = outBip32.filter(n => !!n);
+    utxo.redeem_script = (out || outW).redeem.toString('hex');
 
     return inputs.push(utxo);
   });
@@ -346,7 +350,7 @@ module.exports = args => {
       });
     }
 
-    if (!!args.is_final && !n.partial_sig.length) {
+    if (!!args.is_final && (!n.partial_sig || !n.partial_sig.length)) {
       throw new Error('ExpectedSignaturesForFinalizedTransaction');
     }
 
@@ -387,7 +391,7 @@ module.exports = args => {
       }
 
       // Witness P2SH Nested?
-      if (!!n.witness_utxo && !!n.redeem_script) {
+      if (!!n.redeem_script && !isMultisig({script: n.redeem_script})) {
         pairs.push({
           type: Buffer.from(types.input.final_scriptsig, 'hex'),
           value: pushData({encode: n.redeem_script}),

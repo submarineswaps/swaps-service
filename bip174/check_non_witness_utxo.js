@@ -1,9 +1,10 @@
-const bitcoinjsLib = require('bitcoinjs-lib');
 const {OP_EQUAL} = require('bitcoin-ops');
 const {OP_HASH160} = require('bitcoin-ops');
-const {Transaction} = require('bitcoinjs-lib');
 
-const {decompile} = bitcoinjsLib.script;
+const {script} = require('./../tokenslib');
+const {Transaction} = require('./../tokenslib');
+
+const {decompile} = script;
 const p2shHashByteLength = 20;
 
 /** Check that an input's non witness utxo is valid

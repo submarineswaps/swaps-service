@@ -1,5 +1,6 @@
 const {OP_CHECKMULTISIG} = require('bitcoin-ops');
-const {script} = require('bitcoinjs-lib');
+
+const {script} = require('./../tokenslib');
 
 const {decompile} = script;
 const maxKeyCount = 16;

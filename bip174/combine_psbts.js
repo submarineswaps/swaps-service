@@ -1,6 +1,5 @@
-const {script} = require('bitcoinjs-lib');
-
 const decodePsbt = require('./decode_psbt');
+const {script} = require('./../tokenslib');
 const updatePsbt = require('./update_psbt');
 
 const encodeSig = script.signature.encode;

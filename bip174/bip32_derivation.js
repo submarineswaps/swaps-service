@@ -1,4 +1,4 @@
-const {ECPair} = require('bitcoinjs-lib');
+const {ECPair} = require('./../tokenslib');
 
 const bip32KeyByteLength = 4;
 const bip32KeyLimit = Math.pow(2, 31);
