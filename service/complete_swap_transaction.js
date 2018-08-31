@@ -4,7 +4,9 @@ const {createAddress} = require('ln-service');
 const {createInvoice} = require('ln-service');
 const {getRoutes} = require('ln-service');
 const {pay} = require('ln-service');
+const uuidv4 = require('uuid/v4');
 
+const addDetectedSwap = require('./../pool/add_detected_swap');
 const {addressDetails} = require('./../chain');
 const {broadcastTransaction} = require('./../chain');
 const {checkInvoicePayable} = require('./../swaps');
@@ -303,13 +305,27 @@ module.exports = ({cache, invoice, key, network, script, transaction}, cbk) => {
       'parsedInvoice',
       ({getRoutes, lnd, parsedInvoice}, cbk) =>
     {
+      const date = new Date().toISOString();
       const {id} = parsedInvoice;
       let paymentSecret;
 
       return asyncDetectSeries(getRoutes.routes, (route, cbk) => {
         return pay({id, lnd, routes: [route]}, (err, res) => {
           if (!!err) {
-            return cbk(null, false);
+            // Register the failed payment attempt in the pool
+            return addDetectedSwap({
+              cache,
+              id,
+              attempt: {
+                date,
+                hops: route.hops.map(n => n.channel_id),
+                id: uuidv4(),
+                type: 'attempt',
+              },
+            },
+            err => {
+              return cbk(null, false);
+            });
           }
 
           paymentSecret = res.payment_secret;

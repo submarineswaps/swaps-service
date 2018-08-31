@@ -99,6 +99,7 @@ module.exports = ({cache, invoice, network, script}, cbk) => {
     swapElement: ['getSwapFromPool', ({getSwapFromPool}, cbk) => {
       const elements = getSwapFromPool;
 
+      const {attempt} = getSwapFromPool;
       const [claim] = elements.claim;
       const [funding] = elements.funding.filter(({block}) => !!block);
       const [unconfirmed] = elements.funding.filter(({block}) => !block);
@@ -112,6 +113,7 @@ module.exports = ({cache, invoice, network, script}, cbk) => {
 
       if (!!funding) {
         return cbk(null, {
+          attempts: !attempt ? 0 : attempt.length,
           block: funding.block,
           output_index: funding.vout,
           output_tokens: funding.tokens,
@@ -121,6 +123,7 @@ module.exports = ({cache, invoice, network, script}, cbk) => {
 
       if (!!unconfirmed) {
         return cbk(null, {
+          attempts: !attempt ? 0 : attempt.length,
           output_index: unconfirmed.vout,
           output_tokens: unconfirmed.tokens,
           transaction_id: unconfirmed.id,
@@ -183,6 +186,7 @@ module.exports = ({cache, invoice, network, script}, cbk) => {
       }
 
       return cbk(null, {
+        attempts: swapElement.attempts,
         conf_wait_count: !!remainingConfs ? remainingConfs : null,
         output_index: swapElement.output_index,
         output_tokens: swapElement.output_tokens,

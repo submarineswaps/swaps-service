@@ -4,7 +4,6 @@ const addressForPublicKey = require('./address_for_public_key');
 const {broadcastTransaction} = require('./../../chain');
 const {clearCache} = require('./../../cache');
 const {chainConstants} = require('./../../chain');
-const {createRefundPsbt} = require('./../../swaps');
 const {ECPair} = require('./../../tokenslib');
 const generateChainBlocks = require('./generate_chain_blocks');
 const generateInvoice = require('./generate_invoice');
@@ -15,7 +14,6 @@ const {networks} = require('./../../tokenslib');
 const {payments} = require('./../../tokenslib');
 const {refundTransaction} = require('./../../swaps');
 const sendChainTokensTransaction = require('./send_chain_tokens_tx');
-const {signRefundPsbt} = require('./../../swaps');
 const spawnChainDaemon = require('./spawn_chain_daemon');
 const spawnLnd = require('./spawn_lnd');
 const {stopChainDaemon} = require('./../../chain');
@@ -226,45 +224,6 @@ module.exports = (args, cbk) => {
       }
     }],
 
-    // Alice saves a refund transaction PSBT
-    refundPsbt: [
-      'createChainSwapAddress',
-      'fundSwapAddress',
-      'fundingTransactionUtxos',
-      'generateAliceKeyPair',
-      ({
-        createChainSwapAddress,
-        fundSwapAddress,
-        fundingTransactionUtxos,
-        generateAliceKeyPair,
-      },
-      cbk) =>
-    {
-      try {
-        const outputs = swapScriptInTransaction({
-          redeem_script: createChainSwapAddress.redeem_script,
-          transaction: fundSwapAddress.transaction,
-        })
-
-        const refundPsbt = createRefundPsbt({
-          network: args.network,
-          refund_address: generateAliceKeyPair.p2pkh_address,
-          transactions: [fundSwapAddress.transaction],
-          utxos: outputs.matching_outputs.map(n => ({
-            script: n.script,
-            tokens: n.tokens,
-            transaction_id: n.transaction_id,
-            vout: n.vout,
-            witness: n.redeem,
-          })),
-        });
-
-        return cbk(null, refundPsbt.psbt);
-      } catch (err) {
-        return cbk([500, 'FailedToCreatePsbt', err]);
-      }
-    }],
-
     // Alice makes a transaction to claim her refund too early
     tooEarlyRefundTx: [
       'fundingTransactionUtxos',
@@ -338,7 +297,6 @@ module.exports = (args, cbk) => {
       'generateAliceKeyPair',
       'getHeightForRefund',
       'mineFundingTx',
-      'refundPsbt',
       (res, cbk) =>
     {
       try {

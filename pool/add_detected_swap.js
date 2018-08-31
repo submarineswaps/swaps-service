@@ -23,6 +23,12 @@ const interestingTxCacheMs = 1000 * 60 * 60 * 24;
 
   {
     cache: <Cache Type String>
+    [attempt]: {
+      date: <Attempted At ISO 8601 Date String>
+      hops: [<Short Channel Id String>]
+      id: <Attempt Id String>
+      type: <Type String>
+    }
     [claim]: {
       [block]: <Block Id Hex String>
       id: <Transaction Id Hex String>
@@ -57,21 +63,44 @@ const interestingTxCacheMs = 1000 * 60 * 60 * 24;
     }
   }
 */
-module.exports = ({cache, claim, id, funding, refund}, cbk) => {
+module.exports = ({attempt, cache, claim, id, funding, refund}, cbk) => {
   return asyncAuto({
     // Find the swap element
     element: cbk => {
-      if ([claim, funding, refund].filter(n => !!n).length !== elementCount) {
+      const elementTypes = [attempt, claim, funding, refund];
+
+      if (elementTypes.filter(n => !!n).length !== elementCount) {
         return cbk([400, 'ExpectedSwapElement']);
       }
 
-      return cbk(null, claim || funding || refund);
+      return cbk(null, attempt || claim || funding || refund);
     },
 
     // Check arguments
     validate: ['element', ({element}, cbk) => {
       if (!cache) {
         return cbk([400, 'ExpectedCacheType']);
+      }
+
+      if (!!attempt && !element.date) {
+        return cbk([400, 'ExpectedAttemptDate']);
+      }
+
+      if (!!attempt && !Array.isArray(element.hops)) {
+        return cbk([400, 'ExpectedAttemptHops']);
+      }
+
+      if (!!attempt && !element.id) {
+        return cbk([400, 'ExpectedAttemptId']);
+      }
+
+      if (!!attempt && element.type !== 'attempt') {
+        return cbk([400, 'ExpectedAttemptType']);
+      }
+
+      // Exit early when finished checking attempt
+      if (!!attempt) {
+        return cbk();
       }
 
       if (!element.id) {
@@ -146,6 +175,10 @@ module.exports = ({cache, claim, id, funding, refund}, cbk) => {
 
     // Get timeout height of the swap
     swapDetails: ['element', 'validate', ({element}, cbk) => {
+      if (!!attempt) {
+        return cbk();
+      }
+
       const {network} = element;
       const {script} = element;
 
@@ -159,6 +192,9 @@ module.exports = ({cache, claim, id, funding, refund}, cbk) => {
     // Sort is the second part of a compound key that identifies a swap element
     sortComponent: ['element', 'validate', ({element}, cbk) => {
       switch (element.type) {
+      case 'attempt':
+        return cbk(null, element.id);
+
       case 'claim':
       case 'refund':
         return cbk(null, element.outpoint);
@@ -178,6 +214,10 @@ module.exports = ({cache, claim, id, funding, refund}, cbk) => {
       'swapDetails',
       ({element, sortComponent, swapDetails}, cbk) =>
     {
+      if (element.type === 'attempt') {
+        return cbk(null, [element.date, element.id].join('-'));
+      }
+
       const components = [
         (element.block || ''), // Block swap element was found in
         element.id, // Transaction id swap element is in

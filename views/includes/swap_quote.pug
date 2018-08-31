@@ -116,13 +116,21 @@
                   )
                     | Deposit found
                   span #{' '}
-                  span Waiting for
-                  span #{' '}
-                  span.needed-confirmations-count
-                  span #{' '}
-                  span confirmation
-                  span.plural-confirmation(hidden) s
-                  span ...
+                  span.attempting-sends(hidden)
+                    span Attempting payment
+                    span #{' '}
+                    span (routes attempted:
+                    span #{' '}
+                    span.routes-attempted
+                    span )
+                  span.waiting-for-confirmations(hidden)
+                    span Waiting for
+                    span #{' '}
+                    span.needed-confirmations-count
+                    span #{' '}
+                    span confirmation
+                    span.plural-confirmation(hidden) s
+                    span ...
               span.collapse.failure.hide
                 .alert.alert-warning
                   | Failed to pay invoice :(

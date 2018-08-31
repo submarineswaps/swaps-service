@@ -14,16 +14,23 @@ const {returnResult} = require('./../async-util');
   }
 
   @returns via cbk
-  {    
-    claim: [{
+  {
+    [attempt]: [{
+      date: <ISO 8601 Date String>
+      hops: [<Channel Short Id String>]
+      id: <Id String>
+      type: <Type String> 'attempt'
+    }]
+    [claim]: [{
       [block]: <Block Id Hex String>
       id: <Transaction Id String>
       network: <Network Name String>
       outpoint: <Outpoint String>
       preimage: <Preimage Hex String>
       script: <Redeem Script Hex String>
+      type: <Type String> 'claim'
     }],
-    funding: [{
+    [funding]: [{
       [block]: <Block Id Hex String>
       id: <Transaction Id String>
       index: <HD Seed Key Index Number>
@@ -32,10 +39,10 @@ const {returnResult} = require('./../async-util');
       output: <Output Script Hex String>
       script: <Redeem Script Hex String>
       tokens: <Output Token Count Number>
-      type: <Type String> 'refund'
+      type: <Type String> 'funding'
       vout: <Output Index Number>
     }]
-    refund: {
+    [refund]: {
       [block]: <Block Id Hex String>
       id: <Transaction Id String>
       network: <Network Name String>
@@ -70,6 +77,32 @@ module.exports = ({cache, id}, cbk) => {
       return cbk(null, groupBy(getCachedSwaps.items, 'type'));
     }],
 
+    // Atempts for the invoice
+    attempt: ['elements', ({elements}, cbk) => {
+      const attempts = elements.attempt || [];
+
+      return asyncMap(attempts, ({date, hops, id, type}, cbk) => {
+        if (!date) {
+          return cbk([500, 'ExpectedAttemptDate']);
+        }
+
+        if (!Array.isArray(hops) || !hops.length) {
+          return cbk([500, 'ExpectedAttemptHops']);
+        }
+
+        if (!id) {
+          return cbk([500, 'ExpectedAttemptId']);
+        }
+
+        if (type !== 'attempt') {
+          return cbk([500, 'ExpectedAttemptType']);
+        }
+
+        return cbk(null, {date, hops, id});
+      },
+      cbk);
+    }],
+
     // Claims in swap elements
     claim: ['elements', ({elements}, cbk) => {
       return asyncMap(elements.claim || [], (claim, cbk) => {
@@ -80,6 +113,7 @@ module.exports = ({cache, id}, cbk) => {
         const {outpoint} = claim;
         const {preimage} = claim;
         const {script} = claim;
+        const {type} = claim;
 
         if (!id) {
           return cbk([500, 'ExpectedClaimId']);
@@ -101,6 +135,10 @@ module.exports = ({cache, id}, cbk) => {
           return cbk([500, 'ExpectedClaimScript']);
         }
 
+        if (type !== 'claim') {
+          return cbk([500, 'ExpectedClaimType']);
+        }
+
         return cbk(null, {
           block,
           id,
@@ -109,6 +147,7 @@ module.exports = ({cache, id}, cbk) => {
           outpoint,
           preimage,
           script,
+          type,
         });
       },
       cbk);
@@ -139,6 +178,10 @@ module.exports = ({cache, id}, cbk) => {
 
         if (!funding.script) {
           return cbk([500, 'ExpectedFundingRedeemScript']);
+        }
+
+        if (funding.type !== 'funding') {
+          return cbk([500, 'ExpectedFundingType']);
         }
 
         if (!funding.tokens) {
@@ -174,6 +217,7 @@ module.exports = ({cache, id}, cbk) => {
         const {network} = refund;
         const {outpoint} = refund;
         const {script} = refund;
+        const {type} = refund;
 
         if (!id) {
           return cbk([500, 'ExpectedRefundTransactionId']);
@@ -195,14 +239,32 @@ module.exports = ({cache, id}, cbk) => {
           return cbk([500, 'ExpectedRefundRedeemScript']);
         }
 
-        return cbk(null, {block, id, invoice, network, outpoint, script});
+        if (type !== 'refund') {
+          return cbk([500, 'ExpectedRefundType']);
+        }
+
+        return cbk(null, {
+          block,
+          id,
+          invoice,
+          network,
+          outpoint,
+          script,
+          type,
+        });
       },
       cbk);
     }],
 
     // Final swaps result 
-    swaps: ['claim', 'funding', 'refund', ({claim, funding, refund}, cbk) => {
-      return cbk(null, {claim, funding, refund});
+    swaps: [
+      'attempt',
+      'claim',
+      'funding',
+      'refund',
+      ({attempt, claim, funding, refund}, cbk) =>
+    {
+      return cbk(null, {attempt, claim, funding, refund});
     }],
   },
   returnResult({of: 'swaps'}, cbk));

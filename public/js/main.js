@@ -297,9 +297,18 @@ App.checkSwap = ({button, id, quote}) => {
 
       const isPluralConfs = confCount !== 1;
 
+      if (!!res.attempts) {
+        quote.find('.attempting-sends').prop('hidden', false);
+        quote.find('.waiting-for-confirmations').prop('hidden', true);
+        quote.find('.routes-attempted').text(res.attempts);
+        quote.find('.needed-confirmations-count').text('');
+      } else {
+        quote.find('.waiting-for-confirmations').prop('hidden', false);
+        quote.find('.needed-confirmations-count').text(confCount);
+      }
+
       quote.find('.found-waiting').collapse('show');
       quote.find('.deposit-transaction-id').prop('href', txUrl);
-      quote.find('.needed-confirmations-count').text(confCount);
       quote.find('.plural-confirmation').prop('hidden', !isPluralConfs);
       quote.find('.tx-found').collapse('show');
       quote.find('.waiting-label').collapse('hide');
