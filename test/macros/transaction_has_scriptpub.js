@@ -6,7 +6,7 @@ const {returnResult} = require('./../../async-util');
 const {setJsonInCache} = require('./../../cache');
 const {Transaction} = require('./../../tokenslib');
 
-const cacheTxMs = 60 * 60 * 1000;
+const cacheTxMs = 5 * 60 * 1000;
 const notFoundIndex = -1;
 
 /** Determine if a transaction has a script pub output

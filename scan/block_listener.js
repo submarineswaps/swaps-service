@@ -16,6 +16,7 @@ const {setJsonInCache} = require('./../cache');
 const blockAnnounceBufferMs = 1000 * 30;
 const cacheBlockEmissionMs = 1000 * 60 * 60;
 const currentBlockHash = {};
+const emitDelayMs = 15;
 const notFound = -1;
 const manyTxCount = 50;
 const pollingDelayMs = 3000;
@@ -154,8 +155,14 @@ module.exports = ({cache, network}) => {
         });
 
         return asyncMapSeries(newBlocks, (block, cbk) => {
-          block.transaction_ids.forEach(id => {
-            return listener.emit('transaction', {id, block: block.id});
+          block.transaction_ids.forEach((id, i) => {
+            return setTimeout(() => {
+              return listener.emit('transaction', {
+                id,
+                block: block.id,
+              });
+            },
+            i * emitDelayMs);
           });
 
           if (block.transaction_ids.length > manyTxCount) {

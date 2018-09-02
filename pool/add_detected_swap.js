@@ -9,7 +9,7 @@ const {swapScriptDetails} = require('./../swaps');
 
 const cacheSwapElementMs = 1000 * 60 * 60 * 3;
 const elementCount = 1; // Number of elements that can be added per call
-const interestingTxCacheMs = 1000 * 60 * 60 * 24;
+const interestingTxCacheMs = 1000 * 60 * 60 * 12;
 
 /** Add a detected swap element to the pool set
 

@@ -5,7 +5,7 @@ const {getJsonFromCache} = require('./../cache');
 const {returnResult} = require('./../async-util');
 const {setJsonInCache} = require('./../cache');
 
-const blockExpirationMs = 1000 * 60 * 60;
+const blockExpirationMs = 1000 * 60 * 5;
 const type = 'get_block_metadata';
 
 /** Get block metadata
