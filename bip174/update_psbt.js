@@ -6,6 +6,7 @@ const bip32Path = require('./bip32_path');
 const {crypto} = require('./../tokenslib');
 const decodePsbt = require('./decode_psbt');
 const encodePsbt = require('./encode_psbt');
+const {encodeSignature} = require('./../script');
 const isMultisig = require('./is_multisig');
 const pushData = require('./push_data');
 const {script} = require('./../tokenslib');
@@ -14,7 +15,6 @@ const types = require('./types');
 
 const decBase = 10;
 const {decompile} = script;
-const encodeSig = script.signature.encode;
 const endianness = 'le';
 const {hash160} = crypto;
 const opNumberOffset = 80;
@@ -35,7 +35,7 @@ const tokensByteLength = 8;
     [additional_stack_elements]: [{
       [data_push]: <Script Data Push Hex String>
       [op_code]: <Script Op Code Number>
-      stack_index: <Witness Stack Index Number>
+      stack_index: <Script Stack Index Number>
       vin: <Input Index Number>
     }]
     [bip32_derivations]: [{
@@ -166,7 +166,7 @@ module.exports = args => {
   witnessScripts.map(n => Buffer.from(n, 'hex')).forEach(script => {
     const witnessHash = sha256(script).toString('hex');
 
-    witnesses[witnessHash] = script;
+    witnesses[witnessHash] = {witness: script};
 
     const redeemScript = redeems[witnessHash];
 
@@ -259,10 +259,17 @@ module.exports = args => {
       utxo.non_witness_utxo = spends.toString('hex');
     }
 
-    const outBip32 = (out || {}).derivations.concat((outW || {}).derivations);
+    const legacyOutputBip32 = (out || {}).derivations || [];
+    const redeemScript = (out || outW).redeem;
+    const witnessOutputBip32 = (outW || {}).derivations || [];
+
+    const outBip32 = legacyOutputBip32.concat(witnessOutputBip32);
 
     utxo.bip32_derivations = outBip32.filter(n => !!n);
-    utxo.redeem_script = (out || outW).redeem.toString('hex');
+
+    if (!!redeemScript) {
+      utxo.redeem_script = redeemScript.toString('hex');
+    }
 
     return inputs.push(utxo);
   });
@@ -360,10 +367,17 @@ module.exports = args => {
 
     // Final scriptsig for this input
     if (!!args.is_final && !!n.partial_sig.length) {
+      const isWitness = !!n.witness_script;
+      const redeem = n.redeem_script;
       const [signature] = n.partial_sig;
 
+      const isP2shMultisig = !!redeem && isMultisig({script: redeem});
+
       const sigs = n.partial_sig.map(n => {
-        const sig = encodeSig(Buffer.from(n.signature, 'hex'), n.hash_type);
+        const sig = encodeSignature({
+          flag: n.hash_type,
+          signature: n.signature,
+        });
 
         return Buffer.concat([varuint.encode(sig.length), sig]);
       });
@@ -391,7 +405,7 @@ module.exports = args => {
       }
 
       // Witness P2SH Nested?
-      if (!!n.redeem_script && !isMultisig({script: n.redeem_script})) {
+      if (!!n.redeem_script && !!n.witness_script) {
         pairs.push({
           type: Buffer.from(types.input.final_scriptsig, 'hex'),
           value: pushData({encode: n.redeem_script}),
@@ -452,6 +466,27 @@ module.exports = args => {
           value,
           type: Buffer.from(types.input.final_scriptwitness, 'hex'),
         });
+      } else if (!!redeem && !isWitness && !isP2shMultisig) {
+        const signatures = n.partial_sig.map(n => {
+          return encodeSignature({flag: n.hash_type, signature: n.signature});
+        });
+
+        const redeemScript = Buffer.from(n.redeem_script, 'hex');
+
+        const components = [].concat(signatures).concat(redeemScript);
+
+        if (Array.isArray(n.add_stack_elements)) {
+          n.add_stack_elements.sort((a, b) => (a.index < b.index ? -1 : 1));
+
+          n.add_stack_elements.forEach(({index, value}) => {
+            return components.splice(index, 0, Buffer.from(value, 'hex'));
+          });
+        }
+
+        pairs.push({
+          value: Buffer.concat(components.map(data => pushData({data}))),
+          type: Buffer.from(types.input.final_scriptsig, 'hex'),
+        });
       }
     }
 
@@ -470,11 +505,11 @@ module.exports = args => {
         }
 
         return pairs.push({
+          value,
           type: Buffer.concat([
             Buffer.from(types.input.additional_stack_element, 'hex'),
             stackIndex.toArrayLike(Buffer, endianness, stackIndexByteLength),
           ]),
-          value: Buffer.concat([varuint.encode(value.length), value]),
         });
       });
     }

@@ -162,8 +162,8 @@ module.exports = ({psbt}) => {
         try {
           checkWitnessUtxo({
             hash: input.witness_script_hash,
-            redeem: !input.redeem_script ? null : Buffer.from(input.redeem_script, 'hex'),
-            script: Buffer.from(input.witness_utxo.script_pub, 'hex'),
+            redeem: input.redeem_script,
+            script: input.witness_utxo.script_pub,
           });
         } catch (err) {
           throw err;
@@ -269,11 +269,10 @@ module.exports = ({psbt}) => {
 
         const index = keyType.slice(keyCodeByteLength).readUInt32LE();
 
-        const valueLength = varuint.decode(value);
-
-        const val = value.slice(varuint.decode.bytes);
-
-        input.add_stack_elements.push({index, value: val.toString('hex')});
+        input.add_stack_elements.push({
+          index,
+          value: value.toString('hex'),
+        });
         break;
 
       case types.input.bip32_derivation:

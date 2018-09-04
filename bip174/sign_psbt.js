@@ -1,14 +1,15 @@
 const {crypto} = require('./../tokenslib');
 const decodePsbt = require('./decode_psbt');
 const {ECPair} = require('./../tokenslib');
+const {encodeSignature} = require('./../script');
 const {networks} = require('./../tokenslib');
 const {script} = require('./../tokenslib');
 const {Transaction} = require('./../tokenslib');
 const updatePsbt = require('./update_psbt');
 
 const {decompile} = script;
-const encodeSig = script.signature.encode;
 const {hash160} = crypto;
+const hexBase = 16;
 
 /** Update a PSBT with signatures
 
@@ -73,7 +74,7 @@ module.exports = args => {
         // For each found key, add a signature
         keysToSign.filter(n => !!n).forEach(signingKey => {
           let hashToSign;
-          const sighashType = input.sighash_type;
+          let sighashType = input.sighash_type;
 
           // Witness input spending a witness utxo
           if (!!input.witness_script && !!n.witness_utxo) {
@@ -99,18 +100,47 @@ module.exports = args => {
             });
 
             hashToSign = tx.hashForWitnessV0(vin, script, value, sighashType);
+          } else if (!!input.witness_script && !!input.non_witness_utxo) {
+            const txWithOutputs = Transaction.fromHex(input.non_witness_utxo);
+
+            const vout = tx.ins[vin].index;
+
+            const script = Buffer.from(input.witness_script, 'hex');
+            const tokens = txWithOutputs.outs[vout].value;
+
+            hashToSign = tx.hashForWitnessV0(vin, script, tokens, sighashType);
           } else {
             // Non-witness script
-            const redeemScript = Buffer.from(input.redeem_script, 'hex');
+            const forkId = networks[args.network].fork_id;
 
-            hashToSign = tx.hashForSignature(vin, redeemScript, sighashType);
+            const forkMod = parseInt(forkId || 0, hexBase);
+            const redeem = Buffer.from(input.redeem_script, 'hex');
+            const sigHash = input.sighash_type;
+            let tokens;
+            const spendsTx = Transaction.fromHex(input.non_witness_utxo);
+
+            if (!!input.witness_utxo) {
+              tokens = input.witness_utxo.tokens;
+            } else if (!!input.non_witness_utxo) {
+              tokens = spendsTx.outs[tx.ins[vin].index].value;
+            }
+
+            sighashType = !forkMod ? sigHash : forkMod | sigHash;
+
+            const fork = tx.hashForWitnessV0(vin, redeem, tokens, sighashType);
+            const normal = tx.hashForSignature(vin, redeem, sighashType);
+
+            hashToSign = !!forkMod ? fork : normal;
           }
 
           if (!hashToSign) {
             return;
           }
 
-          const sig = encodeSig(signingKey.sign(hashToSign), sighashType);
+          const sig = encodeSignature({
+            flag: sighashType,
+            signature: signingKey.sign(hashToSign).toString('hex'),
+          });
 
           return signatures.push({
             vin,
@@ -150,7 +180,10 @@ module.exports = args => {
         return;
       }
 
-      const signature = encodeSig(signingKey.sign(hashToSign), sighashType);
+      const signature = encodeSignature({
+        flag: sighashType,
+        signature: signingKey.sign(hashToSign).toString('hex')
+      });
 
       return signatures.push({
         vin,

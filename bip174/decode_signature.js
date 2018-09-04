@@ -24,11 +24,6 @@ module.exports = ({signature}) => {
   const buffer = signature;
 
   const hashType = buffer.readUInt8(buffer.length - sigHashByteLength);
-  const hashTypeMod = hashType & ~0x80;
-
-  if (hashTypeMod <= 0 || hashTypeMod >= 4) {
-    throw new Error('InvalidHashType');
-  }
 
   const decode = bip66.decode(buffer.slice(0, -sigHashByteLength));
 

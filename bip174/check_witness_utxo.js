@@ -15,19 +15,22 @@ const witnessScriptPubElementsLen = 2;
 
   {
     hash: <Witness Script Hash Buffer Object>
-    [redeem]: <Redeem Script Buffer Object>
-    [script]: <Witness UTXO Script PubKey Buffer Object>
+    [redeem]: <Redeem Script Hex String>
+    [script]: <Witness UTXO Script PubKey Hex String>
   }
 
   @throws
   <Error>
 */
 module.exports = ({hash, redeem, script}) => {
-  if (!Buffer.isBuffer(script)) {
+  if (!script) {
     throw new Error('ExpectedScriptInWitnessUtxoCheck');
   }
 
-  const decompiledScriptPub = decompile(script);
+  const redeemScript = !redeem ? null : Buffer.from(redeem, 'hex');
+  const scriptPub = Buffer.from(script, 'hex');
+
+  const decompiledScriptPub = decompile(scriptPub);
 
   switch (decompiledScriptPub.length) {
   case nestedScriptPubElementsLen:
@@ -49,20 +52,22 @@ module.exports = ({hash, redeem, script}) => {
       break;
     }
 
-    const [nestWitnessVersion, redeemScriptHash, extra] = decompile(redeem);
+    {
+      const [version, redeemScriptHash, extra] = decompile(redeemScript);
 
-    try {
-      checkWitnessVersion({version: nestWitnessVersion});
-    } catch (err) {
-      throw err;
-    }
+      try {
+        checkWitnessVersion({version});
+      } catch (err) {
+        throw err;
+      }
 
-    if (!!extra) {
-      throw new Error('UnexpectedElementInWitnessRedeemScript');
-    }
+      if (!!extra) {
+        throw new Error('UnexpectedElementInWitnessRedeemScript');
+      }
 
-    if (!redeemScriptHash.equals(hash)) {
-      throw new Error('InvalidRedeemScriptHashForWitnessScript');
+      if (!redeemScriptHash.equals(hash)) {
+        throw new Error('InvalidRedeemScriptHashForWitnessScript');
+      }
     }
     break;
 

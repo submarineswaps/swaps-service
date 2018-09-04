@@ -1,8 +1,7 @@
 const decodePsbt = require('./decode_psbt');
+const {encodeSignature} = require('./../script');
 const {script} = require('./../tokenslib');
 const updatePsbt = require('./update_psbt');
-
-const encodeSig = script.signature.encode;
 
 /** Combine multiple PSBTs
   {
@@ -26,16 +25,19 @@ module.exports = ({psbts}) => {
   let tx;
 
   psbts.map(psbt => decodePsbt({psbt})).forEach(decoded => {
-    if (!tx) {
-      tx = decoded.unsigned_transaction;
-    } else if (tx !== decoded.unsigned_transaction) {
+    // Transactions must be unique for all combined psbts
+    if (!!tx && tx !== decoded.unsigned_transaction) {
       throw new Error('ExpectedUniqueTransaction');
     }
 
+    tx = tx || decoded.unsigned_transaction;
+
+    // Index unknown global attributes for preservation across combines
     (decoded.unrecognized_attributes || []).forEach(({type, value}) => {
       return globalAttributes[type] = value;
     });
 
+    // Iterate through inputs to push signatures, index unknown attributes
     decoded.inputs.forEach((input, vin) => {
       (input.unrecognized_attributes || []).forEach(({type, value}) => {
         inputAttributes[vin] = inputAttributes[vin] || {};
@@ -44,17 +46,19 @@ module.exports = ({psbts}) => {
       });
 
       return (input.partial_sig || []).forEach(partial => {
-        const sig = Buffer.from(partial.signature, 'hex');
-
         return signatures.push({
           vin,
           hash_type: partial.hash_type,
           public_key: partial.public_key,
-          signature: encodeSig(sig, partial.hash_type),
+          signature: encodeSignature({
+            flag: partial.hash_type,
+            signature: partial.signature,
+          }),
         });
       });
     });
 
+    // Index unrecognized output attributes by vout
     decoded.outputs.forEach((output, vout) => {
       return (output.unrecognized_attributes || []).forEach(pair => {
         outputAttributes[vout] = outputAttributes[vout] || {};
@@ -66,18 +70,21 @@ module.exports = ({psbts}) => {
     return;
   });
 
+  // Fold up global unrecognized attributes
   Object.keys(globalAttributes).sort().forEach(type => {
     return additionalAttributes.push({type, value: globalAttributes[type]});
   });
 
+  // Fold up input attributes
   inputAttributes.forEach((attributes, vin) => {
-    Object.keys(attributes).sort().forEach(type => {
+    return Object.keys(attributes).sort().forEach(type => {
       return additionalAttributes.push({type, vin, value: attributes[type]});
     });
   });
 
+  // Fold up output attributes
   outputAttributes.forEach((attributes, vout) => {
-    Object.keys(attributes).sort().forEach(type => {
+    return Object.keys(attributes).sort().forEach(type => {
       return additionalAttributes.push({type, vout, value: attributes[type]});
     });
   });
