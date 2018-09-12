@@ -22,13 +22,13 @@ const fixtures = {
     timeout_block_height: fixtures.timeout_block_height,
   });
 
-  equal(details.p2sh_address, '2NFpcmuukTNTRqNWjvePBo7mo43CX1wXa8s');
-  equal(details.p2sh_output_script, 'a914f7a383ef317e5b348e3e65b7d592751a76c956b887');
-  equal(details.p2sh_p2wsh_address, '2N2sPWpXdcAPiMNH45MNGTC2Sa5TRRL2sGg');
-  equal(details.p2sh_p2wsh_output_script, 'a91469900f19fc9114d800827a8192205036e67f55f187');
-  equal(details.p2wsh_address, 'tb1qu3t5vf4z7a2nukqy3q3uh3y9l2gx5qvtks58xpxhzgeqa58yg50qa8kzmj');
-  equal(details.redeem_script, 'a82053ada8e6de01c26ff43040887ba7b22bddce19f8658fd1ba00716ed79d15cd5e87632103f8109578aae1e5cfc497e466cf6ae6625497cd31886e87b2f4f54f3f0f46b539670354df07b1752103ec0c1e45b709d708cd376a6f2daf19ac27be229647780d592e27d7fb7efb207a68ac');
-  equal(details.witness_output_script, '0020e4574626a2f7553e58048823cbc485fa906a018bb4287304d712320ed0e4451e');
+  equal(details.p2sh_address, '2NAVNhVAT4fqpdhR9xnNArMS29eAQDQDBcH');
+  equal(details.p2sh_output_script, 'a914bd273b9c514a49b1249ca48879ca07b69481520687');
+  equal(details.p2sh_p2wsh_address, '2NE1k8Vby9J2aM4Gr9VsFgVKdhMXstS63zA');
+  equal(details.p2sh_p2wsh_output_script, 'a914e3cdfa98d9d9b5a7641b64881790627d596bbcf787');
+  equal(details.p2wsh_address, 'tb1qn23cwem84kdkk0w805pvgy3qg2nvatngfpxsmqtg4y268kn3vnhqew9jna');
+  equal(details.redeem_script, 'a914e2ac8cb97af3d59b1c057db4b0c4f9aa12a9127387632103f8109578aae1e5cfc497e466cf6ae6625497cd31886e87b2f4f54f3f0f46b539670354df07b1752103ec0c1e45b709d708cd376a6f2daf19ac27be229647780d592e27d7fb7efb207a68ac');
+  equal(details.witness_output_script, '00209aa3876767ad9b6b3dc77d02c4122042a6ceae68484d0d8168a915a3da7164ee');
 }
 
 // Derive standard public key hash swap address details
@@ -41,13 +41,13 @@ const fixtures = {
     timeout_block_height: fixtures.timeout_block_height,
   });
 
-  equal(details.p2sh_address, '2NAWeCAdGyKfx6tEXnK8fui1rfq3Wsuj7in');
-  equal(details.p2sh_output_script, 'a914bd64953d2427dd5e8ccc4e9ea998f23ad88edb9687');
-  equal(details.p2sh_p2wsh_output_script, 'a9140d533ac62439b2eeba5028ca3c7e9a02ce105a2e87');
-  equal(details.p2sh_p2wsh_address, '2MtTgUfrgPtcYF6BDHP7fD2Eg5hVTMEuvMC');
-  equal(details.p2wsh_address, 'tb1qvcl3wyykqpem0gvpcj9e6xrv86yfx8plxz7ed65tgsreq60ssejss3kngd');
-  equal(details.redeem_script, '76a82053ada8e6de01c26ff43040887ba7b22bddce19f8658fd1ba00716ed79d15cd5e8763752103f8109578aae1e5cfc497e466cf6ae6625497cd31886e87b2f4f54f3f0f46b539670354df07b17576a91410fd1a974109be99bdf95334f8b7625bda0e90be8868ac');
-  equal(details.witness_output_script, '0020663f1710960073b7a181c48b9d186c3e88931c3f30bd96ea8b44079069f08665');
+  equal(details.p2sh_address, '2N71ZcQEpPbyamsQXX4VKT7VbziB25zrro7');
+  equal(details.p2sh_output_script, 'a91496fc515680d892a4910c16a919e083f268c4fc6587');
+  equal(details.p2sh_p2wsh_output_script, 'a914c1c7d40364affdf37f5cd8924ebd67f1a0f238c687');
+  equal(details.p2sh_p2wsh_address, '2NAuqncUDHErNcA9Umu7U1bdhCRjt3bkP8u');
+  equal(details.p2wsh_address, 'tb1qkcavdkmfj7z8ekrnxerxpq5wrr8e66yhr0rsktalrdvtgy8n0czqsad2sm');
+  equal(details.redeem_script, '76a914e2ac8cb97af3d59b1c057db4b0c4f9aa12a912738763752103f8109578aae1e5cfc497e466cf6ae6625497cd31886e87b2f4f54f3f0f46b539670354df07b17576a91410fd1a974109be99bdf95334f8b7625bda0e90be8868ac');
+  equal(details.witness_output_script, '0020b63ac6db6997847cd873364660828e18cf9d68971bc70b2fbf1b58b410f37e04');
 }
 
 // No refund key should throw an error

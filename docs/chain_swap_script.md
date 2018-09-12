@@ -34,7 +34,7 @@ signature from Alice and the payment preimage, or it will be the signature from
 Bob.
 
     // WITNESS SCRIPT
-    OP_SHA256 <paymentHash> OP_EQUAL
+    OP_HASH160 <paymentHash> OP_EQUAL
     OP_IF
       <alicePubKey>
     OP_ELSE
@@ -70,7 +70,7 @@ All cases:
 `claim_success`:
 
     <aliceSig> <paymentPreimage>
-    OP_SHA256 <paymentHash> OP_EQUAL # <preimage> matches, leaves OP_1 on stack
+    OP_HASH160 <paymentHash> OP_EQUAL # <preimage> matches, leaves OP_1 on stack
     OP_IF
       <alicePubKey>
     OP_ELSE
@@ -81,7 +81,7 @@ All cases:
 `claim_fail_sig`:
 
     <badSig> <paymentPreimage>
-    OP_SHA256 <paymentHash> OP_EQUAL # <preimage> matches, leaves OP_1 on stack
+    OP_HASH160 <paymentHash> OP_EQUAL # <preimage> matches, leaves OP_1 on stack
     OP_IF
       <alicePubKey>
     OP_ELSE
@@ -92,7 +92,7 @@ All cases:
 `claim_fail_preimage`
 
     <aliceSig> <badPaymentPreimage>
-    OP_SHA256 <paymentHash> OP_EQUAL # <preimage> doesn't match, stack -> OP_0
+    OP_HASH160 <paymentHash> OP_EQUAL # <preimage> doesn't match, stack -> OP_0
     OP_IF
       # Path Not Taken
     OP_ELSE
@@ -104,7 +104,7 @@ All cases:
 `refund_too_early`:
 
     <bobSig> OP_0
-    OP_SHA256 <paymentHash> OP_EQUAL # <preimage> doesn't match
+    OP_HASH160 <paymentHash> OP_EQUAL # <preimage> doesn't match
     OP_IF
       # Path not taken
     OP_ELSE
@@ -114,7 +114,7 @@ All cases:
 `refund_success`:
 
     <bobSig> OP_0
-    OP_SHA256 <paymentHash> OP_EQUAL # <preimage> doesn't match
+    OP_HASH160 <paymentHash> OP_EQUAL # <preimage> doesn't match
     OP_IF
       # Path not taken
     OP_ELSE
@@ -132,7 +132,7 @@ he can hand over a normal Bitcoin address, as long as it is a p2pkh/p2wpkh.
 The altered script for a pkhash looks like:
 
     <bobSig> <bobPubKey>
-    OP_DUP OP_SHA256 <paymentHash> OP_EQUAL
+    OP_DUP OP_HASH160 <paymentHash> OP_EQUAL
     OP_IF
       OP_DROP # We dont need the DUP preimage for anything
       <alicePubKey>

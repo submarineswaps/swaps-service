@@ -1,10 +1,11 @@
 const bip65Encode = require('bip65').encode;
 const {OP_CHECKLOCKTIMEVERIFY, OP_CHECKSIG, OP_DROP} = require('bitcoin-ops');
 const {OP_DUP, OP_ELSE, OP_ENDIF, OP_EQUAL} = require('bitcoin-ops');
-const {OP_EQUALVERIFY, OP_HASH160, OP_IF, OP_SHA256} = require('bitcoin-ops');
+const {OP_EQUALVERIFY, OP_HASH160, OP_IF} = require('bitcoin-ops');
 const pushdataEncode = require('pushdata-bitcoin').encode;
 const pushdataEncodingLen = require('pushdata-bitcoin').encodingLength;
 
+const {crypto} = require('./../tokenslib');
 const {script} = require('./../tokenslib');
 const scriptBuffersAsScript = require('./script_buffers_as_script');
 
@@ -53,7 +54,7 @@ module.exports = args => {
   */
   const chainSwapScript = [
     OP_DUP,
-    OP_SHA256, paymentHash, OP_EQUAL,
+    OP_HASH160, crypto.ripemd160(paymentHash), OP_EQUAL,
     OP_IF,
       OP_DROP,
       destinationPublicKey,

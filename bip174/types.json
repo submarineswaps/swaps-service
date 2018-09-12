@@ -5,7 +5,7 @@
     "unsigned_tx": "00"
   },
   "input": {
-    "additional_stack_element": "09",
+    "additional_stack_element": "53",
     "bip32_derivation": "06",
     "final_scriptsig": "07",
     "final_scriptwitness": "08",

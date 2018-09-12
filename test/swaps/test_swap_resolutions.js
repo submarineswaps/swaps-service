@@ -6,44 +6,44 @@ const fixtures = {
   np2wsh_claim_transaction: {
     args: {
       inputs: [{
-        hash: Buffer.from('ccb4452c7745c3601b7a48f22df9ab2163a496bdcc748d10d0173364eedf0438', 'hex'),
+        hash: Buffer.from('285d227e2823c679c224b4d562a9b5b5b7b927badd483df9f4225c6fc761d754', 'hex'),
         index: 0,
-        script: Buffer.from('2200204834d8725d8db6ee5d07b1db9408dcfebc6870255cedbfd5b797afa947d894b9', 'hex'),
+        script: Buffer.from('22002043be0610272e1c0dc1cbeef21a7b8cdf257c1a54b3d4e4887416521bd49ebbe6', 'hex'),
         witness: [
-          Buffer.from('304402200588cd611b0d0c4950028cef3baeecd374bede1c87881d4c0d9dfaff6149c502022067b6f0e0c4db65f485ae57f7f4134f41e4268cc54efc32ef646949215f771b1b01', 'hex'),
-          Buffer.from('04c1b5544ea904139b443d56db7a49f5d5bef5a22fdaf0241b3889cb588d2d96', 'hex'),
-          Buffer.from('76a820e2a18c356623279b664c46396f56a9d4210c70f07e5aca56702feceec3c7dc0787637521021f905f25401ac8d22a1125bff0bd309754b226764cf6d8c6b1005388fa0d1af6670351ba13b17576a914a03357088c2ca6bb10c0c62cadcd8c592cc683db8868ac', 'hex'),
+          Buffer.from('3045022100ec78999a9e08087c9dec428494fe3bde06cab5a79b19c476a25fe2eed00730e902201765b16677dd0ec4c402aa64ee057e1ea560a52813343fd5f1a134eb206226fa01', 'hex'),
+          Buffer.from('9a11bb7d34158497edc0f40a03bbfa606e37233c1cc16b26b4d3d0c18fb86bde', 'hex'),
+          Buffer.from('76a914d0c3a2c094bbc9301549f0af85f6bd2330b9ab258763752103a81f284d64682c6dcb96a1cadd46a9102cacc3a8664b156a13fd79fcae8afb0667027802b17576a9148c62f608c4ffaf840ffef2089a3e34cab85df5d88868ac', 'hex'),
         ],
       }],
-      network: 'testnet',
+      network: 'regtest',
     },
     expected: {
       count: 1,
-      outpoint: '3804dfee643317d0108d74ccbd96a46321abf92df2487a1b60c345772c45b4cc:0',
-      preimage: '04c1b5544ea904139b443d56db7a49f5d5bef5a22fdaf0241b3889cb588d2d96',
-      script: '76a820e2a18c356623279b664c46396f56a9d4210c70f07e5aca56702feceec3c7dc0787637521021f905f25401ac8d22a1125bff0bd309754b226764cf6d8c6b1005388fa0d1af6670351ba13b17576a914a03357088c2ca6bb10c0c62cadcd8c592cc683db8868ac',
+      outpoint: '54d761c76f5c22f4f93d48ddba27b9b7b5b5a962d5b424c279c623287e225d28:0',
+      preimage: '9a11bb7d34158497edc0f40a03bbfa606e37233c1cc16b26b4d3d0c18fb86bde',
+      script: '76a914d0c3a2c094bbc9301549f0af85f6bd2330b9ab258763752103a81f284d64682c6dcb96a1cadd46a9102cacc3a8664b156a13fd79fcae8afb0667027802b17576a9148c62f608c4ffaf840ffef2089a3e34cab85df5d88868ac',
       type: 'claim',
     },
   },
   np2wsh_refund_transaction: {
     args: {
       inputs: [{
-        hash: Buffer.from('17932038e24b2e5b1b41dde92594dd87583c029217a31aefe8e4958017debfa5', 'hex'),
+        hash: Buffer.from('cf663e0aabb401e0362948932828908c2c09202eee6c7c36f526922f4996cfea', 'hex'),
         index: 0,
-        script: Buffer.from('2200203c8d334559e0d6d4a830dde4d0b8d8d5fd84b17000222d4acf4332fa68dd1cb1', 'hex'),
+        script: Buffer.from('220020297df18ce6a24161125693d3f4ed4017c8b5b8e3dc0322aa67b836d42778467e', 'hex'),
         witness: [
-          Buffer.from('30450221009fc87d545693a11bd7e0a1144c619165675b0dbf5107c1f8a5adbf8494c212ed02202ebf60878b8b2485568a60fda38d986bae8329633cb5b006c125328d349b09d201', 'hex'),
-          Buffer.from('033cba779b9d6334841bf821fe75780f3595983766f446476d6ff525d1d28a9ad1', 'hex'),
-          Buffer.from('76a8209b12afefaa28b210cf7ca711da1f14dd31ce226b0520d6953c542d420bd728ea87637521025a8799600d2388def96838a8a213d86758eb060dbceb1157e2f1412e4aaad3496703eeb113b17576a91402712c67099a80d34f7e82dd91ab6f2e1feac9848868ac', 'hex'),
+          Buffer.from('30440220160f856010e72dd0cfba067b902382bbbc6031717c00fd3013a8b967c55a303902207f02e0afd3246151dbd2ebcf649a68e0d15bdf8bb2f217f868919fbd5c10997601', 'hex'),
+          Buffer.from('029476dfdc86519011a460a3ea397f4a0d1d459cb5947ef53278688c9c0a69dd69', 'hex'),
+          Buffer.from('76a914474bae727550db7fe9e8b3401f9212f6f66a8ef48763752102957f7bda09b441b4df84195b0b2e7204a8aebe42384fd058f1c7ae30ac6ec94b6702c901b17576a914fbf52df0a98760fba0d504f607fc9459676488688868ac', 'hex'),
         ],
       }],
-      network: 'testnet',
+      network: 'regtest',
     },
     expected: {
       count: 1,
-      outpoint: 'a5bfde178095e4e8ef1aa31792023c5887dd9425e9dd411b5b2e4be238209317:0',
+      outpoint: 'eacf96492f9226f5367c6cee2e20092c8c90282893482936e001b4ab0a3e66cf:0',
       preimage: null,
-      script: '76a8209b12afefaa28b210cf7ca711da1f14dd31ce226b0520d6953c542d420bd728ea87637521025a8799600d2388def96838a8a213d86758eb060dbceb1157e2f1412e4aaad3496703eeb113b17576a91402712c67099a80d34f7e82dd91ab6f2e1feac9848868ac',
+      script: '76a914474bae727550db7fe9e8b3401f9212f6f66a8ef48763752102957f7bda09b441b4df84195b0b2e7204a8aebe42384fd058f1c7ae30ac6ec94b6702c901b17576a914fbf52df0a98760fba0d504f607fc9459676488688868ac',
       type: 'refund',
     },
   },
@@ -77,7 +77,7 @@ fixturesToTest.forEach(({args, expected}) => {
   const {resolutions} = swapResolutions(args);
 
   // Make sure we see the expected number of resolutions in the transaction
-  equal(resolutions.length, expected.count);
+  equal(resolutions.length, expected.count, 'RightResolutionsFound');
 
   // Check that the resolution type and redeem script are accurately derived
   resolutions.forEach(({outpoint, preimage, script, type}) => {

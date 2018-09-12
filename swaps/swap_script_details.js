@@ -75,7 +75,7 @@ module.exports = (args) => {
 
     {
       const [
-        OP_SHA256, pkPaymentHash, OP_EQUAL,
+        OP_HASH160, pkPaymentHash, OP_EQUAL,
         OP_IF,
           pkDestinationPublicKey,
         OP_ELSE,
@@ -85,11 +85,11 @@ module.exports = (args) => {
         OP_CHECKSIG,
       ] = scriptAssembly;
 
-      if (OP_SHA256 !== 'OP_SHA256') {
-        throw new Error('ExpectedSha256');
+      if (OP_HASH160 !== 'OP_HASH160') {
+        throw new Error('ExpectedHash160');
       }
 
-      if (!pkPaymentHash || pkPaymentHash.length !== 32 * 2) {
+      if (!pkPaymentHash || pkPaymentHash.length !== 20 * 2) {
         throw new Error('ExpectedStandardPaymentHash');
       }
 
@@ -150,7 +150,7 @@ module.exports = (args) => {
     {
       const [
         OP_DUP,
-        OP_SHA256, pkhPaymentHash, OP_EQUAL,
+        OP_HASH160_PREIMAGE, pkhPaymentHash, OP_EQUAL,
         OP_IF,
           OP_DROP,
           pkhDestinationPublicKey,
@@ -165,11 +165,11 @@ module.exports = (args) => {
         throw new Error('ExpectedInitialOpDup');
       }
 
-      if (OP_SHA256 !== 'OP_SHA256') {
-        throw new Error('ExpectedSha256');
+      if (OP_HASH160_PREIMAGE !== 'OP_HASH160') {
+        throw new Error('ExpectedHash160');
       }
 
-      if (!pkhPaymentHash || pkhPaymentHash.length !== 32 * 2) {
+      if (!pkhPaymentHash || pkhPaymentHash.length !== 20 * 2) {
         throw new Error('ExpectedStandardPaymentHash');
       }
 

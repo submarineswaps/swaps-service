@@ -231,6 +231,7 @@ module.exports = (args, cbk) => {
       'fundingTransactionUtxos',
       'generateAliceKeyPair',
       'getHeightAfterFunding',
+      'swapRefundHeight',
       (res, cbk) =>
     {
       try {

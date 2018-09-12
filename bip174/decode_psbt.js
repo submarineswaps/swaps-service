@@ -16,7 +16,7 @@ const fingerPrintByteLength = 4;
 const globalSeparatorCode = parseInt(types.global.separator, 16);
 const keyCodeByteLength = 1;
 const magicBytes = Buffer.from(types.global.magic);
-const {ripemd160} = crypto;
+const {hash160} = crypto;
 const sigHashTypeByteLength = 4;
 const stackIndexByteLength = 4;
 const tokensByteLength = 8;
@@ -380,7 +380,7 @@ module.exports = ({psbt}) => {
         }
 
         input.redeem_script = value.toString('hex');
-        input.redeem_script_hash = ripemd160(crypto.sha256(value));
+        input.redeem_script_hash = hash160(value);
         break;
 
       case types.input.sighash_type:

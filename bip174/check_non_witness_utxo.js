@@ -20,7 +20,8 @@ const p2shHashByteLength = 20;
 */
 module.exports = ({hash, script, utxo}) => {
   const scriptPubHashes = Transaction.fromBuffer(utxo).outs.map(out => {
-    const [hash160, scriptHash, isEqual] = decompile(out.script);
+    // It's expected that the scripPub be a normal P2SH script
+    const [hash160, scriptHash, isEqual, extra] = decompile(out.script);
 
     if (hash160 !== OP_HASH160) {
       return null;
@@ -34,9 +35,14 @@ module.exports = ({hash, script, utxo}) => {
       return null;
     }
 
+    if (!!extra) {
+      return null;
+    }
+
     return scriptHash;
   });
 
+  // Make sure the p2sh script hashes has a hash that matches the input
   if (!scriptPubHashes.find(h => !!h && h.equals(hash))) {
     throw new Error('RedeemScriptDoesNotMatchUtxo');
   }
