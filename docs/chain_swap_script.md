@@ -21,7 +21,7 @@ What would a simple script look like for the locking condition?
 
     let controllingKey;
     
-    if (hash256(preimage) === paymentHash) {
+    if (hash160(preimage) === paymentHash) {
       controllingKey = alicePubKey;
     } else if currentTime > refundTimeLock {
       controllingKey = bobPubKey;
@@ -43,7 +43,7 @@ Bob.
     OP_CHECKSIG
     
     // HEX (20 = pushdata 32, 21 = pushdata 33)
-    A8 20 0000000000000000000000000000000000000000000000000000000000000000 87
+    A9 20 0000000000000000000000000000000000000000000000000000000000000000 87
     63
        21 000000000000000000000000000000000000000000000000000000000000000000
     67

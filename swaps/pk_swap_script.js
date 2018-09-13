@@ -36,8 +36,8 @@ module.exports = args => {
     When spending the remote presents the preimage and their signature or the
     local presents a dummy value and their signature.
 
-    Verification: take the top stack item, sha256 it, then see if it is the pay
-    hash.
+    Verification: take the top stack item, ripemd160 it, then see if it is the
+    pay hash.
 
     If it's the same as the pay hash then push the remote pubkey on the stack
 

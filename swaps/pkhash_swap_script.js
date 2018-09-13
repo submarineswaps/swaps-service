@@ -39,7 +39,8 @@ module.exports = args => {
 
     Verification: take the top stack item, duplicate it to save it for later.
 
-    sha256 the top stack item and compare it to see if it is the payment hash.
+    ripemd160 the top stack item and compare it to see if it is the payment
+    hash.
 
     If it's the same as the pay hash then eliminate the top stack item which is
     a duplicate of the payment hash. Push the remote key on the stack.
