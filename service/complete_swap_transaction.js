@@ -22,6 +22,7 @@ const {setJsonInCache} = require('./../cache');
 const swapParameters = require('./swap_parameters');
 const {swapScriptInTransaction} = require('./../swaps');
 
+const defaultLtcTimeout = 144 * 4;
 const dummyLockingInvoiceValue = 1;
 const dummyPreimage = '0000000000000000000000000000000000000000000000000000000000000000';
 const estimatedTxVirtualSize = 200;
@@ -157,11 +158,21 @@ module.exports = ({cache, invoice, key, network, script, transaction}, cbk) => {
       'parsedInvoice',
       ({getSwapFee, lnd, parsedInvoice}, cbk) =>
     {
+      let timeout = null;
+
+      switch (parsedInvoice.network) {
+      case 'ltc':
+      case 'ltctestnet':
+        timeout = defaultLtcTimeout;
+        break;
+      }
+
       return getRoutes({
         lnd,
         fee: getSwapFee.converted_fee,
         destination: parsedInvoice.destination,
         limit: maxAttemptedRoutes,
+        timeout: !!timeout ? timeout : undefined,
         tokens: parsedInvoice.tokens,
       },
       cbk);
