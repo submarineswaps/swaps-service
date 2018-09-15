@@ -1140,14 +1140,13 @@ App.submitCreateSwapQuote = function(event) {
       break;
 
     case 'bitcoin':
-    case 'ltc':
     case 'testnet':
       scheme = 'bitcoin';
       break;
 
+    case 'ltc':
     case 'ltctestnet':
       scheme = 'litecoin';
-      swapAddress = details.swap_p2sh_address;
       break;
 
     default:
