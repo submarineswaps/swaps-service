@@ -45,7 +45,7 @@ const startWalletTimeoutMs = 4500;
   {
     cert: <Base 64 TLS Certificate String>
     host: <IP and Port String>
-    kill: <Stop Function> ({}, () => {})
+    kill: <Stop Function> ({}, err => {})
     lnd: <LND GRPC API Object>
     macaroon: <Base 64 Admin Macaroon String>
   }
@@ -130,8 +130,8 @@ module.exports = ({}, cbk) => {
       try {
         return cbk(null, lightningDaemon({
           cert: cert.toString('base64'),
-          host: `${lightningDaemonIp}:${lightningDaemonRpcPort}`,
           service: 'WalletUnlocker',
+          socket: `${lightningDaemonIp}:${lightningDaemonRpcPort}`,
         }));
       } catch (err) {
         return cbk([503, 'FailedToLaunchLightningDaemon', err]);
@@ -187,8 +187,8 @@ module.exports = ({}, cbk) => {
       try {
         return cbk(null, lightningDaemon({
           cert: wallet.cert,
-          host: wallet.host,
           macaroon: wallet.macaroon,
+          socket: wallet.host,
         }));
       } catch (err) {
         return cbk([503, 'FailedToInstantiateWalletLnd', err]);

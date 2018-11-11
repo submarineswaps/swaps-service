@@ -14,12 +14,6 @@ const hexBase = 16;
 /** Update a PSBT with signatures
 
   {
-    additional_stack_elements: [{
-      [data_push]: <Script Data Push Hex String>
-      [op_code]: <Script Op Code Number>
-      stack_index: <Witness Stack Index Number>
-      vin: <Input Index Number>
-    }]
     network: <Network Name String>
     psbt: <BIP 174 Encoded PSBT Hex String>
     signing_keys: [<WIF Encoded Private Key String>]
@@ -194,10 +188,6 @@ module.exports = args => {
     });
   });
 
-  return updatePsbt({
-    signatures,
-    additional_stack_elements: args.additional_stack_elements,
-    psbt: args.psbt, signatures,
-  });
+  return updatePsbt({signatures, psbt: args.psbt, signatures});
 };
 

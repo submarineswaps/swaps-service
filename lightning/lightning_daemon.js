@@ -28,23 +28,23 @@ module.exports = ({network}) => {
   const networkName = network.toUpperCase();
 
   const cert = process.env[`SSS_LND_${networkName}_TLS_CERT`];
-  const host = process.env[`SSS_LND_${networkName}_GRPC_HOST`];
   const macaroon = process.env[`SSS_LND_${networkName}_MACAROON`];
+  const socket = process.env[`SSS_LND_${networkName}_GRPC_HOST`];
 
   if (!cert) {
     throw new Error('ExpectedDaemonCert');
-  }
-
-  if (!host) {
-    throw new Error('ExpectedDaemonHost');
   }
 
   if (!macaroon) {
     throw new Error('ExpectedDaemonMacaroon');
   }
 
+  if (!socket) {
+    throw new Error('ExpectedDaemonHost');
+  }
+
   try {
-    lnd = lightningDaemon({cert, host, macaroon});
+    lnd = lightningDaemon({cert, macaroon, socket});
   } catch (err) {
     throw new Error('FailedToInstantiateDaemon');
   }

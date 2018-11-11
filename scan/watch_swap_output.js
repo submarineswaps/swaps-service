@@ -2,7 +2,7 @@ const asyncAuto = require('async/auto');
 const asyncEach = require('async/each');
 
 const {lightningDaemon} = require('./../lightning');
-const {parseInvoice} = require('./../lightning');
+const {parsePaymentRequest} = require('./../lightning');
 const {returnResult} = require('./../async-util');
 const serverSwapKeyPair = require('./../service/server_swap_key_pair');
 const {setJsonInCache} = require('./../cache');
@@ -68,7 +68,7 @@ module.exports = ({cache, index, invoice, network, script, tokens}, cbk) => {
     // Derive the invoice id
     id: ['validate', ({}, cbk) => {
       try {
-        return cbk(null, parseInvoice({invoice}).id);
+        return cbk(null, parsePaymentRequest({request: invoice}).id);
       } catch (e) {
         return cbk([400, 'ExpectedValidInvoice', e]);
       }

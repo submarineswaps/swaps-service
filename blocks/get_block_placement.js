@@ -21,8 +21,8 @@ const type = 'get_block_placement';
 
   @returns via cbk
   {
+    [created_at]: <Time Created At ISO 8601 String>
     [current_confirmation_count]: <Current Confirmation Count Number>
-    [median_created_at]: <Median Time Created At ISO 8601 String>
     [previous_block]: <Previous Block Hash Hex String>
   }
 */
@@ -82,8 +82,8 @@ module.exports = ({block, cache, network, priority}, cbk) => {
         key: [getChainTip.hash, block].join('/'),
         ms: networks[network].ms_per_block * blockCacheMultiplier,
         value: {
+          created_at: getFresh.created_at,
           current_confirmation_count: getFresh.current_confirmation_count,
-          median_created_at: getFresh.median_created_at,
           previous_block: getFresh.previous_block,
         },
       },
@@ -95,8 +95,8 @@ module.exports = ({block, cache, network, priority}, cbk) => {
       const block = getFresh || getCached;
 
       return cbk(null, {
+        created_at: block.created_at,
         current_confirmation_count: block.current_confirmation_count,
-        median_created_at: block.median_created_at,
         previous_block: block.previous_block,
       });
     }],

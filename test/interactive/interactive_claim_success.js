@@ -14,7 +14,7 @@ const {getCurrentHeight} = require('./../../chain');
 const {getTransaction} = require('./../../chain');
 const math = require('./../conf/math');
 const {mineTransaction} = require('./../macros');
-const {parseInvoice} = require('./../lightning');
+const {parsePaymentRequest} = require('./../lightning');
 const promptForInput = require('./../macros').prompt;
 const {returnResult} = require('./../../async-util');
 const {sendChainTokensTransaction} = require('./../macros');
@@ -179,9 +179,12 @@ module.exports = ({}, cbk) => {
     }],
 
     // Bob needs to parse the invoice to find the hash to lock the swap to
-    parseLightningInvoice: ['promptForLightingInvoice', (res, cbk) => {
+    parseLightningInvoice: [
+      'promptForLightingInvoice',
+      ({promptForLightingInvoice}, cbk) =>
+    {
       try {
-        return parseInvoice({invoice: res.promptForLightingInvoice.value});
+        return parsePaymentRequest({request: promptForLightingInvoice.value});
       } catch (err) {
         return cbk([0, 'ExpectedValidInvoice', err]);
       }

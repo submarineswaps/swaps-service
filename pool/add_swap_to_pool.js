@@ -3,7 +3,7 @@ const asyncAuto = require('async/auto');
 const addDetectedSwap = require('./add_detected_swap');
 const getDetectedSwaps = require('./get_detected_swaps');
 const getSwapStatus = require('./../service/get_swap_status');
-const {parseInvoice} = require('./../lightning');
+const {parsePaymentRequest} = require('./../lightning');
 const {returnResult} = require('./../async-util');
 
 /** Add a swap to the pool
@@ -113,7 +113,7 @@ module.exports = ({cache, swap}, cbk) => {
       const {invoice} = swap;
 
       try {
-        return cbk(null, parseInvoice({invoice}));
+        return cbk(null, parsePaymentRequest({request: invoice}));
       } catch (e) {
         return cbk([400, 'FailedParsingInvoiceWhenAddingSwapToPool']);
       }

@@ -2,7 +2,7 @@ const asyncAuto = require('async/auto');
 const asyncEach = require('async/each');
 
 const {deleteJsonFromCache} = require('./../cache');
-const {parseInvoice} = require('./../lightning');
+const {parsePaymentRequest} = require('./../lightning');
 const {serverSwapKeyPair} = require('./../service');
 const {swapScriptDetails}= require('./../swaps');
 
@@ -48,7 +48,7 @@ module.exports = ({cache, index, invoice, network, script}, cbk) => {
     // Derive the invoice id
     id: ['validate', ({}, cbk) => {
       try {
-        return cbk(null, parseInvoice({invoice}).id);
+        return cbk(null, parsePaymentRequest({request: invoice}).id);
       } catch (e) {
         return cbk([400, 'ExpectedValidInvoice', e]);
       }

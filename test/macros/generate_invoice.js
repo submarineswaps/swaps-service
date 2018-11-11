@@ -24,9 +24,9 @@ module.exports = ({lnd}, cbk) => {
     }
 
     return cbk(null, {
-      invoice: res.invoice,
+      invoice: res.request,
       payment_hash: res.id,
-      payment_preimage: res.payment_secret,
+      payment_preimage: res.secret,
     });
   });
 };

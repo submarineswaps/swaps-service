@@ -3,6 +3,7 @@ const {global} = require('./types');
 const {Transaction} = require('./../tokenslib');
 
 const defaultTransactionVersionNumber = 2;
+const type = Buffer.from(global.unsigned_tx, 'hex');
 
 /** Create a PSBT
 
@@ -34,17 +35,15 @@ module.exports = ({outputs, timelock, utxos, version}) => {
     throw new Error('ExpectedTransactionInputsForNewPsbt');
   }
 
+  // Construct a new transaction that will be the basis of the PSBT
   const tx = new Transaction();
 
-  if (!!timelock) {
-    tx.locktime = timelock;
-  }
-
+  tx.locktime = timelock || undefined;
   tx.version = version || defaultTransactionVersionNumber;
 
   // Push all the unsigned inputs into the transaction
   utxos
-    .map(n => ({hash: Buffer.from(n.id, 'hex'), vout: n.vout}))
+    .map(({id, vout}) => ({vout, hash: Buffer.from(id, 'hex')}))
     .forEach(({hash, vout}) => tx.addInput(hash.reverse(), vout));
 
   // Set sequence numbers as necessary
@@ -57,12 +56,8 @@ module.exports = ({outputs, timelock, utxos, version}) => {
     .map(({script, tokens}) => ({tokens, script: Buffer.from(script, 'hex')}))
     .forEach(({script, tokens}) => tx.addOutput(script, tokens));
 
-  const unsignedTransactionPair = {
-    type: Buffer.from(global.unsigned_tx, 'hex'),
-    value: tx.toBuffer(),
-  };
-
-  const pairs = [unsignedTransactionPair, {separator: true}];
+  // Initialize the type value pairs with the transaction
+  const pairs = [{type, value: tx.toBuffer()}, {separator: true}];
 
   // Each input and output is represented as an empty key value pair
   outputs.concat(utxos).forEach(({}) => pairs.push({separator: true}));

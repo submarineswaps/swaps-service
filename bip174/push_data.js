@@ -25,9 +25,8 @@ module.exports = ({data, encode}) => {
   const dataToEncode = data || Buffer.from(encode, 'hex');
 
   const dataLength = dataToEncode.length;
-  const bufferLength = new Buffer(pushdata.encodingLength(dataLength)).length;
 
-  switch (bufferLength) {
+  switch (Buffer.alloc(pushdata.encodingLength(dataLength)).length) {
   case 1:
     return Buffer.concat([
       new BN(dataLength).toArrayLike(Buffer),

@@ -64,12 +64,6 @@ module.exports = ({key, network, psbt}) => {
 
   const signedPsbt = signPsbt({
     network,
-    additional_stack_elements: [{
-      data_push: type === 'pkhash' ? publicKey.toString('hex') : undefined,
-      op_code: type === 'pk' ? OP_0 : undefined,
-      stack_index: 1,
-      vin: 0,
-    }],
     psbt: updatedPsbt.psbt,
     signing_keys: [key],
   });

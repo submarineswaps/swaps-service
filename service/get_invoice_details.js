@@ -11,7 +11,7 @@ const getFeeForSwap = require('./get_fee_for_swap');
 const {getRecentChainTip} = require('./../blocks');
 const {getRecentFeeRate} = require('./../blocks');
 const {lightningDaemon} = require('./../lightning');
-const {parseInvoice} = require('./../lightning');
+const {parsePaymentRequest} = require('./../lightning');
 const {returnResult} = require('./../async-util');
 const swapParameters = require('./swap_parameters');
 
@@ -77,7 +77,7 @@ module.exports = ({cache, invoice, network}, cbk) => {
     // Decode the supplied invoice
     parsedInvoice: ['validate', ({}, cbk) => {
       try {
-        return cbk(null, parseInvoice({invoice}));
+        return cbk(null, parsePaymentRequest({request: invoice}));
       } catch (err) {
         return cbk([400, 'DecodeInvoiceFailure', err]);
       }
@@ -129,9 +129,7 @@ module.exports = ({cache, invoice, network}, cbk) => {
     }],
 
     // Pull the pending channels to see if we have a related pending channel
-    getPending: ['lnd', ({lnd}, cbk) => {
-      return getPendingChannels({lnd}, cbk);
-    }],
+    getPending: ['lnd', ({lnd}, cbk) => getPendingChannels({lnd}, cbk)],
 
     // See if this invoice is payable
     getRoutes: [

@@ -20,7 +20,7 @@ const p2shHashByteLength = 20;
 */
 module.exports = ({hash, script, utxo}) => {
   const scriptPubHashes = Transaction.fromBuffer(utxo).outs.map(out => {
-    // It's expected that the scripPub be a normal P2SH script
+    // It's expected that the scriptPub be a normal P2SH script
     const [hash160, scriptHash, isEqual, extra] = decompile(out.script);
 
     if (hash160 !== OP_HASH160) {

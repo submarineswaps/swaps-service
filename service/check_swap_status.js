@@ -10,7 +10,7 @@ const {getBlockPlacement} = require('./../blocks');
 const getDetectedSwaps = require('./../pool/get_detected_swaps');
 const getSwapStatus = require('./get_swap_status');
 const {lightningDaemon} = require('./../lightning');
-const {parseInvoice} = require('./../lightning');
+const {parsePaymentRequest} = require('./../lightning');
 const {returnResult} = require('./../async-util');
 
 /** Check the status of a swap
@@ -59,9 +59,9 @@ module.exports = ({cache, invoice, network, script}, cbk) => {
     // Parsed invoice
     invoiceInfo: ['validate', ({}, cbk) => {
       try {
-        return cbk(null, parseInvoice({invoice}));
-      } catch (e) {
-        return cbk([400, 'FailedToParseSwapInvoice', e]);
+        return cbk(null, parsePaymentRequest({request: invoice}));
+      } catch (err) {
+        return cbk([400, 'FailedToParseSwapInvoice', err]);
       }
     }],
 

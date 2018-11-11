@@ -15,7 +15,7 @@ const getFeeForSwap = require('./get_fee_for_swap');
 const {getFeeRate} = require('./../blocks');
 const {getRecentChainTip} = require('./../blocks');
 const {getRecentFeeRate} = require('./../blocks');
-const {parseInvoice} = require('./../lightning');
+const {parsePaymentRequest} = require('./../lightning');
 const {lightningDaemon} = require('./../lightning');
 const {returnResult} = require('./../async-util');
 const {setJsonInCache} = require('./../cache');
@@ -26,7 +26,7 @@ const defaultLtcTimeout = 144 * 4;
 const dummyLockingInvoiceValue = 1;
 const dummyPreimage = '0000000000000000000000000000000000000000000000000000000000000000';
 const estimatedTxVirtualSize = 200;
-const maxAttemptedRoutes = 30;
+const maxAttemptedRoutes = 100;
 const paymentTimeoutMs = 1000 * 60;
 const priority = 0;
 const swapSuccessCacheMs = 1000 * 60 * 60;
@@ -114,7 +114,7 @@ module.exports = ({cache, invoice, key, network, script, transaction}, cbk) => {
     // Decode the supplied invoice
     parsedInvoice: ['validate', ({}, cbk) => {
       try {
-        return cbk(null, parseInvoice({invoice}));
+        return cbk(null, parsePaymentRequest({request: invoice}));
       } catch (err) {
         return cbk([400, 'DecodeInvoiceFailure', err]);
       }
@@ -321,7 +321,7 @@ module.exports = ({cache, invoice, key, network, script, transaction}, cbk) => {
       let paymentSecret;
 
       return asyncDetectSeries(getRoutes.routes, (route, cbk) => {
-        return pay({id, lnd, routes: [route]}, (err, res) => {
+        return pay({lnd, path: {id, routes: [route]}}, (err, res) => {
           if (!!err) {
             // Register the failed payment attempt in the pool
             return addDetectedSwap({
@@ -339,7 +339,7 @@ module.exports = ({cache, invoice, key, network, script, transaction}, cbk) => {
             });
           }
 
-          paymentSecret = res.payment_secret;
+          paymentSecret = res.secret;
 
           return cbk(null, true);
         });

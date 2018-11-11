@@ -94,6 +94,7 @@ module.exports = ({psbt}) => {
   const globalKeys = {};
   let input;
   let inputKeys = {};
+  let isGlobal = true;
   let offset = 0;
   let output;
   let outputKeys = {};
@@ -117,17 +118,17 @@ module.exports = ({psbt}) => {
   // Start reading - beginning with magic bytes
   const magicValue = read(magicBytes.length);
 
+  // The magic bytes of a psbt must always be set
   if (!magicValue.equals(magicBytes)) {
     throw new Error('UnrecognizedMagicBytes');
   }
 
   const globalSeparator = buffer.readUInt8(offset++);
 
+  // After the magic bytes must come a global separator
   if (globalSeparator !== globalSeparatorCode) {
     throw new Error('ExpectedGlobalSeparator');
   }
-
-  let isGlobal = true;
 
   // Read through key/value pairs
   while (offset < buffer.length) {
@@ -203,9 +204,13 @@ module.exports = ({psbt}) => {
     // Values are variable length data
     const value = read(readCompactVarInt());
 
-    if (!decoded.unsigned_transaction) {
+    if (isGlobal) {
       switch (keyType.toString('hex')) {
       case types.global.unsigned_tx:
+        if (!!decoded.unsigned_transaction) {
+          throw new Error('InvalidGlobalTransactionKeyType');
+        }
+
         const tx = Transaction.fromBuffer(value);
         decoded.unsigned_transaction = value.toString('hex');
 
@@ -227,24 +232,23 @@ module.exports = ({psbt}) => {
         break;
 
       default:
-        throw new Error('InvalidGlobalTransactionKeyType');
+        if (!decoded.unsigned_transaction) {
+          throw new Error('InvalidGlobalTransactionKeyType');
+        }
+
+        const type = keyType.toString('hex');
+        const unrecognized = decoded.unrecognized_attributes || [];
+
+        if (!!globalKeys[type] || type === types.global.unsigned_tx) {
+          throw new Error('UnexpectedDuplicateGlobalKey');
+        }
+
+        decoded.unrecognized_attributes = unrecognized;
+        globalKeys[type] = true;
+
+        decoded.unrecognized_attributes.push({type, value: value.toString('hex')});
         break;
       }
-    } else if (isGlobal) {
-      decoded.unrecognized_attributes = decoded.unrecognized_attributes || [];
-
-      const type = keyType.toString('hex');
-
-      if (!!globalKeys[type] || type === types.global.unsigned_tx) {
-        throw new Error('UnexpectedDuplicateGlobalKey');
-      }
-
-      globalKeys[type] = true;
-
-      decoded.unrecognized_attributes.push({
-        type: keyType.toString('hex'),
-        value: value.toString('hex'),
-      });
     } else if (!!foundInputs.length || !!input) {
       // Start of a new input?
       if (!input) {
@@ -260,21 +264,6 @@ module.exports = ({psbt}) => {
       inputKeys[keyType.toString('hex')] = true;
 
       switch (keyTypeCode) {
-      case types.input.additional_stack_element:
-        if (keyType.length !== keyCodeByteLength + stackIndexByteLength) {
-          throw new Error('UnexpectedAdditionalWitnessElementTypeLength');
-        }
-
-        input.add_stack_elements = input.add_stack_elements || [];
-
-        const index = keyType.slice(keyCodeByteLength).readUInt32LE();
-
-        input.add_stack_elements.push({
-          index,
-          value: value.toString('hex'),
-        });
-        break;
-
       case types.input.bip32_derivation:
         input.bip32_derivations = input.bip32_derivations || [];
 

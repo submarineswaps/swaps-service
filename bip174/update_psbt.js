@@ -32,12 +32,6 @@ const tokensByteLength = 8;
       vin: <Input Index Number>
       vout: <Output Index Number>
     }]
-    [additional_stack_elements]: [{
-      [data_push]: <Script Data Push Hex String>
-      [op_code]: <Script Op Code Number>
-      stack_index: <Script Stack Index Number>
-      vin: <Input Index Number>
-    }]
     [bip32_derivations]: [{
       fingerprint: <BIP 32 Fingerprint of Parent's Key Hex String>
       path: <BIP 32 Derivation Path String>
@@ -86,7 +80,6 @@ module.exports = args => {
   const scriptPubs = {};
   const sighashes = {};
   const signatures = {};
-  const stackElements = {};
   const transactions = args.transactions || [];
   const txs = {};
   const witnessScripts = args.witness_scripts || [];
@@ -122,15 +115,6 @@ module.exports = args => {
 
     return;
   });
-
-  // Index additional stack elements by vin
-  if (Array.isArray(args.additional_stack_elements)) {
-    args.additional_stack_elements.forEach(n => {
-      stackElements[n.vin] = stackElements[n.vin] || [];
-
-      return stackElements[n.vin].push(n);
-    });
-  }
 
   // Index sighashes by spending outpoint
   if (Array.isArray(args.sighashes)) {
@@ -488,30 +472,6 @@ module.exports = args => {
           type: Buffer.from(types.input.final_scriptsig, 'hex'),
         });
       }
-    }
-
-    // Additional stack elements
-    if (!args.is_final && Array.isArray(stackElements[vin])) {
-      stackElements[vin].forEach(n => {
-        const stackIndex = new BN(n.stack_index, decBase);
-        let value;
-
-        if (n.data_push !== undefined) {
-          value = Buffer.from(n.data_push, 'hex');
-        } else if (n.op_code !== undefined) {
-          value = new BN(n.op_code, decBase).toArrayLike(Buffer);
-        } else {
-          throw new Error('UnknownStackElementType');
-        }
-
-        return pairs.push({
-          value,
-          type: Buffer.concat([
-            Buffer.from(types.input.additional_stack_element, 'hex'),
-            stackIndex.toArrayLike(Buffer, endianness, stackIndexByteLength),
-          ]),
-        });
-      });
     }
 
     addAttributes.filter(n => n.vin === vin).forEach(({type, value}) => {

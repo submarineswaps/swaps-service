@@ -7,7 +7,7 @@ const getFeeForSwap = require('./get_fee_for_swap');
 const {getRecentChainTip} = require('./../blocks');
 const {getSwapKeyIndex} = require('./../scan');
 const {getTransaction} = require('./../blocks');
-const {parseInvoice} = require('./../lightning');
+const {parsePaymentRequest} = require('./../lightning');
 const {returnResult} = require('./../async-util');
 const serverSwapKeyPair = require('./server_swap_key_pair');
 const {swapOutput} = require('./../swaps');
@@ -52,9 +52,9 @@ module.exports = ({block, cache, id, invoice, network, script}, cbk) => {
       }
 
       try {
-        return cbk(null, parseInvoice({invoice}));
-      } catch (e) {
-        return cbk([400, 'InvalidInvoice', e]);
+        return cbk(null, parsePaymentRequest({request: invoice}));
+      } catch (err) {
+        return cbk([400, 'InvalidInvoice', err]);
       }
     },
 

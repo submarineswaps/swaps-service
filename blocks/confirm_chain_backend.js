@@ -43,12 +43,12 @@ module.exports = ({network}, cbk) => {
 
     // Check header info
     checkHeaderInfo: ['getHeaderInfo', ({getHeaderInfo}, cbk) => {
-      if (!getHeaderInfo || !getHeaderInfo.median_created_at) {
-        return cbk([503, 'FailedToReceiveMedianDate']);
+      if (!getHeaderInfo || !getHeaderInfo.created_at) {
+        return cbk([503, 'FailedToReceiveBlockCreatedDate']);
       }
 
       // Roughly how long has it been since this block was created?
-      const delayMs = Date.now() - Date.parse(getHeaderInfo.median_created_at);
+      const delayMs = Date.now() - Date.parse(getHeaderInfo.created_at);
 
       if (delayMs > networks[network].ms_per_block * staleBlockVariance) {
         return cbk([503, 'StaleRemoteBlockTime', network, delayMs]);

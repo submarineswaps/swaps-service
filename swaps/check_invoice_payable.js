@@ -60,11 +60,11 @@ module.exports = args => {
     throw new Error('ExpectedBlockWindowToExecuteClaimTransaction');
   }
 
-  if (!args.current_height) {
+  if (args.current_height === undefined) {
     throw new Error('ExpectedCurrentChainHeight');
   }
 
-  if (!args.destination_height) {
+  if (args.destination_height === undefined) {
     throw new Error('ExpectedDestinationChainHeight');
   }
 

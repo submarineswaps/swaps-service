@@ -1,5 +1,5 @@
 const lightningDaemon = require('./lightning_daemon');
-const parseInvoice = require('./parse_invoice');
+const parsePaymentRequest = require('./parse_payment_request');
 
-module.exports = {lightningDaemon, parseInvoice};
+module.exports = {lightningDaemon, parsePaymentRequest};
 

@@ -17,9 +17,9 @@ const notFoundIndex = -1;
 
   @returns via cbk
   {
+    [created_at]: <Time Created At ISO 8601 String>
     [current_confirmation_count]: <Current Confirmation Count Number>
     [height]: <Chain Height Number>
-    [median_created_at]: <Median Time Created At ISO 8601 String>
     [previous_block]: <Previous Block Hash Hex String>
   }
 */
@@ -58,7 +58,7 @@ module.exports = ({block, cache, network, priority}, cbk) => {
 
         const {confirmations} = details;
         const {height} = details;
-        const {mediantime} = details;
+        const {time} = details;
 
         if (!confirmations || confirmations < notFoundIndex) {
           return cbk([503, 'UnexpectedConfirmationsValue']);
@@ -68,14 +68,14 @@ module.exports = ({block, cache, network, priority}, cbk) => {
           return cbk([503, 'ExpectedBlockHeight']);
         }
 
-        if (!mediantime) {
-          return cbk([503, 'ExpectedBlockMedianTimeValue']);
+        if (!time) {
+          return cbk([503, 'ExpectedBlockTimeValue']);
         }
 
         return cbk(null, {
           height,
+          created_at: new Date(time * msPerSec).toISOString(),
           current_confirmation_count: confirmations > 0 ? confirmations : null,
-          median_created_at: new Date(mediantime * msPerSec).toISOString(),
           previous_block: details.previousblockhash,
         });
       });

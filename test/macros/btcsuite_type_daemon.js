@@ -1,7 +1,6 @@
 const {join} = require('path');
 const {spawn} = require('child_process');
 
-const chainServer = require('./../../chain/conf/chain_server_defaults');
 const credentialsForNetwork = require('./../../chain/credentials_for_network');
 const {ECPair} = require('./../../tokenslib');
 const {networks} = require('./../../tokenslib');

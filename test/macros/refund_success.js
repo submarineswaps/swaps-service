@@ -4,7 +4,6 @@ const addressForPublicKey = require('./address_for_public_key');
 const {broadcastTransaction} = require('./../../chain');
 const {clearCache} = require('./../../cache');
 const {chainConstants} = require('./../../chain');
-const {createRefundPsbt} = require('./../../swaps');
 const {ECPair} = require('./../../tokenslib');
 const generateChainBlocks = require('./generate_chain_blocks');
 const generateInvoice = require('./generate_invoice');
@@ -303,40 +302,19 @@ module.exports = (args, cbk) => {
       'mineFundingTx',
       (res, cbk) =>
     {
-      let refundPsbt;
-      let signedRefund;
-
       try {
-        refundPsbt = createRefundPsbt({
+        cbk(null, refundTransaction({
+          destination: res.generateAliceKeyPair.p2pkh_address,
           fee_tokens_per_vbyte: staticFeePerVirtualByte,
+          is_public_key_hash_refund: args.is_refund_to_public_key_hash,
           network: args.network,
-          refund_address: res.generateAliceKeyPair.p2pkh_address,
-          transactions: [res.fundSwapAddress.transaction],
-          utxos: res.fundingTransactionUtxos.matching_outputs.map(utxo => {
-            return {
-              redeem: res.createChainSwapAddress.redeem_script,
-              script: utxo.script,
-              tokens: utxo.tokens,
-              transaction_id: utxo.transaction_id,
-              vout: utxo.vout,
-            };
-          }),
-        });
+          private_key: res.generateAliceKeyPair.private_key,
+          timelock_block_height: res.getHeightForRefund.height,
+          utxos: res.fundingTransactionUtxos.matching_outputs,
+        }));
       } catch (err) {
-        return cbk([500, 'ExpectedRefundPsbt', err]);
+        return cbk([0, 'ExpectedRefundTx', err]);
       }
-
-      try {
-        signedRefund = signRefundPsbt({
-          key: res.generateAliceKeyPair.private_key,
-          network: args.network,
-          psbt: refundPsbt.psbt,
-        });
-      } catch (err) {
-        return cbk([500, 'ExpectedSignedRefundPsbt', err]);
-      }
-
-      return cbk(null, signedRefund);
     }],
 
     // Mine the sweep transaction into a block
