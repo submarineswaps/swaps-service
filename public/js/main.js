@@ -1780,6 +1780,10 @@ App.updateInvoiceDetails = ({swap}) => {
         text = 'Using this currency to pay this invoice is not yet supported.';
         break;
 
+      case 'ExpectedTokensForFeeCalculation':
+        text = 'This invoice does not include an amount. Try one with amount?';
+        break;
+
       case 'ChainFeesTooHighToSwap':
         text = 'Value too low for a chain swap. Use a higher value invoice?';
         break;
