@@ -19,6 +19,7 @@ const {parsePaymentRequest} = require('ln-service');
     id: <Payment Request Hash String>
     is_expired: <Invoice is Expired Bool>
     network: <Network Name String>
+    routes: <Routes Object>
     [tokens]: <Requested Chain Tokens Number>
   }
 */
@@ -55,6 +56,7 @@ module.exports = ({request}) => {
     expires_at: details.expires_at,
     id: details.id,
     is_expired: details.is_expired,
+    routes: details.routes,
     tokens: details.tokens,
   };
 };

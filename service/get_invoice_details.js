@@ -18,7 +18,7 @@ const swapParameters = require('./swap_parameters');
 
 const estimatedTxVirtualSize = 200;
 const decBase = 10;
-const defaultMaxHops = 3;
+const defaultMaxHops = 5;
 const fiatCurrency = 'USD';
 const probeLimit = 5;
 const probeTimeoutMs = 15000;
