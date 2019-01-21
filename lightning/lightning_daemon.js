@@ -55,8 +55,10 @@ module.exports = ({network}) => {
 
   // Clear daemon cache on errors or end of subscription
   // This subscription allows opportunistic reconnecting on remote restarts.
+  daemons[network].sub.on('data', () => {});
   daemons[network].sub.on('end', () => daemons[network] = null);
   daemons[network].sub.on('error', ({}) => daemons[network] = null);
+  daemons[network].sub.on('status', () => {});
 
   return lnd;
 };

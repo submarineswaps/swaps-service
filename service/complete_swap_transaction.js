@@ -172,6 +172,7 @@ module.exports = ({cache, invoice, key, network, script, transaction}, cbk) => {
         fee: getSwapFee.converted_fee,
         destination: parsedInvoice.destination,
         limit: maxAttemptedRoutes,
+        routes: parsedInvoice.routes,
         timeout: !!timeout ? timeout : undefined,
         tokens: parsedInvoice.tokens,
       },
@@ -329,7 +330,7 @@ module.exports = ({cache, invoice, key, network, script, transaction}, cbk) => {
               id,
               attempt: {
                 date,
-                hops: route.hops.map(n => n.channel_id),
+                hops: route.hops.map(n => n.channel),
                 id: uuidv4(),
                 type: 'attempt',
               },
@@ -413,8 +414,8 @@ module.exports = ({cache, invoice, key, network, script, transaction}, cbk) => {
       cbk) =>
     {
       return cbk(null, {
-        invoice_id: parsedInvoice.id,
         funding_utxos: fundingUtxos.matching_outputs,
+        invoice_id: parsedInvoice.id,
         payment_secret: payInvoice.payment_secret,
         transaction_id: broadcastTransaction.id,
       });

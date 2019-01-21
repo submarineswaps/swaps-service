@@ -46,7 +46,7 @@ module.exports = ({cache, network, to, tokens}, cbk) => {
 
     // Get swap fee rate information
     getChainFee: ['validate', ({}, cbk) => {
-      return getRecentFeeRate({cache, network}, cbk);[]
+      return getRecentFeeRate({cache, network}, cbk);
     }],
 
     // Get exchange rate information

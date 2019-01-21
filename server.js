@@ -1,8 +1,5 @@
-const {log} = console;
-
+const config = require('dotenv').config();
 const walnut = require('walnut');
-
-require('dotenv').config();
 
 const {addSwapToPool} = require('./pool');
 const apiRouter = require('./routers/api');
@@ -18,7 +15,8 @@ const {PORT} = process.env;
 
 const cache = 'redis';
 const isProduction = NODE_ENV === 'production';
-const logOnErr = err => !!err ? log(err) : null;
+const {log} = console;
+const logOnErr = err => !!err ? console.log(err) : null;
 const port = PORT || SSS_PORT || 9889;
 const scannersStartDelay = 1000 * 10;
 

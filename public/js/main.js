@@ -585,6 +585,7 @@ App.getInvoiceDetails = ({invoice, network}, cbk) => {
     .then(r => {
       switch (r.status) {
       case 200:
+      case 304:
         return Promise.resolve(r);
 
       default:
@@ -651,7 +652,7 @@ App.getInvoiceDetails = ({invoice, network}, cbk) => {
         return err.text().then(text => cbk([err.status, text]));
       }
 
-      return cbk([500, err.statusText]);
+      return cbk([500, err.statusText || err.message]);
     });
 };
 
@@ -1804,6 +1805,7 @@ App.updateInvoiceDetails = ({swap}) => {
         text = 'No route found to execute this swap. Try a smaller amount?';
         break;
 
+      case 'ExpectedUnexpiredInvoice':
       case 'InvoiceExpiresTooSoon':
         text = 'This invoice expires too soon, get a fresh invoice?';
         break;

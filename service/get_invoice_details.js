@@ -3,6 +3,7 @@ const {nextTick} = process;
 const asyncAuto = require('async/auto');
 const {getPendingChannels} = require('ln-service');
 const {getRoutes} = require('ln-service');
+const {probe} = require('ln-service');
 
 const {checkInvoicePayable} = require('./../swaps');
 const {getExchangeRate} = require('./../fiat');
@@ -19,12 +20,15 @@ const estimatedTxVirtualSize = 200;
 const decBase = 10;
 const defaultMaxHops = 3;
 const fiatCurrency = 'USD';
+const probeLimit = 5;
+const probeTimeoutMs = 15000;
 const tokensConfidenceMultiplier = 2;
 
 /** Get invoice details in the context of a swap
 
   {
     cache: <Cache Type String>
+    check: <Should Execute Probe Check Bool>
     invoice: <Invoice String>
     network: <Network of Chain Swap String>
   }
@@ -45,7 +49,7 @@ const tokensConfidenceMultiplier = 2;
     tokens: <Tokens to Send Number>
   }
 */
-module.exports = ({cache, invoice, network}, cbk) => {
+module.exports = ({cache, check, invoice, network}, cbk) => {
   return asyncAuto({
     // Check arguments
     validate: cbk => {
@@ -141,9 +145,10 @@ module.exports = ({cache, invoice, network}, cbk) => {
       const {destination} = parsedInvoice;
       const fee = getSwapFee.converted_fee;
       const net = parsedInvoice.network.toUpperCase();
+      const {routes} = parsedInvoice;
       const tokens = parsedInvoice.tokens * tokensConfidenceMultiplier;
 
-      return getRoutes({destination, fee, lnd, tokens}, (err, res) => {
+      return getRoutes({destination, fee, lnd, routes, tokens}, (err, res) => {
         if (!!err) {
           return cbk(err);
         }
@@ -202,6 +207,38 @@ module.exports = ({cache, invoice, network}, cbk) => {
       } catch (err) {
         return cbk([400, err.message]);
       }
+    }],
+
+    // Execute probe
+    probe: [
+      'checkPayable',
+      'getRoutes',
+      'lnd',
+      'parsedInvoice',
+      ({getRoutes, lnd, parsedInvoice}, cbk) =>
+    {
+      if (!check || !!parsedInvoice.is_expired) {
+        return cbk();
+      }
+
+      return probe({
+        lnd,
+        limit: probeLimit,
+        routes: getRoutes.routes,
+        timeout: probeTimeoutMs,
+        tokens: parsedInvoice.tokens,
+      },
+      (err, res) => {
+        if (!!err) {
+          return cbk([503, 'FailedToExecuteProbe', err]);
+        }
+
+        if (!res.successes.length) {
+          return cbk([400, 'InsufficientCapacityForSwap']);
+        }
+
+        return cbk();
+      });
     }],
 
     // Get the exchange rate

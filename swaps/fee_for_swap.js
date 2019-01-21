@@ -67,6 +67,7 @@ module.exports = args => {
 
   const tokens = convertedTokens + fee;
 
-  return {fee, tokens, converted_fee: round(fee * args.rate_source)};
-};
+  const convertedFee = round(fee / conversionRate);
 
+  return {fee, tokens, converted_fee: convertedFee};
+};

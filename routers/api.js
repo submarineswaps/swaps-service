@@ -50,6 +50,7 @@ module.exports = ({cache, log}) => {
   router.get('/invoice_details/:network/:invoice', ({params}, res) => {
     return getInvoiceDetails({
       cache,
+      check: true,
       invoice: params.invoice,
       network: params.network,
     },
