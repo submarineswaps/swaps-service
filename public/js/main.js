@@ -853,10 +853,10 @@ App.initFromQueryParams = ({}) => {
   }
 
   // Set the currency to use
-  $('.select-currency').val(network).trigger('change');
+  $('.select-currency').val(network);
 
   // Add in the LN invoice
-  $('.pay-to-lightning-invoice').val(invoice).trigger('change');
+  $('.pay-to-lightning-invoice').val(invoice);
 
   return;
 };
