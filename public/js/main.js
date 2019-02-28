@@ -873,7 +873,10 @@ App.initFromQueryParams = ({}) => {
   $('.pay-to-lightning-invoice').val(invoice);
 
   $('.select-currency').trigger('change');
-  $('.pay-to-lightning-invoice').removeClass('is-invalid');
+
+  setTimeout(() => {
+    return $('.pay-to-lightning-invoice').removeClass('is-invalid');
+  }, 300);
 
   return;
 };
