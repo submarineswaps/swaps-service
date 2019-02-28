@@ -852,11 +852,28 @@ App.initFromQueryParams = ({}) => {
     return;
   }
 
-  // Set the currency to use
-  $('.select-currency').val(network);
+  switch (network) {
+  case 'btc':
+    // Also support btc code for query params
+    $('.select-currency').val('bitcoin');
+    break;
+
+  case 'litecoin':
+    // Also support litecoin code for query params
+    $('.select-currency').val('ltc');
+    break;
+
+  default:
+    // Set the currency to use
+    $('.select-currency').val(network);
+    break;
+  }
 
   // Add in the LN invoice
   $('.pay-to-lightning-invoice').val(invoice);
+
+  $('.select-currency').trigger('change');
+  $('.pay-to-lightning-invoice').removeClass('is-invalid');
 
   return;
 };
