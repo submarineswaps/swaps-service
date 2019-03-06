@@ -5,6 +5,7 @@ const {networks} = require('./../tokenslib');
 const decBase = 10;
 const {env} = process;
 const hoursInDay = 24;
+const maxCsvDays = 14;
 const msPerHour = 1000 * 60 * 60;
 
 /** Get swap parameters for a network
@@ -66,8 +67,7 @@ module.exports = ({network}) => {
   return {
     claim_window: standardConfCount,
     funding_confs: parseInt(fundingWaitConfs || standardConfCount, decBase),
-    refund_timeout: standardConfCount * hoursInDay,
+    refund_timeout: standardConfCount * hoursInDay * maxCsvDays,
     swap_fees: swapFees,
   };
 };
-
