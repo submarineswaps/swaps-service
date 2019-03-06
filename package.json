@@ -41,8 +41,8 @@
     "test": "test"
   },
   "engines": {
-    "node": "10.13.0",
-    "npm": "6.4.1"
+    "node": "10.15.3",
+    "npm": "6.8.0"
   },
   "license": "MIT",
   "main": "server.js",
