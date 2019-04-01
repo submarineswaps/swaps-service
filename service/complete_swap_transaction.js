@@ -173,7 +173,7 @@ module.exports = ({cache, invoice, key, network, script, transaction}, cbk) => {
         destination: parsedInvoice.destination,
         limit: maxAttemptedRoutes,
         routes: parsedInvoice.routes,
-        timeout: !!timeout ? timeout : undefined,
+        timeout: parsedInvoice.timeout || timeout,
         tokens: parsedInvoice.tokens,
       },
       cbk);
@@ -423,4 +423,3 @@ module.exports = ({cache, invoice, key, network, script, transaction}, cbk) => {
   },
   returnResult({of: 'completedSwap'}, cbk));
 };
-

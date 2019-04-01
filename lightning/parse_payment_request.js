@@ -20,6 +20,7 @@ const {parsePaymentRequest} = require('ln-service');
     is_expired: <Invoice is Expired Bool>
     network: <Network Name String>
     routes: <Routes Object>
+    timeout: <CLTV Final Delta Number>
     [tokens]: <Requested Chain Tokens Number>
   }
 */
@@ -57,7 +58,7 @@ module.exports = ({request}) => {
     id: details.id,
     is_expired: details.is_expired,
     routes: details.routes,
+    timeout: details.cltv_delta,
     tokens: details.tokens,
   };
 };
-
