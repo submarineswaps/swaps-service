@@ -17,7 +17,7 @@ const cache = 'redis';
 const isProduction = NODE_ENV === 'production';
 const {log} = console;
 const logOnErr = err => !!err ? console.log(err) : null;
-const nodeMemLimit = 475;
+const nodeMemLimit = 300;
 const port = PORT || SSS_PORT || 9889;
 const scannersStartDelay = 1000 * 10;
 
