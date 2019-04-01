@@ -1,5 +1,9 @@
 const chainRpc = require('./call_chain_rpc');
 const {getRawMempool} = require('./conf/rpc_commands');
+const {take} = require('lodash');
+
+const {isArray} = Array;
+const maxMempoolIds = 3000;
 
 /** Get the current mempool
 
@@ -19,11 +23,10 @@ module.exports = ({network}, cbk) => {
       return cbk(err);
     }
 
-    if (!Array.isArray(ids)) {
+    if (!isArray(ids)) {
       return cbk([503, 'ExpectedTransactionIds']);
     }
 
-    return cbk(null, {transaction_ids: ids});
+    return cbk(null, {transaction_ids: take(ids, maxMempoolIds)});
   });
 };
-
