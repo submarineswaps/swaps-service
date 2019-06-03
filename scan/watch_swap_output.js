@@ -1,9 +1,9 @@
 const asyncAuto = require('async/auto');
 const asyncEach = require('async/each');
+const {returnResult} = require('asyncjs-util');
 
 const {lightningDaemon} = require('./../lightning');
 const {parsePaymentRequest} = require('./../lightning');
-const {returnResult} = require('./../async-util');
 const serverSwapKeyPair = require('./../service/server_swap_key_pair');
 const {setJsonInCache} = require('./../cache');
 const {swapScriptDetails} = require('./../swaps');

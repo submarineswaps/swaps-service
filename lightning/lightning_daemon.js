@@ -1,4 +1,4 @@
-const {lightningDaemon} = require('ln-service');
+const {authenticatedLndGrpc} = require('ln-service');
 const {subscribeToInvoices} = require('ln-service');
 
 const daemons = {};
@@ -44,7 +44,7 @@ module.exports = ({network}) => {
   }
 
   try {
-    lnd = lightningDaemon({cert, macaroon, socket});
+    lnd = authenticatedLndGrpc({cert, macaroon, socket}).lnd;
   } catch (err) {
     throw new Error('FailedToInstantiateDaemon');
   }
@@ -62,4 +62,3 @@ module.exports = ({network}) => {
 
   return lnd;
 };
-

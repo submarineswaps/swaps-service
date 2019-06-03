@@ -1,9 +1,9 @@
 const asyncAuto = require('async/auto');
 const asyncMap = require('async/map');
 const {groupBy} = require('lodash');
+const {returnResult} = require('asyncjs-util');
 
 const {getCachedSetJson} = require('./../cache');
-const {returnResult} = require('./../async-util');
 
 /** Get the swap elements that correspond to a swap, identified by an invoice
   id.

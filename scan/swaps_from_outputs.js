@@ -1,11 +1,11 @@
 const asyncAuto = require('async/auto');
 const asyncMap = require('async/map');
+const {returnResult} = require('asyncjs-util');
 
 const {address} = require('./../tokenslib');
 const {addressDetails} = require('./../chain');
 const getWatchedOutput = require('./get_watched_output');
 const {networks} = require('./../tokenslib');
-const {returnResult} = require('./../async-util');
 const {Transaction} = require('./../tokenslib');
 
 const {fromOutputScript} = address;

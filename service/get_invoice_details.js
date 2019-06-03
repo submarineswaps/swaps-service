@@ -3,7 +3,9 @@ const {nextTick} = process;
 const asyncAuto = require('async/auto');
 const {getPendingChannels} = require('ln-service');
 const {getRoutes} = require('ln-service');
-const {probe} = require('ln-service');
+const {probeForRoute} = require('ln-service');
+const {returnResult} = require('asyncjs-util');
+const {subscribeToProbe} = require('ln-service');
 
 const {checkInvoicePayable} = require('./../swaps');
 const {getExchangeRate} = require('./../fiat');
@@ -13,13 +15,13 @@ const {getRecentChainTip} = require('./../blocks');
 const {getRecentFeeRate} = require('./../blocks');
 const {lightningDaemon} = require('./../lightning');
 const {parsePaymentRequest} = require('./../lightning');
-const {returnResult} = require('./../async-util');
 const swapParameters = require('./swap_parameters');
 
 const estimatedTxVirtualSize = 200;
 const decBase = 10;
 const defaultMaxHops = 5;
 const fiatCurrency = 'USD';
+const pathfindingTimeoutMs = 1000 * 20;
 const probeLimit = 5;
 const probeTimeoutMs = 15000;
 const tokensConfidenceMultiplier = 2;
@@ -221,19 +223,20 @@ module.exports = ({cache, check, invoice, network}, cbk) => {
         return cbk();
       }
 
-      return probe({
+      return probeForRoute({
         lnd,
-        limit: probeLimit,
-        routes: getRoutes.routes,
-        timeout: probeTimeoutMs,
+        cltv_delta: parsedInvoice.cltv_delta,
+        destination: parsedInvoice.destination,
+        pathfinding_timeout: pathfindingTimeoutMs,
+        routes: parsedInvoice.routes,
         tokens: parsedInvoice.tokens,
       },
       (err, res) => {
         if (!!err) {
-          return cbk([503, 'FailedToExecuteProbe', err]);
+          return cbk([503, 'FailedToExecuteProbe', {err}]);
         }
 
-        if (!res.successes.length) {
+        if (!res.route) {
           return cbk([400, 'InsufficientCapacityForSwap']);
         }
 

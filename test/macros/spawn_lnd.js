@@ -3,10 +3,11 @@ const {readFileSync} = require('fs');
 const {spawn} = require('child_process');
 
 const asyncAuto = require('async/auto');
+const {authenticatedLndGrpc} = require('ln-service');
 const {createSeed} = require('ln-service');
 const {createWallet} = require('ln-service');
 const {getWalletInfo} = require('ln-service');
-const {lightningDaemon} = require('ln-service');
+const {unauthenticatedLndGrpc} = require('ln-service');
 const uuidv4 = require('uuid/v4');
 
 const {generateKeyPair} = require('./../../chain');
@@ -128,11 +129,10 @@ module.exports = ({}, cbk) => {
       const cert = readFileSync(join(dir, lightningTlsCertFileName));
 
       try {
-        return cbk(null, lightningDaemon({
+        return cbk(null, unauthenticatedLndGrpc({
           cert: cert.toString('base64'),
-          service: 'WalletUnlocker',
           socket: `${lightningDaemonIp}:${lightningDaemonRpcPort}`,
-        }));
+        }).lnd);
       } catch (err) {
         return cbk([503, 'FailedToLaunchLightningDaemon', err]);
       }
@@ -185,11 +185,11 @@ module.exports = ({}, cbk) => {
     // Wallet LND GRPC API
     lnd: ['wallet', ({wallet}, cbk) => {
       try {
-        return cbk(null, lightningDaemon({
+        return cbk(null, authenticatedLndGrpc({
           cert: wallet.cert,
           macaroon: wallet.macaroon,
           socket: wallet.host,
-        }));
+        }).lnd);
       } catch (err) {
         return cbk([503, 'FailedToInstantiateWalletLnd', err]);
       }

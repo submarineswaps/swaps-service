@@ -1,11 +1,11 @@
 const asyncAuto = require('async/auto');
 const asyncFilter = require('async/filter');
 const asyncTimeout = require('async/timeout');
+const {returnResult} = require('asyncjs-util');
 
 const {getRecentChainTip} = require('./../blocks');
 const isConfigured = require('./is_configured');
 const {networks} = require('./../tokenslib');
-const {returnResult} = require('./../async-util');
 
 const active = {};
 const nets = Object.keys(networks);

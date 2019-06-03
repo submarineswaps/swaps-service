@@ -2,9 +2,9 @@ const asyncAuto = require('async/auto');
 const asyncRetry = require('async/retry');
 const {includes} = require('lodash');
 const request = require('request');
+const {returnResult} = require('asyncjs-util');
 
 const {getJsonFromCache} = require('./../cache');
-const {returnResult} = require('./../async-util');
 const {setJsonInCache} = require('./../cache');
 
 const api = 'https://apiv2.bitcoinaverage.com/';

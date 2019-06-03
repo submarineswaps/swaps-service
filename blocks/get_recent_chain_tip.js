@@ -1,10 +1,10 @@
 const asyncAuto = require('async/auto');
+const {returnResult} = require('asyncjs-util');
 
 const {getBlockHeader} = require('./../chain');
 const {getCurrentHash} = require('./../chain');
 const getHeightForBlock = require('./get_height_for_block');
 const {getJsonFromCache} = require('./../cache');
-const {returnResult} = require('./../async-util');
 const {setJsonInCache} = require('./../cache');
 
 const cache = 'memory';

@@ -1,9 +1,9 @@
 const asyncAuto = require('async/auto');
+const {returnResult} = require('asyncjs-util');
 
 const {feeForSwap} = require('./../swaps');
 const getExchangeRates = require('./get_exchange_rates');
 const {getRecentFeeRate} = require('./../blocks');
-const {returnResult} = require('./../async-util');
 
 /** Given swap information, determine the number of tokens needed for a fee
 

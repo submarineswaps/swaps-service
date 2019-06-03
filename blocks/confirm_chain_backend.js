@@ -1,9 +1,9 @@
 const asyncAuto = require('async/auto');
+const {returnResult} = require('asyncjs-util');
 
 const {getBlockHeader} = require('./../chain');
 const {getCurrentHash} = require('./../chain');
 const {networks} = require('./../tokenslib');
-const {returnResult} = require('./../async-util');
 
 const staleBlockVariance = 30;
 

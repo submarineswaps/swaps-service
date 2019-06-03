@@ -1,10 +1,10 @@
 const asyncAuto = require('async/auto');
+const {returnResult} = require('asyncjs-util');
 
 const {getBlockHeader} = require('./../chain');
 const {getJsonFromCache} = require('./../cache');
 const getRecentChainTip = require('./get_recent_chain_tip');
 const {networks} = require('./../tokenslib');
-const {returnResult} = require('./../async-util');
 const {setJsonInCache} = require('./../cache');
 
 const blockCacheMultiplier = 10;

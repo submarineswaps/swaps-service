@@ -1,9 +1,9 @@
 const asyncAuto = require('async/auto');
 const asyncDetectLimit = require('async/detectLimit');
+const {returnResult} = require('asyncjs-util');
 
 const {getBlock} = require('./../../chain');
 const {getJsonFromCache} = require('./../../cache');
-const {returnResult} = require('./../../async-util');
 const {setJsonInCache} = require('./../../cache');
 const transactionHasScriptPub = require('./transaction_has_scriptpub');
 

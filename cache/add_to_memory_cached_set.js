@@ -1,7 +1,7 @@
 const asyncAuto = require('async/auto');
+const {returnResult} = require('asyncjs-util');
 
 const getFromMemoryCache = require('./get_from_memory_cache');
-const {returnResult} = require('./../async-util');
 const setInMemoryCache = require('./set_in_memory_cache');
 
 /** Add an element to a memory cached set

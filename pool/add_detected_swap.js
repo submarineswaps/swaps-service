@@ -1,9 +1,9 @@
 const {createHash} = require('crypto');
 
 const asyncAuto = require('async/auto');
+const {returnResult} = require('asyncjs-util');
 
 const {addJsonToCachedSet} = require('./../cache');
-const {returnResult} = require('./../async-util');
 const {setJsonInCache} = require('./../cache');
 const {swapScriptDetails} = require('./../swaps');
 

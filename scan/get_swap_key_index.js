@@ -1,8 +1,8 @@
 const asyncAuto = require('async/auto');
+const {returnResult} = require('asyncjs-util');
 
 const {getJsonFromCache} = require('./../cache');
 const {swapScriptDetails} = require('./../swaps');
-const {returnResult} = require('./../async-util');
 
 /** Get the claim key index for a given swap redeem script
 

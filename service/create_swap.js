@@ -1,11 +1,11 @@
 const asyncAuto = require('async/auto');
+const {returnResult} = require('asyncjs-util');
 
 const getAddressDetails = require('./get_address_details');
 const getInvoiceDetails = require('./get_invoice_details');
 const getFeeForSwap = require('./get_fee_for_swap');
 const {getRecentChainTip} = require('./../blocks');
 const {getRecentFeeRate} = require('./../blocks');
-const {returnResult} = require('./../async-util');
 const serverSwapKeyPair = require('./server_swap_key_pair');
 const {swapAddress} = require('./../swaps');
 const swapParameters = require('./swap_parameters');

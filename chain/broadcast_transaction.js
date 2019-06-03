@@ -1,9 +1,9 @@
 const asyncAuto = require('async/auto');
+const {returnResult} = require('asyncjs-util');
 
 const chainRpc = require('./call_chain_rpc');
 const {getRawTransaction} = require('./conf/rpc_commands');
 const {sendRawTransaction} = require('./conf/rpc_commands');
-const {returnResult} = require('./../async-util');
 
 const broadcastDelayMs = 200;
 

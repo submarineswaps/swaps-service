@@ -1,8 +1,8 @@
 const asyncAuto = require('async/auto');
+const {returnResult} = require('asyncjs-util');
 
 const {getJsonFromCache} = require('./../cache');
 const {getTransaction} = require('./../blocks');
-const {returnResult} = require('./../async-util');
 const {setJsonInCache} = require('./../cache');
 const swapsFromInputs = require('./swaps_from_inputs');
 const swapsFromOutputs = require('./swaps_from_outputs');

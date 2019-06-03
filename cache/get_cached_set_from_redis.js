@@ -1,9 +1,9 @@
 const asyncAuto = require('async/auto');
 const asyncMap = require('async/map');
+const {returnResult} = require('asyncjs-util');
 
 const getFromRedis = require('./get_from_redis');
 const redisCache = require('./redis_cache');
-const {returnResult} = require('./../async-util');
 const scopeKey = require('./scope_key');
 
 /** Get a set from the memory cache

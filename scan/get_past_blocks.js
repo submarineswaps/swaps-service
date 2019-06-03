@@ -1,14 +1,13 @@
-const {ceil} = Math;
-
 const asyncAuto = require('async/auto');
 const asyncWhilst = require('async/whilst');
+const {returnResult} = require('asyncjs-util');
 
 const {getBlockMetadata} = require('./../blocks');
 const {networks} = require('./../tokenslib');
-const {returnResult} = require('./../async-util');
 const {swapParameters} = require('./../service');
 
 const bufferTimeMs = 1000 * 60 * 30;
+const {ceil} = Math;
 
 /** Get past blocks
 
@@ -47,7 +46,7 @@ module.exports = ({current, network}, cbk) => {
   }
 
   return asyncWhilst(
-    () => (blocks.length < fetchBlocksCount) && cursor,
+    cbk => cbk(null, (blocks.length < fetchBlocksCount) && cursor),
     cbk => {
       return asyncAuto({
         // Get block metadata

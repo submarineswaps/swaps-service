@@ -8,7 +8,6 @@ const nestedSegWitScript = require('./nested_segwit_script');
 const nestedSegWitUtxos = require('./nested_segwit_utxos');
 const {networks} = require('./../tokenslib');
 const outputScriptForAddress = require('./output_script_for_address');
-const {script} = require('./../tokenslib');
 const {Transaction} = require('./../tokenslib');
 const witnessUtxos = require('./witness_utxos');
 const witnessesForResolution = require('./witnesses_for_resolution');

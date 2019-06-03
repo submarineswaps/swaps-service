@@ -1,8 +1,8 @@
 const asyncAuto = require('async/auto');
+const {returnResult} = require('asyncjs-util');
 
 const {getBlock} = require('./../chain');
 const {getJsonFromCache} = require('./../cache');
-const {returnResult} = require('./../async-util');
 const {setJsonInCache} = require('./../cache');
 
 const blockExpirationMs = 1000 * 60 * 5;

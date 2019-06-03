@@ -1,6 +1,6 @@
 const {fromSeed} = require('bip32');
 const {generateMnemonic} = require('bip39');
-const {mnemonicToSeed} = require('bip39');
+const {mnemonicToSeedSync} = require('bip39');
 const {validateMnemonic} = require('bip39');
 
 const {address} = require('./../tokenslib');
@@ -51,7 +51,7 @@ module.exports = ({index, network}) => {
   }
 
   const net = networks[network];
-  const seed = mnemonicToSeed(SSS_CLAIM_BIP39_SEED);
+  const seed = mnemonicToSeedSync(SSS_CLAIM_BIP39_SEED);
 
   const root = fromSeed(seed, networks[network]);
 
@@ -65,4 +65,3 @@ module.exports = ({index, network}) => {
     public_key: keyPair.publicKey.toString('hex'),
   };
 };
-

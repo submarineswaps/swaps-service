@@ -1,8 +1,8 @@
 const asyncAuto = require('async/auto');
+const {returnResult} = require('asyncjs-util');
 
 const chainRpc = require('./call_chain_rpc');
 const {getBlockHeader} = require('./conf/rpc_commands');
-const {returnResult} = require('./../async-util');
 
 const msPerSec = 1e3;
 const notFoundIndex = -1;

@@ -1,8 +1,8 @@
 const asyncAuto = require('async/auto');
 const asyncMap = require('async/map');
+const {returnResult} = require('asyncjs-util');
 
 const {getExchangeRate} = require('./../fiat');
-const {returnResult} = require('./../async-util');
 const swapParameters = require('./swap_parameters');
 
 /** Get the exchange rates for trading

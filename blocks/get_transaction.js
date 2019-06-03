@@ -1,10 +1,10 @@
 const asyncAuto = require('async/auto');
+const {returnResult} = require('asyncjs-util');
 
 const {Block} = require('./../tokenslib');
 const {getFullBlock} = require('./../chain');
 const {getJsonFromCache} = require('./../cache');
 const {getTransaction} = require('./../chain');
-const {returnResult} = require('./../async-util');
 const {setJsonInCache} = require('./../cache');
 
 const cacheResultMs = 1000 * 60 * 5;

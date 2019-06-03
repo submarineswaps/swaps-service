@@ -1,8 +1,8 @@
 const asyncAuto = require('async/auto');
 const asyncDetectLimit = require('async/detectLimit');
+const {returnResult} = require('asyncjs-util');
 
 const {getMempool} = require('./../../chain');
-const {returnResult} = require('./../../async-util');
 const transactionHasScriptPub = require('./transaction_has_scriptpub');
 
 const cacheMs = 5000;

@@ -1,8 +1,8 @@
 const asyncAuto = require('async/auto');
+const {returnResult} = require('asyncjs-util');
 
 const {broadcastTransaction} = require('./../chain');
 const {getRecentChainTip} = require('./../blocks');
-const {returnResult} = require('./../async-util');
 const {Transaction} = require('./../tokenslib');
 
 /** Send a raw transaction to the network

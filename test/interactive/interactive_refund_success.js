@@ -1,11 +1,11 @@
 const asyncAuto = require('async/auto');
+const {returnResult} = require('asyncjs-util');
 
 const {broadcastTransaction} = require('./../../chain');
 const {getCurrentHeight} = require('./../../chain');
 const prefixes = require('./../../tokenslib/prefixes');
 const promptForInput = require('./../macros/prompt');
 const {refundTransaction} = require('./../../swaps');
-const {returnResult} = require('./../../async-util');
 const {swapScriptDetails} = require('./../../swaps');
 
 const decBase = 10;

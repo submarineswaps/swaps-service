@@ -18,4 +18,3 @@ const {sha256} = crypto;
 module.exports = ({script}) => {
   return compile([OP_0, sha256(Buffer.from(script, 'hex'))]);
 };
-

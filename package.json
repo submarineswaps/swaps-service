@@ -1,22 +1,24 @@
 {
   "author": "Alex Bosworth",
   "dependencies": {
-    "async": "2.6.2",
-    "bchaddrjs": "0.3.2",
-    "bip32": "2.0.1",
-    "bip39": "2.6.0",
+    "async": "3.0.1",
+    "asyncjs-util": "1.0.0",
+    "bchaddrjs": "0.4.0",
+    "bip32": "2.0.3",
+    "bip39": "3.0.2",
     "bip65": "1.0.3",
     "bip66": "1.1.5",
     "bitcoin-ops": "1.4.1",
-    "bitcoinjs-lib": "4.0.3",
-    "body-parser": "1.18.3",
+    "bitcoinjs-lib": "5.0.5",
+    "bn.js": "4.11.8",
+    "body-parser": "1.19.0",
     "browserify-middleware": "8.1.1",
     "compression": "1.7.4",
     "cors": "2.8.5",
-    "dotenv": "7.0.0",
-    "express": "4.16.4",
-    "helmet": "3.16.0",
-    "ln-service": "34.7.2",
+    "dotenv": "8.0.0",
+    "express": "4.17.1",
+    "helmet": "3.18.0",
+    "ln-service": "file:/Users/alex/repos/ln-service",
     "lodash": "4.17.11",
     "morgan": "1.9.1",
     "node-cache": "4.2.0",
@@ -27,32 +29,35 @@
     "request": "2.88.0",
     "serve-favicon": "2.5.0",
     "uuid": "3.3.2",
-    "varuint-bitcoin": "1.1.0",
-    "walnut": "0.0.4"
+    "varuint-bitcoin": "1.1.0"
   },
   "description": "Tools for swaps with Lightning",
   "devDependencies": {
     "prompt": "1.0.0",
     "rimraf": "2.6.3",
-    "tap": "12.6.1"
+    "tap": "14.2.0"
   },
   "directories": {
     "doc": "docs",
     "test": "test"
   },
   "engines": {
-    "node": "10.15.3",
+    "node": "10.16.0",
     "npm": "6.9.0"
   },
   "license": "MIT",
   "main": "server.js",
   "name": "swaps-service",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/submarineswaps/swaps-service"
+  },
   "scripts": {
-    "bcash-integration-test": "tap test/bcash_bcashregtest/*.js",
-    "bcoin-integration-test": "tap test/bcoin_bcoinregtest/*.js",
-    "btcd-integration-test": "tap test/btcd_regtest/*.js",
-    "ltcd-integration-test": "tap test/ltcd_ltcregtest/*.js",
-    "server-integration-test": "tap test/server",
+    "bcash-integration-test": "tap -j 1 test/bcash_bcashregtest/*.js",
+    "bcoin-integration-test": "tap -j 1 test/bcoin_bcoinregtest/*.js",
+    "btcd-integration-test": "tap -j 1 test/btcd_regtest/*.js",
+    "ltcd-integration-test": "tap -j 1 test/ltcd_ltcregtest/*.js",
+    "server-integration-test": "tap -j 1 test/server",
     "test": "tap test/async-util/*.js test/chain/*.js test/script/*.js test/swaps/*.js"
   },
   "version": "1.0.0"

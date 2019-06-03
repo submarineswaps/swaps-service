@@ -1,7 +1,7 @@
 const asyncAuto = require('async/auto');
+const {returnResult} = require('asyncjs-util');
 
 const {getJsonFromCache} = require('./../cache');
-const {returnResult} = require('./../async-util');
 const {swapScriptDetails} = require('./../swaps');
 
 const lastAddress = {};

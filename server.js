@@ -1,5 +1,4 @@
 const config = require('dotenv').config();
-const walnut = require('walnut');
 
 const {addSwapToPool} = require('./pool');
 const apiRouter = require('./routers/api');
@@ -9,15 +8,12 @@ const {isConfigured} = require('./service');
 const {networks} = require('./tokenslib');
 const {swapScanner} = require('./scan');
 
-const {NODE_ENV} = process.env;
-const {SSS_PORT} = process.env;
-const {PORT} = process.env;
-
 const cache = 'redis';
-const isProduction = NODE_ENV === 'production';
+const isProduction = process.env.NODE_ENV === 'production';
+const {keys} = Object;
 const {log} = console;
 const logOnErr = err => !!err ? console.log(err) : null;
-const port = PORT || SSS_PORT || 9889;
+const port = process.env.PORT || process.env.SSS_PORT || 9889;
 const scannersStartDelay = 1000 * 10;
 
 setTimeout(() => {
@@ -26,7 +22,7 @@ setTimeout(() => {
       cache,
       found: ({swap}) => addSwapToPool({cache, swap}, logOnErr),
       log: logOnErr,
-      networks: Object.keys(networks).filter(network => isConfigured({network})),
+      networks: keys(networks).filter(network => isConfigured({network})),
     });
   } catch (err) {
     log(err);
@@ -39,7 +35,3 @@ const app = createServer({});
 app.use('/api/v0', apiRouter({cache, log}));
 
 app.listen(port, () => log(`Server listening on port ${port}.`));
-
-if (!isProduction) {
-  walnut.check(require('./package'));
-}

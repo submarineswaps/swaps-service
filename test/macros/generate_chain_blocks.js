@@ -1,12 +1,12 @@
 const asyncAuto = require('async/auto');
 const asyncMapSeries = require('async/mapSeries');
 const asyncTimesSeries = require('async/timesSeries');
+const {returnResult} = require('asyncjs-util');
 
 const chainRpc = require('./../../chain/call_chain_rpc');
 const {generate} = require('./../../chain/conf/rpc_commands');
 const {generateToAddress} = require('./../../chain/conf/rpc_commands');
 const getBlockDetails = require('./get_block_details');
-const {returnResult} = require('./../../async-util');
 
 const noDelay = 0;
 

@@ -1,8 +1,8 @@
 const asyncAuto = require('async/auto');
+const {returnResult} = require('asyncjs-util');
 
 const {getJsonFromCache} = require('./../../cache');
 const {getTransaction} = require('./../../chain');
-const {returnResult} = require('./../../async-util');
 const {setJsonInCache} = require('./../../cache');
 const {Transaction} = require('./../../tokenslib');
 

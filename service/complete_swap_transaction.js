@@ -2,8 +2,9 @@ const asyncAuto = require('async/auto');
 const asyncDetectSeries = require('async/detectSeries');
 const {createAddress} = require('ln-service');
 const {createInvoice} = require('ln-service');
-const {getRoutes} = require('ln-service');
-const {pay} = require('ln-service');
+const {payViaRoutes} = require('ln-service');
+const {returnResult} = require('asyncjs-util');
+const {subscribeToProbe} = require('ln-service');
 const uuidv4 = require('uuid/v4');
 
 const addDetectedSwap = require('./../pool/add_detected_swap');
@@ -17,7 +18,6 @@ const {getRecentChainTip} = require('./../blocks');
 const {getRecentFeeRate} = require('./../blocks');
 const {parsePaymentRequest} = require('./../lightning');
 const {lightningDaemon} = require('./../lightning');
-const {returnResult} = require('./../async-util');
 const {setJsonInCache} = require('./../cache');
 const swapParameters = require('./swap_parameters');
 const {swapScriptInTransaction} = require('./../swaps');
@@ -27,6 +27,9 @@ const dummyLockingInvoiceValue = 1;
 const dummyPreimage = '0000000000000000000000000000000000000000000000000000000000000000';
 const estimatedTxVirtualSize = 200;
 const maxAttemptedRoutes = 100;
+const maxBtcBlocks = 1 * 144 * 5;
+const maxLtcBlocks = 4 * 144 * 5;
+const pathfindingTimeoutMs = 1000 * 60 * 3;
 const paymentTimeoutMs = 1000 * 60;
 const priority = 0;
 const swapSuccessCacheMs = 1000 * 60 * 60;
@@ -151,32 +154,97 @@ module.exports = ({cache, invoice, key, network, script, transaction}, cbk) => {
       }
     }],
 
-    // Fetch routes to execute payment over
-    getRoutes: [
+    // Probe the route
+    getRoute: [
+      'getInvoiceChainTip',
       'getSwapFee',
       'lnd',
       'parsedInvoice',
-      ({getSwapFee, lnd, parsedInvoice}, cbk) =>
-    {
-      let timeout = null;
-
-      switch (parsedInvoice.network) {
-      case 'ltc':
-      case 'ltctestnet':
-        timeout = defaultLtcTimeout;
-        break;
-      }
-
-      return getRoutes({
+      'swapParams',
+      ({
+        getInvoiceChainTip,
+        getSwapFee,
         lnd,
-        fee: getSwapFee.converted_fee,
-        destination: parsedInvoice.destination,
-        limit: maxAttemptedRoutes,
-        routes: parsedInvoice.routes,
-        timeout: parsedInvoice.timeout || timeout,
-        tokens: parsedInvoice.tokens,
+        parsedInvoice,
+        swapParams,
       },
-      cbk);
+      cbk) =>
+    {
+      const date = new Date().toISOString();
+      const result = {};
+
+      const sub = subscribeToProbe({
+        lnd,
+        cltv_delta: parsedInvoice.cltv_delta,
+        destination: parsedInvoice.destination,
+        max_fee: getSwapFee.converted_fee,
+        routes: parsedInvoice.routes,
+        tokens: parsedInvoice.tokens,
+      });
+
+      const timeout = setTimeout(() => {
+        sub.removeAllListeners();
+
+        return cbk([503, 'FailedToFindRouteWhenCompletingSwapTransaction']);
+      },
+      pathfindingTimeoutMs);
+
+      sub.on('error', err => result.err = err);
+
+      sub.on('probe_success', ({route}) => {
+        result.err = null;
+        result.route = route;
+
+        return;
+      });
+
+      sub.on('routing_failure', failure => {
+        result.err = [503, 'RoutingFailure', {failure}];
+
+        return addDetectedSwap({
+          cache,
+          id: parsedInvoice.id,
+          attempt: {
+            date,
+            hops: failure.route.hops.map(n => n.channel),
+            id: uuidv4(),
+            type: 'attempt',
+          },
+        },
+        () => {});
+      });
+
+      sub.on('end', () => {
+        const {err} = result;
+
+        if (!!err) {
+          return cbk([503, 'FailedToGetRouteForSwapCompletion', {err}]);
+        }
+
+        clearTimeout(timeout);
+
+        if (!result.route) {
+          return cbk([400, 'FailedToFindPathForSwapCompletion']);
+        }
+
+        const blocksRemaining = result.route.timeout - getInvoiceChainTip.height;
+
+        switch (parsedInvoice.network) {
+        case 'ltc':
+        case 'ltctestnet':
+          if (blocksRemaining > maxLtcBlocks) {
+            return cbk([503, 'FailedToFindReasonableTimeoutRoute']);
+          }
+          break;
+
+        default:
+          if (blocksRemaining > maxBtcBlocks) {
+            return cbk([503, 'FailedToFindReasonableTimeoutRoute']);
+          }
+        }
+
+        return cbk(null, {route: result.route});
+      });
     }],
 
     // Current chain state
@@ -198,11 +266,11 @@ module.exports = ({cache, invoice, key, network, script, transaction}, cbk) => {
     // Check to make sure the invoice can be paid
     checkPayable: [
       'chainState',
-      'getRoutes',
+      'getRoute',
       'getSwapFee',
       'parsedInvoice',
       'swapParams',
-      ({chainState, getSwapFee, parsedInvoice, getRoutes, swapParams}, cbk) =>
+      ({chainState, getSwapFee, parsedInvoice, getRoute, swapParams}, cbk) =>
     {
       try {
         const check = checkInvoicePayable({
@@ -216,7 +284,7 @@ module.exports = ({cache, invoice, key, network, script, transaction}, cbk) => {
           pending_channels: [],
           refund_height: chainState.refund_height,
           required_confirmations: swapParams.funding_confs,
-          routes: getRoutes.routes,
+          routes: [getRoute],
           swap_fee: getSwapFee.fee,
           sweep_fee: chainState.sweep_fee,
           tokens: parsedInvoice.tokens,
@@ -234,6 +302,7 @@ module.exports = ({cache, invoice, key, network, script, transaction}, cbk) => {
       'fundingUtxos',
       'getChainTip',
       'getFeeRate',
+      'getRoute',
       'lnd',
       'parsedInvoice',
       ({parsedInvoice, lnd}, cbk) =>
@@ -243,7 +312,7 @@ module.exports = ({cache, invoice, key, network, script, transaction}, cbk) => {
       return createInvoice({
         lnd,
         expires_at: new Date(Date.now() + paymentTimeoutMs).toISOString(),
-        payment_secret: id,
+        secret: id,
         tokens: dummyLockingInvoiceValue,
       },
       cbk);
@@ -312,50 +381,17 @@ module.exports = ({cache, invoice, key, network, script, transaction}, cbk) => {
     payInvoice: [
       'canClaim',
       'createLockingInvoice',
-      'getRoutes',
+      'getRoute',
       'lnd',
       'parsedInvoice',
-      ({getRoutes, lnd, parsedInvoice}, cbk) =>
+      ({getRoute, lnd, parsedInvoice}, cbk) =>
     {
-      const date = new Date().toISOString();
-      const {id} = parsedInvoice;
-      let paymentSecret;
-
-      return asyncDetectSeries(getRoutes.routes, (route, cbk) => {
-        return pay({lnd, path: {id, routes: [route]}}, (err, res) => {
-          if (!!err) {
-            // Register the failed payment attempt in the pool
-            return addDetectedSwap({
-              cache,
-              id,
-              attempt: {
-                date,
-                hops: route.hops.map(n => n.channel),
-                id: uuidv4(),
-                type: 'attempt',
-              },
-            },
-            err => {
-              return cbk(null, false);
-            });
-          }
-
-          paymentSecret = res.secret;
-
-          return cbk(null, true);
-        });
+      return payViaRoutes({
+        lnd,
+        id: parsedInvoice.id,
+        routes: [getRoute.route],
       },
-      err => {
-        if (!!err) {
-          return cbk([503, 'FailedToExecutePayment', err]);
-        }
-
-        if (!paymentSecret) {
-          return cbk([503, 'RouteExecutionFailedToGetPreimage']);
-        }
-
-        return cbk(null, {payment_secret: paymentSecret});
-      });
+      cbk);
     }],
 
     // Create a claim transaction to sweep the swap to the destination address
@@ -380,7 +416,7 @@ module.exports = ({cache, invoice, key, network, script, transaction}, cbk) => {
           current_block_height: getChainTip.height,
           destination: getSweepAddress.address,
           fee_tokens_per_vbyte: getFeeRate.fee_tokens_per_vbyte,
-          preimage: payInvoice.payment_secret,
+          preimage: payInvoice.secret,
           private_key: key,
           utxos: fundingUtxos.matching_outputs,
         }));
@@ -416,7 +452,7 @@ module.exports = ({cache, invoice, key, network, script, transaction}, cbk) => {
       return cbk(null, {
         funding_utxos: fundingUtxos.matching_outputs,
         invoice_id: parsedInvoice.id,
-        payment_secret: payInvoice.payment_secret,
+        payment_secret: payInvoice.secret,
         transaction_id: broadcastTransaction.id,
       });
     }],

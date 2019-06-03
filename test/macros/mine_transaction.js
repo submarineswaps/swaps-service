@@ -1,9 +1,9 @@
 const asyncAuto = require('async/auto');
+const {returnResult} = require('asyncjs-util');
 
 const {broadcastTransaction} = require('./../../chain');
 const generateChainBlocks = require('./generate_chain_blocks');
 const {getTransaction} = require('./../../chain');
-const {returnResult} = require('./../../async-util');
 const {Transaction} = require('./../../tokenslib');
 
 const txConfirmationCount = 6;

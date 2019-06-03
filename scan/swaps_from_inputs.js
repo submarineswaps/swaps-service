@@ -1,8 +1,8 @@
 const asyncAuto = require('async/auto');
 const asyncMap = require('async/map');
+const {returnResult} = require('asyncjs-util');
 
 const getSwapKeyIndex = require('./get_swap_key_index');
-const {returnResult} = require('./../async-util');
 const swapResolutions = require('./../swaps/swap_resolutions');
 const {Transaction} = require('./../tokenslib');
 

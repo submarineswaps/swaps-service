@@ -1,12 +1,12 @@
 const asyncAuto = require('async/auto');
 const asyncConstant = require('async/constant');
 const asyncUntil = require('async/until');
+const {returnResult} = require('asyncjs-util');
 
 const findScriptPubInBlock = require('./find_scriptpub_in_block');
 const findScriptPubInMempool = require('./find_scriptpub_in_mempool');
 const {getCurrentHash} = require('./../../chain');
 const {getTransaction} = require('./../../chain');
-const {returnResult} = require('./../../async-util');
 const {swapAddress} = require('./../../swaps');
 
 const blockSearchRateLimit = 300;
@@ -120,7 +120,11 @@ module.exports = (args, cbk) => {
       let txId = findTransactionInMempool.transaction_id || null;
 
       return asyncUntil(
-        () => !!txId || !cursor || count === args.block_search_depth,
+        cbk => {
+          const isSearchDepthReached = count === args.block_search_depth;
+
+          return cbk(null, !!txId || !cursor || isSearchDepthReached);
+        },
         cbk => {
           return findScriptPubInBlock({
             cache: args.cache,

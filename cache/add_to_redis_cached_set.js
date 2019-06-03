@@ -1,13 +1,12 @@
-const {stringify} = JSON;
-
 const asyncAuto = require('async/auto');
+const {returnResult} = require('asyncjs-util');
 
 const redisCache = require('./redis_cache');
-const {returnResult} = require('./../async-util');
 const scopeKey = require('./scope_key');
 const setInRedis = require('./set_in_redis');
 
 const msPerSec = 1e3;
+const {stringify} = JSON;
 
 /** Add an element to a redis cached set
 
