@@ -18,7 +18,7 @@
     "dotenv": "8.0.0",
     "express": "4.17.1",
     "helmet": "3.18.0",
-    "ln-service": "38.3.6",
+    "ln-service": "38.3.7",
     "lodash": "4.17.11",
     "morgan": "1.9.1",
     "node-cache": "4.2.0",
