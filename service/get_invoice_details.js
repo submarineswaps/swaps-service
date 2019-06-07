@@ -1,6 +1,7 @@
 const {nextTick} = process;
 
 const asyncAuto = require('async/auto');
+const asyncTimeout = require('async/timeout');
 const {getPendingChannels} = require('ln-service');
 const {getRoutes} = require('ln-service');
 const {probeForRoute} = require('ln-service');
@@ -23,7 +24,7 @@ const defaultMaxHops = 5;
 const fiatCurrency = 'USD';
 const pathfindingTimeoutMs = 1000 * 20;
 const probeLimit = 5;
-const probeTimeoutMs = 15000;
+const probeTimeoutMs = 20000;
 const tokensConfidenceMultiplier = 2;
 
 /** Get invoice details in the context of a swap
@@ -223,11 +224,10 @@ module.exports = ({cache, check, invoice, network}, cbk) => {
         return cbk();
       }
 
-      return probeForRoute({
+      return asyncTimeout(probeForRoute, probeTimeoutMs)({
         lnd,
         cltv_delta: parsedInvoice.cltv_delta,
         destination: parsedInvoice.destination,
-        pathfinding_timeout: pathfindingTimeoutMs,
         routes: parsedInvoice.routes,
         tokens: parsedInvoice.tokens,
       },
