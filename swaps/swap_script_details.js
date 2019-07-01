@@ -284,6 +284,8 @@ module.exports = (args) => {
       timelock_block_height: lockHeight,
     };
   } else {
+    const p2wshAddress = address.fromOutputScript(witnessProgram, network);
+
     return {
       type,
       destination_public_key: destinationPublicKey,
@@ -291,7 +293,8 @@ module.exports = (args) => {
       p2sh_output_script: p2shLegacyOutput.toString('hex'),
       p2sh_p2wsh_address: p2shNestedAddr,
       p2sh_p2wsh_output_script: p2shWrappedWitnessProg.toString('hex'),
-      p2wsh_address: address.fromOutputScript(witnessProgram, network),
+      p2wsh_address: p2wshAddress,
+      p2wsh_output_script: address.toOutputScript(p2wshAddress, network),
       payment_hash: paymentHash,
       refund_p2pkh_address: refundP2pkh.address,
       refund_p2wpkh_address: refundP2wpkh.address,
