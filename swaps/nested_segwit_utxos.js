@@ -1,4 +1,4 @@
-const {chainConstants} = require('./../chain');
+const chainConstants = require('./../chain/conf/constants');
 const swapScriptDetails = require('./swap_script_details');
 
 const p2shScriptPubByteLength = chainConstants.p2sh_scriptpub_byte_length;

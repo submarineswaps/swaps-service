@@ -1,4 +1,4 @@
-const {chainConstants} = require('./../chain');
+const chainConstants = require('./../chain/conf/constants');
 const {networks} = require('./../tokenslib');
 const swapScriptDetails = require('./swap_script_details');
 

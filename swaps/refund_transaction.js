@@ -1,7 +1,7 @@
 const bip65Encode = require('bip65').encode;
 const {OP_FALSE} = require('bitcoin-ops');
 
-const {chainConstants} = require('./../chain');
+const chainConstants = require('./../chain/conf/constants');
 const {crypto} = require('./../tokenslib');
 const {ECPair} = require('./../tokenslib');
 const estimateWeightWithInputs = require('./estimate_weight_with_inputs');

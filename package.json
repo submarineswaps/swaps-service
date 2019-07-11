@@ -1,16 +1,16 @@
 {
   "author": "Alex Bosworth",
   "dependencies": {
-    "async": "3.0.1",
-    "asyncjs-util": "1.0.0",
-    "bchaddrjs": "0.4.0",
+    "async": "3.1.0",
+    "asyncjs-util": "1.1.0",
+    "bchaddrjs": "0.4.2",
     "bip32": "2.0.3",
     "bip39": "3.0.2",
     "bip65": "1.0.3",
     "bip66": "1.1.5",
     "bitcoin-ops": "1.4.1",
     "bitcoinjs-lib": "5.0.5",
-    "bn.js": "4.11.8",
+    "bn.js": "5.0.0",
     "body-parser": "1.19.0",
     "browserify-middleware": "8.1.1",
     "compression": "1.7.4",
@@ -18,11 +18,11 @@
     "dotenv": "8.0.0",
     "express": "4.17.1",
     "helmet": "3.18.0",
-    "ln-service": "38.3.9",
-    "lodash": "4.17.11",
+    "ln-service": "40.3.0",
+    "lodash": "4.17.14",
     "morgan": "1.9.1",
     "node-cache": "4.2.0",
-    "pug": "2.0.3",
+    "pug": "2.0.4",
     "pushdata-bitcoin": "1.0.1",
     "random-lib": "3.0.0",
     "redis": "2.8.0",
@@ -35,7 +35,7 @@
   "devDependencies": {
     "prompt": "1.0.0",
     "rimraf": "2.6.3",
-    "tap": "14.2.1"
+    "tap": "14.4.1"
   },
   "directories": {
     "doc": "docs",
@@ -43,7 +43,7 @@
   },
   "engines": {
     "node": "10.16.0",
-    "npm": "6.9.0"
+    "npm": "6.10.0"
   },
   "license": "MIT",
   "main": "server.js",

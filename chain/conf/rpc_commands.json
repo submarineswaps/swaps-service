@@ -11,6 +11,7 @@
   "getBlockHeader": "getblockheader",
   "getRawMempool": "getrawmempool",
   "getRawTransaction": "getrawtransaction",
+  "getUtxo": "gettxout",
   "sendRawTransaction": "sendrawtransaction",
   "stop": "stop"
 }

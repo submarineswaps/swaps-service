@@ -1,6 +1,6 @@
 const bip65Encode = require('bip65').encode;
 
-const {chainConstants} = require('./../chain');
+const chainConstants = require('./../chain/conf/constants');
 const estimateWeightWithInputs = require('./estimate_weight_with_inputs');
 const inputScriptsForLegacy = require('./input_scripts_for_legacy_p2sh');
 const legacyScriptHashUtxos = require('./legacy_scripthash_utxos');
