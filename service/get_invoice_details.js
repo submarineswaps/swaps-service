@@ -24,7 +24,7 @@ const defaultMaxHops = 5;
 const fiatCurrency = 'USD';
 const pathfindingTimeoutMs = 1000 * 20;
 const probeLimit = 5;
-const probeTimeoutMs = 20000;
+const probeTimeoutMs = 25000 * 1000;
 const tokensConfidenceMultiplier = 2;
 
 /** Get invoice details in the context of a swap
@@ -228,6 +228,7 @@ module.exports = ({cache, check, invoice, network}, cbk) => {
         lnd,
         cltv_delta: parsedInvoice.cltv_delta,
         destination: parsedInvoice.destination,
+        pathfinding_timeout: probeTimeoutMs,
         routes: parsedInvoice.routes,
         tokens: parsedInvoice.tokens,
       },
