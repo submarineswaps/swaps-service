@@ -217,11 +217,11 @@ module.exports = ({cache, invoice, key, network, script, transaction}, cbk) => {
       sub.on('end', () => {
         const {err} = result;
 
+        clearTimeout(timeout);
+
         if (!!err) {
           return cbk([503, 'FailedToGetRouteForSwapCompletion', {err}]);
         }
-
-        clearTimeout(timeout);
 
         if (!result.route) {
           return cbk([400, 'FailedToFindPathForSwapCompletion']);
