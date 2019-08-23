@@ -1,6 +1,6 @@
 const asyncAuto = require('async/auto');
 const asyncDetectSeries = require('async/detectSeries');
-const {createAddress} = require('ln-service');
+const {createChainAddress} = require('ln-service');
 const {createInvoice} = require('ln-service');
 const {payViaRoutes} = require('ln-service');
 const {returnResult} = require('asyncjs-util');
@@ -328,7 +328,7 @@ module.exports = ({cache, invoice, key, network, script, transaction}, cbk) => {
         return cbk(null, {address});
       }
 
-      return createAddress({lnd}, cbk);
+      return createChainAddress({lnd, format: 'p2wpkh'}, cbk);
     }],
 
     // Make sure that the sweep address is OK
