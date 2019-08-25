@@ -7,6 +7,7 @@ const {shuffle} = require('lodash');
 const {claimTransaction} = require('./../swaps');
 const {getChainFeeRate} = require('ln-service');
 const {getInvoices} = require('./../lightning');
+const getSwapStatus = require('./../service/get_swap_status');
 const {getTransaction} = require('./../blocks');
 const {getUtxo} = require('./../chain');
 const {lightningDaemon} = require('./../lightning');
@@ -15,6 +16,7 @@ const {subscribeToChainSpend} = require('ln-service');
 const {swapParameters} = require('./../service');
 const {swapScriptDetails} = require('./../swaps');
 const {swapScriptInTransaction} = require('./../swaps');
+const swapsFromOutputs = require('./../scan/swaps_from_outputs');
 
 const {ceil} = Math;
 const confTarget = 30;
@@ -26,17 +28,19 @@ const {parse} = JSON;
 /** Check payments for outstanding swaps
 
   {
+    cache: <Cache Name String>
     network: <Network Name String>
   }
 
   @returns via cbk
 */
-module.exports = async ({network}, cbk) => {
+module.exports = async ({cache, network}, cbk) => {
   if (!network) {
     return cbk([400, 'ExpectedNetworkToCheckPaidRequests']);
   }
 
   const after = new Date(now() - maxTimeoutMs).toISOString();
+  const invoices = [];
 
   try {
     const lnd = lightningDaemon({network});
@@ -56,6 +60,12 @@ module.exports = async ({network}, cbk) => {
 
       const swap = parse(invoice.description);
 
+      // There must be a chain lnd to check paid via lnd methods
+      try { lightningDaemon({network: swap.network}) } catch (err) {
+        return;
+      }
+
+      const chainLnd = lightningDaemon({network: swap.network});
       const {id} = swap;
       const {script} = swap;
 
@@ -77,7 +87,34 @@ module.exports = async ({network}, cbk) => {
         return;
       }
 
-      const {payment} = await getPayment({lnd, id: invoice.secret});
+      const {swaps} = await swapsFromOutputs({
+        cache,
+        id,
+        network: swap.network,
+        outputs: [{
+          script: Buffer.from(utxo.output_script, 'hex'),
+          value: utxo.tokens,
+        }],
+      });
+
+      await Promise.all(swaps.filter(n => n.type === 'funding').map(found => {
+        return getSwapStatus({
+          cache,
+          id,
+          block: utxo.block,
+          invoice: found.invoice,
+          network: swap.network,
+          script: found.script,
+        });
+      }));
+
+      let payment;
+
+      try {
+        payment = (await getPayment({lnd, id: invoice.secret})).payment;
+      } catch (err) {
+        return;
+      }
 
       // There must have been a successful payment
       if (!payment || !payment.secret) {
@@ -95,8 +132,8 @@ module.exports = async ({network}, cbk) => {
 
       const {address} = await createChainAddress({
         format,
-        lnd,
         is_unused: true,
+        lnd: chainLnd,
       });
 
       const {transaction} = await getTransaction({id, network: swap.network});
@@ -107,8 +144,8 @@ module.exports = async ({network}, cbk) => {
       });
 
       const feeRate = await getChainFeeRate({
-        lnd,
         confirmation_target: confTarget,
+        lnd: chainLnd,
       });
 
       const claim = claimTransaction({
@@ -122,7 +159,10 @@ module.exports = async ({network}, cbk) => {
       });
 
       try {
-        await broadcastChainTransaction({lnd, transaction: claim.transaction});
+        await broadcastChainTransaction({
+          lnd: chainLnd,
+          transaction: claim.transaction,
+        });
       } catch (err) {
         return;
       }

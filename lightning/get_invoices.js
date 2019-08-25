@@ -74,10 +74,10 @@ module.exports = ({after, lnd}, cbk) => {
                 .filter(invoice => invoice.created_at > after)
                 .forEach(invoice => invoices.push(invoice));
 
-              const oldInvoice = res.invoices.find(n => n.created_at < after);
+              const newInvoice = res.invoices.find(n => n.created_at > after);
 
               limit = null;
-              token = !!oldInvoice || !res.next ? false : res.next;
+              token = !newInvoice || !res.next ? false : res.next;
 
               return cbk();
             });

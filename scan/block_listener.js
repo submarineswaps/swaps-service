@@ -2,6 +2,7 @@ const EventEmitter = require('events');
 
 const asyncAuto = require('async/auto');
 const asyncEach = require('async/each');
+const asyncEachSeries = require('async/eachSeries');
 const asyncFilter = require('async/filter');
 const asyncMap = require('async/map');
 const asyncMapSeries = require('async/mapSeries');
@@ -13,10 +14,9 @@ const getPastBlocks = require('./get_past_blocks');
 const {getRecentChainTip} = require('./../blocks');
 const {setJsonInCache} = require('./../cache');
 
-const blockAnnounceBufferMs = 1000 * 30;
 const cacheBlockEmissionMs = 1000 * 60 * 60;
 const currentBlockHash = {};
-const emitDelayMs = 15;
+const emitDelayMs = 10;
 const notFound = -1;
 const manyTxCount = 50;
 const pollingDelayMs = 3000;
@@ -120,6 +120,8 @@ module.exports = ({cache, network}) => {
               return cbk(err);
             }
 
+            return cbk(null, false);
+
             return cbk(null, !!res && !!res.id);
           });
         },
@@ -155,21 +157,18 @@ module.exports = ({cache, network}) => {
         });
 
         return asyncMapSeries(newBlocks, (block, cbk) => {
-          block.transaction_ids.forEach((id, i) => {
-            return setTimeout(() => {
-              return listener.emit('transaction', {
-                id,
-                block: block.id,
-              });
-            },
-            i * emitDelayMs);
-          });
+          return asyncEachSeries(block.transaction_ids, (id, cbk) => {
+            listener.emit('transaction', {id, block: block.id});
 
-          if (block.transaction_ids.length > manyTxCount) {
-            return setTimeout(() => cbk(null, block), blockAnnounceBufferMs);
-          } else {
-            return cbk(null, block);
-          }
+            return setTimeout(() => cbk(), emitDelayMs);
+          },
+          err => {
+            if (!!err) {
+              return cbk(err);
+            }
+
+            return cbk(null, {id: block.id});
+          });
         },
         cbk);
       }],

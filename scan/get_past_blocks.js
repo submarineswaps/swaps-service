@@ -6,7 +6,7 @@ const {getBlockMetadata} = require('./../blocks');
 const {networks} = require('./../tokenslib');
 const {swapParameters} = require('./../service');
 
-const bufferTimeMs = 1000 * 60 * 30;
+const bufferTimeMs = 1000 * 60 * 60;
 const {ceil} = Math;
 
 /** Get past blocks

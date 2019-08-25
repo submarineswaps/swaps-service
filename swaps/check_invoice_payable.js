@@ -30,6 +30,7 @@ const channelMinMargin = 1.01;
     expires_at: <Invoice Expires At ISO 8601 Date String>
     [funded_height]: <Expected/Existing Funded Block Height Number>
     invoice_network: <Invoice Network Name String>
+    [is_ignoring_expiry]: <Ignore Invoice Expiry Bool>
     network: <Network Name String>
     pending_channels: [{
       is_opening: <Channel Is In Opening State Bool>
@@ -149,7 +150,7 @@ module.exports = args => {
   }
 
   // Can the funding transaction confirm before the invoice expires?
-  if (confsUntilFundingConfirmed > 0) {
+  if (confsUntilFundingConfirmed > 0 && !args.is_ignoring_expiry) {
     const expectedWaitMs = msPerBlock * confsUntilFundingConfirmed;
 
     const expectedConfirmationDate = new Date(now() + expectedWaitMs);

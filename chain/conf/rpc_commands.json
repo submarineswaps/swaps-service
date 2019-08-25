@@ -8,6 +8,7 @@
   "getBestBlockHash": "getbestblockhash",
   "getBlock": "getblock",
   "getBlockCount": "getblockcount",
+  "getBlockHashAtHeight": "getblockhash",
   "getBlockHeader": "getblockheader",
   "getRawMempool": "getrawmempool",
   "getRawTransaction": "getrawtransaction",

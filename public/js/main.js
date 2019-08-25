@@ -1601,14 +1601,14 @@ App.updatedSwapDetails = ({swap}) => {
   const invoice = swap.find('.pay-to-lightning-invoice').val().trim();
   const network = swap.find('.select-currency').val();
 
-  if (!invoice.length || !network) {
+  if (!network) {
     return;
   }
 
   const address = swap.find('.refund-address').val().trim();
 
   const hasAddress = !!App.address_details[address];
-  const hasInvoiceDetails = !!App.invoice_details[invoice];
+  const hasInvoiceDetails = !!invoice && !!App.invoice_details[invoice];
   const keyPair = blockchain.generateKeyPair({network});
 
   if (!!hasInvoiceDetails && !!swap.find('.refund-address-entry.hide')) {
@@ -1629,7 +1629,9 @@ App.updatedSwapDetails = ({swap}) => {
 
   const isReady = (!!hasAddress || !!isPaperRefund) && !!hasInvoiceDetails;
 
-  App.invoice_refund_keypairs[invoice] = keyPair;
+  if (!!invoice) {
+    App.invoice_refund_keypairs[invoice] = keyPair;
+  }
 
   let baseFee = 0;
   let feePercentage = '';

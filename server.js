@@ -11,6 +11,7 @@ const {networks} = require('./tokenslib');
 const {swapScanner} = require('./scan');
 
 const cache = 'redis';
+const checkPaidDelayMs = 1000 * 60 * 5;
 const isProduction = process.env.NODE_ENV === 'production';
 const {keys} = Object;
 const {log} = console;
@@ -34,12 +35,12 @@ scannersStartDelay);
 
 keys(networks).filter(network => isConfigured({network})).forEach(network => {
   return asyncForever(cbk => {
-    return checkPaid({network}, err => {
+    return checkPaid({cache, network}, err => {
       if (!!err) {
         return cbk(err);
       }
 
-      return setTimeout(() => cbk(), 1000 * 60);
+      return setTimeout(() => cbk(), checkPaidDelayMs);
     });
   },
   err => {

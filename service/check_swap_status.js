@@ -20,11 +20,11 @@ const {parsePaymentRequest} = require('./../lightning');
   {
     cache: <Cache Name String>
     invoice: <Lightning Invoice String>
-    network: <Network Name String>
+    network: <Chain Network Name String>
     script: <Redeem Script Hex String>
   }
 
-  @returns via cbk
+  @returns via cbk or Promise
   {
     [output_index]: <Output Index Of Funding Output Number>
     [output_tokens]: <Output Tokens Value For Funding Output Number>
@@ -34,167 +34,173 @@ const {parsePaymentRequest} = require('./../lightning');
   }
 */
 module.exports = ({cache, invoice, network, script}, cbk) => {
-  return asyncAuto({
-    // Check arguments
-    validate: cbk => {
-      if (!cache) {
-        return cbk([400, 'ExpectedCacheForSwapDetails']);
-      }
+  return new Promise((resolve, reject) => {
+    return asyncAuto({
+      // Check arguments
+      validate: cbk => {
+        if (!cache) {
+          return cbk([400, 'ExpectedCacheForSwapDetails']);
+        }
 
-      if (!invoice) {
-        return cbk([400, 'ExpectedInvoice']);
-      }
+        if (!invoice) {
+          return cbk([400, 'ExpectedInvoice']);
+        }
 
-      if (!network) {
-        return cbk([400, 'ExpectedNetwork']);
-      }
+        if (!network) {
+          return cbk([400, 'ExpectedNetwork']);
+        }
 
-      if (!script) {
-        return cbk([400, 'ExpectedRedeemScript']);
-      }
+        if (!script) {
+          return cbk([400, 'ExpectedRedeemScript']);
+        }
 
-      return cbk();
-    },
+        return cbk();
+      },
 
-    // Parsed invoice
-    invoiceInfo: ['validate', ({}, cbk) => {
-      try {
-        return cbk(null, parsePaymentRequest({request: invoice}));
-      } catch (err) {
-        return cbk([400, 'FailedToParseSwapInvoice', err]);
-      }
-    }],
+      // Parsed invoice
+      invoiceInfo: ['validate', ({}, cbk) => {
+        try {
+          return cbk(null, parsePaymentRequest({request: invoice}));
+        } catch (err) {
+          return cbk([400, 'FailedToParseSwapInvoice', err]);
+        }
+      }],
 
-    // Invoice id
-    id: ['invoiceInfo', ({invoiceInfo}, cbk) => cbk(null, invoiceInfo.id)],
+      // Invoice id
+      id: ['invoiceInfo', ({invoiceInfo}, cbk) => cbk(null, invoiceInfo.id)],
 
-    // Lnd for invoice
-    lnd: ['invoiceInfo', ({invoiceInfo}, cbk) => {
-      try {
-        return cbk(null, lightningDaemon({network: invoiceInfo.network}));
-      } catch (err) {
-        return cbk(null, [500, 'FailedToCreateLndConnection', err]);
-      }
-    }],
+      // Lnd for invoice
+      lnd: ['invoiceInfo', ({invoiceInfo}, cbk) => {
+        try {
+          return cbk(null, lightningDaemon({network: invoiceInfo.network}));
+        } catch (err) {
+          return cbk(null, [500, 'FailedToCreateLndConnection', err]);
+        }
+      }],
 
-    // Get swap attempt in progress
-    getSwapAttempt: ['id', 'lnd', ({id, lnd}, cbk) => {
-      const swapId = Buffer.from(id, 'hex');
+      // Get swap attempt in progress
+      getSwapAttempt: ['id', 'lnd', ({id, lnd}, cbk) => {
+        const swapId = Buffer.from(id, 'hex');
 
-      const attemptId = createHash('sha256').update(swapId).digest('hex');
+        const attemptId = createHash('sha256').update(swapId).digest('hex');
 
-      return getInvoice({lnd, id: attemptId}, (err, details) => {
-        if (!!err) {
+        return getInvoice({lnd, id: attemptId}, (err, details) => {
+          if (!!err) {
+            return cbk();
+          }
+
+          return cbk(null, details.expires_at);
+        });
+      }],
+
+      // See if the swap is in the swap pool
+      getSwapFromPool: ['id', ({id}, cbk) => {
+        return getDetectedSwaps({cache, id}, cbk);
+      }],
+
+      // See if we have a related swap element
+      swapElement: ['getSwapFromPool', ({getSwapFromPool}, cbk) => {
+        const elements = getSwapFromPool;
+
+        const {attempt} = getSwapFromPool;
+        const [claim] = elements.claim;
+        const [funding] = elements.funding.filter(({block}) => !!block);
+        const [unconfirmed] = elements.funding.filter(({block}) => !block);
+
+        if (!!claim) {
+          return cbk(null, {
+            payment_secret: claim.preimage,
+            transaction_id: claim.outpoint.split(':')[0],
+          });
+        }
+
+        if (!!funding) {
+          return cbk(null, {
+            attempts: !attempt ? 0 : attempt.length,
+            block: funding.block,
+            output_index: funding.vout,
+            output_tokens: funding.tokens,
+            transaction_id: funding.id,
+          });
+        }
+
+        if (!!unconfirmed) {
+          return cbk(null, {
+            attempts: !attempt ? 0 : attempt.length,
+            output_index: unconfirmed.vout,
+            output_tokens: unconfirmed.tokens,
+            transaction_id: unconfirmed.id,
+          });
+        }
+
+        return cbk();
+      }],
+
+      // Check for swap attempt failure
+      checkSwapAttempt: [
+        'getSwapAttempt',
+        'swapElement',
+        ({getSwapAttempt, swapElement}, cbk) =>
+      {
+        if (!getSwapAttempt) {
           return cbk();
         }
 
-        return cbk(null, details.expires_at);
-      });
-    }],
+        if (!!swapElement && !!swapElement.payment_secret) {
+          return cbk();
+        }
 
-    // See if the swap is in the swap pool
-    getSwapFromPool: ['id', ({id}, cbk) => getDetectedSwaps({cache, id}, cbk)],
-
-    // See if we have a related swap element
-    swapElement: ['getSwapFromPool', ({getSwapFromPool}, cbk) => {
-      const elements = getSwapFromPool;
-
-      const {attempt} = getSwapFromPool;
-      const [claim] = elements.claim;
-      const [funding] = elements.funding.filter(({block}) => !!block);
-      const [unconfirmed] = elements.funding.filter(({block}) => !block);
-
-      if (!!claim) {
-        return cbk(null, {
-          payment_secret: claim.preimage,
-          transaction_id: claim.outpoint.split(':')[0],
-        });
-      }
-
-      if (!!funding) {
-        return cbk(null, {
-          attempts: !attempt ? 0 : attempt.length,
-          block: funding.block,
-          output_index: funding.vout,
-          output_tokens: funding.tokens,
-          transaction_id: funding.id,
-        });
-      }
-
-      if (!!unconfirmed) {
-        return cbk(null, {
-          attempts: !attempt ? 0 : attempt.length,
-          output_index: unconfirmed.vout,
-          output_tokens: unconfirmed.tokens,
-          transaction_id: unconfirmed.id,
-        });
-      }
-
-      return cbk();
-    }],
-
-    // Check for swap attempt failure
-    checkSwapAttempt: [
-      'getSwapAttempt',
-      'swapElement',
-      ({getSwapAttempt, swapElement}, cbk) =>
-    {
-      if (!getSwapAttempt) {
         return cbk();
-      }
+      }],
 
-      if (!!swapElement && !!swapElement.payment_secret) {
-        return cbk();
-      }
+      // Determine confirmation count
+      getBlockInfo: ['swapElement', ({swapElement}, cbk) => {
+        // Exit early when there is no need to look up block details
+        if (!swapElement || !swapElement.block) {
+          return cbk();
+        }
 
-      return cbk();
-    }],
+        const {block} = swapElement;
 
-    // Determine confirmation count
-    getBlockInfo: ['swapElement', ({swapElement}, cbk) => {
-      // Exit early when there is no need to look up block details
-      if (!swapElement || !swapElement.block) {
-        return cbk();
-      }
+        return getBlockPlacement({block, cache, network}, cbk);
+      }],
 
-      const {block} = swapElement;
+      // Determine wait time still necessary to confirm the swap
+      remainingConfs: ['getBlockInfo', ({getBlockInfo}, cbk) => {
+        const blockInfo = getBlockInfo || {};
 
-      return getBlockPlacement({block, cache, network}, cbk);
-    }],
+        const confs = blockInfo.current_confirmation_count || 0;
 
-    // Determine wait time still necessary to confirm the swap
-    remainingConfs: ['getBlockInfo', ({getBlockInfo}, cbk) => {
-      const conf = !getBlockInfo ? 0 : getBlockInfo.current_confirmation_count;
+        try {
+          const requiredFundingConfs = swapParameters({network}).funding_confs;
 
-      try {
-        const requiredFundingConfs = swapParameters({network}).funding_confs;
+          return cbk(null, Math.max(0, requiredFundingConfs - confs));
+        } catch (err) {
+          return cbk([500, 'FailedToDetermineWaitConfirmations', {err}]);
+        }
+      }],
 
-        return cbk(null, Math.max(0, requiredFundingConfs - conf));
-      } catch (e) {
-        return cbk([500, 'FailedToDetermineWaitConfirmations', e]);
-      }
-    }],
+      // Current swap status
+      getSwapStatus: [
+        'remainingConfs',
+        'swapElement',
+        ({remainingConfs, swapElement}, cbk) =>
+      {
+        if (!swapElement) {
+          return cbk([402, 'FundingNotFound']);
+        }
 
-    // Current swap status
-    getSwapStatus: [
-      'remainingConfs',
-      'swapElement',
-      ({remainingConfs, swapElement}, cbk) =>
-    {
-      if (!swapElement) {
-        return cbk([402, 'FundingNotFound']);
-      }
-
-      return cbk(null, {
-        attempts: swapElement.attempts,
-        conf_wait_count: !!remainingConfs ? remainingConfs : null,
-        output_index: swapElement.output_index,
-        output_tokens: swapElement.output_tokens,
-        payment_secret: swapElement.payment_secret,
-        transaction_id: swapElement.transaction_id,
-      });
-    }],
-  },
-  returnResult({of: 'getSwapStatus'}, cbk));
+        return cbk(null, {
+          attempts: swapElement.attempts,
+          conf_wait_count: !!remainingConfs ? remainingConfs : null,
+          output_index: swapElement.output_index,
+          output_tokens: swapElement.output_tokens,
+          payment_secret: swapElement.payment_secret,
+          transaction_id: swapElement.transaction_id,
+        });
+      }],
+    },
+    returnResult({reject, resolve, of: 'getSwapStatus'}, cbk));
+  });
 };
 

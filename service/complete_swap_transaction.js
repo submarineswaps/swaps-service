@@ -70,7 +70,9 @@ const timeoutBuffer = 20;
     transaction_id: <Transaction Id Hex String>
   }
 */
-module.exports = ({cache, index, invoice, key, network, script, transaction}, cbk) => {
+module.exports = (args, cbk) => {
+  const {cache, index, invoice, key, network, script, transaction} = args;
+
   return asyncAuto({
     // Check completion arguments
     validate: cbk => {
@@ -145,15 +147,6 @@ module.exports = ({cache, index, invoice, key, network, script, transaction}, cb
       }
     }],
 
-    // Check the invoice
-    checkInvoice: ['parsedInvoice', ({parsedInvoice}, cbk) => {
-      if (!!parsedInvoice.is_expired) {
-        return cbk([503, 'InvoiceToPayIsAlreadyExpired']);
-      }
-
-      return cbk();
-    }],
-
     // Get the chain tip for the invoice's network
     getInvoiceChainTip: ['parsedInvoice', ({parsedInvoice}, cbk) => {
       return getRecentChainTip({network: parsedInvoice.network}, cbk);
@@ -172,7 +165,7 @@ module.exports = ({cache, index, invoice, key, network, script, transaction}, cb
       try {
         return cbk(null, lightningDaemon({network: parsedInvoice.network}));
       } catch (err) {
-        return cbk([500, 'FailedToInitLightningDaemonConnection', err]);
+        return cbk([500, 'FailedToInitLightningDaemonConnection', {err}]);
       }
     }],
 
@@ -311,6 +304,7 @@ module.exports = ({cache, index, invoice, key, network, script, transaction}, cb
           destination_height: chainState.destination_height,
           expires_at: parsedInvoice.expires_at,
           invoice_network: parsedInvoice.network,
+          is_ignoring_expiry: true,
           pending_channels: [],
           refund_height: chainState.refund_height,
           required_confirmations: swapParams.funding_confs,
@@ -384,8 +378,25 @@ module.exports = ({cache, index, invoice, key, network, script, transaction}, cb
       });
     }],
 
+    // Chain lnd
+    chainLnd: ['validate', ({}, cbk) => {
+      const net = network.toUpperCase();
+
+      const address = process.env[`SSS_CLAIM_${net}_ADDRESS`];
+
+      if (!!address) {
+        return cbk();
+      }
+
+      try {
+        return cbk(null, lightningDaemon({network}));
+      } catch (err) {
+        return cbk([500, 'FailedToInitChainLndConnection', {err}]);
+      }
+    }],
+
     // Make a new address to sweep out the funds to
-    getSweepAddress: ['createLockingInvoice', 'lnd', ({lnd}, cbk) => {
+    getSweepAddress: ['createLockingInvoice', 'chainLnd', ({chainLnd}, cbk) => {
       const net = network.toUpperCase();
 
       const address = process.env[`SSS_CLAIM_${net}_ADDRESS`];
@@ -394,7 +405,12 @@ module.exports = ({cache, index, invoice, key, network, script, transaction}, cb
         return cbk(null, {address});
       }
 
-      return createChainAddress({lnd, format: 'p2wpkh', is_unused: true}, cbk);
+      return createChainAddress({
+        format: 'p2wpkh',
+        is_unused: true,
+        lnd: chainLnd,
+      },
+      cbk);
     }],
 
     // Make sure that the sweep address is OK
