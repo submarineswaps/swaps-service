@@ -14,6 +14,7 @@ const {TransactionBuilder} = require('./../../tokenslib');
 const hexBase = 16;
 const {p2pkh} = payments;
 const {SIGHASH_ALL} = Transaction;
+const {toOutputScript} = address;
 
 /** Send some tokens to an address
 
@@ -60,23 +61,20 @@ module.exports = (args, cbk) => {
   const network = networks[args.network];
 
   const keyPair = ECPair.fromWIF(args.private_key, network);
-  const txBuilder = new TransactionBuilder(network);
+  const outpointHash = Buffer.from(args.spend_transaction_id, 'hex').reverse();
+  const outputScript = toOutputScript(args.destination, network);
+  const tx = new Transaction();
 
-  txBuilder.addInput(args.spend_transaction_id, args.spend_vout);
+  tx.addInput(outpointHash, args.spend_vout);
 
   try {
-    txBuilder.addOutput(args.destination, (args.tokens - (args.fee || 0)));
+    tx.addOutput(outputScript, (args.tokens - (args.fee || 0)));
   } catch (e) {
     return cbk([400, 'ErrorAddingOutput', e]);
   }
 
-  [keyPair].forEach((k, i) => txBuilder.sign(i, k));
-
   const forkModifier = parseInt(network.fork_id || 0, hexBase);
-  const transaction = txBuilder.build().toHex();
   const sigHashAll = parseInt(SIGHASH_ALL, hexBase);
-
-  const tx = Transaction.fromHex(transaction);
 
   [keyPair].forEach((signingKey, vin) => {
     const flag = !forkModifier ? sigHashAll : sigHashAll | forkModifier;

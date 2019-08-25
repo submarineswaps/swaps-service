@@ -217,10 +217,11 @@ module.exports = ({block, cache, id, invoice, network, script}, cbk) => {
       'checkDestinationPublicKey',
       'checkTimelockHeight',
       'checkTransactionDetected',
+      'getSwapKeyIndex',
       'getTransaction',
       'remainingConfs',
       'serverKeyPair',
-      ({getTransaction, remainingConfs, serverKeyPair}, cbk) =>
+      ({getSwapKeyIndex, getTransaction, remainingConfs, serverKeyPair}, cbk) =>
     {
       // Exit early and abort swap when there are remaining confirmations
       if (remainingConfs > 0) {
@@ -232,6 +233,7 @@ module.exports = ({block, cache, id, invoice, network, script}, cbk) => {
         invoice,
         network,
         script,
+        index: getSwapKeyIndex.index,
         key: serverKeyPair.private_key,
         transaction: getTransaction.transaction,
       },
@@ -244,7 +246,7 @@ module.exports = ({block, cache, id, invoice, network, script}, cbk) => {
           });
         }
 
-        const [,error] = err;
+        const [, error] = err;
 
         if (error === 'AddInvoiceError') {
           return cbk();
@@ -307,4 +309,3 @@ module.exports = ({block, cache, id, invoice, network, script}, cbk) => {
   },
   returnResult({of: 'swapStatus'}, cbk));
 };
-

@@ -12,6 +12,7 @@ const {Transaction} = require('./../tokenslib');
 const witnessUtxos = require('./witness_utxos');
 const witnessesForResolution = require('./witnesses_for_resolution');
 
+const {ceil} = Math;
 const dustRatio = 1 / chainConstants.dust_denominator;
 const maxSequenceValue = chainConstants.max_sequence_value;
 const minSequenceValue = chainConstants.min_sequence_value;
@@ -40,6 +41,7 @@ const vRatio = chainConstants.witness_byte_discount_denominator;
 
   @returns
   {
+    id: <Transaction Id Hex String>
     transaction: <Sweep Transaction Hex Serialized String>
   }
 */
@@ -98,7 +100,7 @@ module.exports = args => {
   }
 
   // Add the sweep destination as an output script
-  tx.addOutput(Buffer.from(destinationScript, 'hex'), tokens);
+  tx.addOutput(Buffer.from(destinationScript, 'hex'), ceil(tokens));
 
   // Set input sequence values
   tx.ins.forEach(n => n.sequence = sequence);
@@ -145,17 +147,17 @@ module.exports = args => {
     throw err;
   }
 
-  const fee = tokensPerVirtualByte * Math.ceil(anticipatedWeight / vRatio);
+  const fee = ceil(tokensPerVirtualByte * ceil(anticipatedWeight / vRatio));
 
   // Exit early when the ratio of the amount spent on fees would be too high
-  if (fee > tokens || fee / (tokens - fee) > dustRatio) {
+  if (fee > ceil(tokens) || fee / (ceil(tokens) - fee) > dustRatio) {
     throw new Error('FeesTooHighToClaim');
   }
 
   // Reduce the final output value to give some tokens over to fees
   const [out] = tx.outs;
 
-  out.value -= fee;
+  out.value -= ceil(fee);
 
   // Legacy P2SH: Set final input scripts with proper signatures
   try {
@@ -192,6 +194,6 @@ module.exports = args => {
     throw err;
   }
 
-  return {transaction: tx.toHex()};
+  return {id: tx.getId(), transaction: tx.toHex()};
 };
 

@@ -22,7 +22,7 @@ const estimatedTxVirtualSize = 200;
 const decBase = 10;
 const defaultMaxHops = 5;
 const fiatCurrency = 'USD';
-const pathfindingTimeoutMs = 1000 * 20;
+const pathfindingTimeoutMs = 1000 * 25;
 const probeLimit = 5;
 const probeTimeoutMs = 25000 * 1000;
 const tokensConfidenceMultiplier = 2;
@@ -145,13 +145,18 @@ module.exports = ({cache, check, invoice, network}, cbk) => {
       'parsedInvoice',
       ({getSwapFee, lnd, parsedInvoice}, cbk) =>
     {
-      const {destination} = parsedInvoice;
-      const fee = getSwapFee.converted_fee;
       const net = parsedInvoice.network.toUpperCase();
-      const {routes} = parsedInvoice;
-      const tokens = parsedInvoice.tokens * tokensConfidenceMultiplier;
 
-      return getRoutes({destination, fee, lnd, routes, tokens}, (err, res) => {
+      return getRoutes({
+        lnd,
+        cltv_delta: parsedInvoice.cltv_delta,
+        destination: parsedInvoice.destination,
+        is_adjusted_for_past_failures: true,
+        max_fee: getSwapFee.converted_fee,
+        routes: parsedInvoice.routes,
+        tokens: parsedInvoice.tokens * tokensConfidenceMultiplier,
+      },
+      (err, res) => {
         if (!!err) {
           return cbk(err);
         }
@@ -216,9 +221,10 @@ module.exports = ({cache, check, invoice, network}, cbk) => {
     probe: [
       'checkPayable',
       'getRoutes',
+      'getSwapFee',
       'lnd',
       'parsedInvoice',
-      ({getRoutes, lnd, parsedInvoice}, cbk) =>
+      ({getRoutes, getSwapFee, lnd, parsedInvoice}, cbk) =>
     {
       if (!check || !!parsedInvoice.is_expired) {
         return cbk();
@@ -228,7 +234,8 @@ module.exports = ({cache, check, invoice, network}, cbk) => {
         lnd,
         cltv_delta: parsedInvoice.cltv_delta,
         destination: parsedInvoice.destination,
-        pathfinding_timeout: probeTimeoutMs,
+        max_fee: getSwapFee.converted_fee,
+        probe_timeout_ms: probeTimeoutMs,
         routes: parsedInvoice.routes,
         tokens: parsedInvoice.tokens,
       },

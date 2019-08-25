@@ -1,7 +1,9 @@
+const asyncForever = require('async/forever');
 const config = require('dotenv').config();
 
 const {addSwapToPool} = require('./pool');
 const apiRouter = require('./routers/api');
+const {checkPaid} = require('./scan');
 const {createScanners} = require('./scan');
 const createServer = require('./create_server');
 const {isConfigured} = require('./service');
@@ -29,6 +31,21 @@ setTimeout(() => {
   }
 },
 scannersStartDelay);
+
+keys(networks).filter(network => isConfigured({network})).forEach(network => {
+  return asyncForever(cbk => {
+    return checkPaid({network}, err => {
+      if (!!err) {
+        return cbk(err);
+      }
+
+      return setTimeout(() => cbk(), 1000 * 60);
+    });
+  },
+  err => {
+    return log(err);
+  });
+});
 
 const app = createServer({});
 

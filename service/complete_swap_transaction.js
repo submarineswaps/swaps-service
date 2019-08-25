@@ -1,7 +1,9 @@
 const asyncAuto = require('async/auto');
 const asyncDetectSeries = require('async/detectSeries');
-const {createAddress} = require('ln-service');
+const {createChainAddress} = require('ln-service');
 const {createInvoice} = require('ln-service');
+const {getPayment} = require('ln-service');
+const {payViaPaymentRequest} = require('ln-service');
 const {payViaRoutes} = require('ln-service');
 const {returnResult} = require('asyncjs-util');
 const {subscribeToProbe} = require('ln-service');
@@ -20,19 +22,25 @@ const {parsePaymentRequest} = require('./../lightning');
 const {lightningDaemon} = require('./../lightning');
 const {setJsonInCache} = require('./../cache');
 const swapParameters = require('./swap_parameters');
+const {swapScriptDetails} = require('./../swaps');
 const {swapScriptInTransaction} = require('./../swaps');
 
+const bufferBlocks = 144;
 const defaultLtcTimeout = 144 * 4;
 const dummyLockingInvoiceValue = 1;
 const dummyPreimage = '0000000000000000000000000000000000000000000000000000000000000000';
 const estimatedTxVirtualSize = 200;
+const highestPriority = 0;
 const maxAttemptedRoutes = 100;
 const maxBtcBlocks = 1 * 144 * 5;
 const maxLtcBlocks = 4 * 144 * 5;
+const {now} = Date;
 const pathfindingTimeoutMs = 1000 * 60 * 3;
 const paymentTimeoutMs = 1000 * 60;
 const priority = 0;
+const {stringify} = JSON;
 const swapSuccessCacheMs = 1000 * 60 * 60;
+const timeoutBuffer = 20;
 
 /** Complete a swap transaction
 
@@ -40,6 +48,7 @@ const swapSuccessCacheMs = 1000 * 60 * 60;
 
   {
     cache: <Cache Type String>
+    index: <Key Index Number>
     invoice: <Bolt 11 Invoice String>
     key: <Private Key WIF String>
     network: <Network Name String>
@@ -61,12 +70,16 @@ const swapSuccessCacheMs = 1000 * 60 * 60;
     transaction_id: <Transaction Id Hex String>
   }
 */
-module.exports = ({cache, invoice, key, network, script, transaction}, cbk) => {
+module.exports = ({cache, index, invoice, key, network, script, transaction}, cbk) => {
   return asyncAuto({
     // Check completion arguments
     validate: cbk => {
       if (!cache) {
         return cbk([400, 'ExpectedCacheToStoreSwapSuccess']);
+      }
+
+      if (index === undefined) {
+        return cbk([400, 'ExpectedKeyIndexToCompleteSwapTransaction']);
       }
 
       if (!invoice) {
@@ -132,6 +145,15 @@ module.exports = ({cache, invoice, key, network, script, transaction}, cbk) => {
       }
     }],
 
+    // Check the invoice
+    checkInvoice: ['parsedInvoice', ({parsedInvoice}, cbk) => {
+      if (!!parsedInvoice.is_expired) {
+        return cbk([503, 'InvoiceToPayIsAlreadyExpired']);
+      }
+
+      return cbk();
+    }],
+
     // Get the chain tip for the invoice's network
     getInvoiceChainTip: ['parsedInvoice', ({parsedInvoice}, cbk) => {
       return getRecentChainTip({network: parsedInvoice.network}, cbk);
@@ -172,12 +194,14 @@ module.exports = ({cache, invoice, key, network, script, transaction}, cbk) => {
     {
       const date = new Date().toISOString();
       const result = {};
+      const swapDetails = swapScriptDetails({network, script});
 
       const sub = subscribeToProbe({
         lnd,
         cltv_delta: parsedInvoice.cltv_delta,
         destination: parsedInvoice.destination,
         max_fee: getSwapFee.converted_fee,
+        max_timeout_height: swapDetails.timelock_block_height - bufferBlocks,
         routes: parsedInvoice.routes,
         tokens: parsedInvoice.tokens,
       });
@@ -192,6 +216,12 @@ module.exports = ({cache, invoice, key, network, script, transaction}, cbk) => {
       sub.on('error', err => result.err = err);
 
       sub.on('probe_success', ({route}) => {
+        const routeTimeoutDelta = route.timeout - getInvoiceChainTip.height;
+
+        if (routeTimeoutDelta + timeoutBuffer > swapParams.refund_timeout) {
+          return;
+        }
+
         result.err = null;
         result.route = route;
 
@@ -217,11 +247,11 @@ module.exports = ({cache, invoice, key, network, script, transaction}, cbk) => {
       sub.on('end', () => {
         const {err} = result;
 
+        clearTimeout(timeout);
+
         if (!!err) {
           return cbk([503, 'FailedToGetRouteForSwapCompletion', {err}]);
         }
-
-        clearTimeout(timeout);
 
         if (!result.route) {
           return cbk([400, 'FailedToFindPathForSwapCompletion']);
@@ -296,26 +326,62 @@ module.exports = ({cache, invoice, key, network, script, transaction}, cbk) => {
       }
     }],
 
+    // Get the payment status
+    getPayment: ['lnd', 'parsedInvoice', ({lnd, parsedInvoice}, cbk) => {
+      return getPayment({lnd, id: parsedInvoice.id}, (err, res) => {
+        // Ignore errors
+        if (!!err) {
+          return cbk();
+        }
+
+        return cbk(null, res);
+      });
+    }],
+
     // Hack around the locking failure of paying invoices twice
     createLockingInvoice: [
       'checkPayable',
       'fundingUtxos',
       'getChainTip',
       'getFeeRate',
+      'getPayment',
       'getRoute',
       'lnd',
       'parsedInvoice',
-      ({parsedInvoice, lnd}, cbk) =>
+      ({fundingUtxos, getChainTip, getPayment, lnd, parsedInvoice}, cbk) =>
     {
+      // Exit early when the payment already exists
+      if (!!getPayment) {
+        return cbk();
+      }
+
       const {id} = parsedInvoice;
 
+      const [utxo] = fundingUtxos.matching_outputs;
+
+      const description = stringify({
+        index,
+        network,
+        script,
+        height: getChainTip.height,
+        id: utxo.transaction_id,
+        vout: utxo.vout,
+      });
+
       return createInvoice({
+        description,
         lnd,
-        expires_at: new Date(Date.now() + paymentTimeoutMs).toISOString(),
+        expires_at: new Date(now() + paymentTimeoutMs).toISOString(),
         secret: id,
         tokens: dummyLockingInvoiceValue,
       },
-      cbk);
+      err => {
+        if (!!err) {
+          return cbk([503, 'FailedToCreateLockingInvoice', {err}]);
+        }
+
+        return cbk();
+      });
     }],
 
     // Make a new address to sweep out the funds to
@@ -328,7 +394,7 @@ module.exports = ({cache, invoice, key, network, script, transaction}, cbk) => {
         return cbk(null, {address});
       }
 
-      return createAddress({lnd}, cbk);
+      return createChainAddress({lnd, format: 'p2wpkh', is_unused: true}, cbk);
     }],
 
     // Make sure that the sweep address is OK
@@ -381,11 +447,19 @@ module.exports = ({cache, invoice, key, network, script, transaction}, cbk) => {
     payInvoice: [
       'canClaim',
       'createLockingInvoice',
+      'getPayment',
       'getRoute',
       'lnd',
       'parsedInvoice',
-      ({getRoute, lnd, parsedInvoice}, cbk) =>
+      ({getPayment, getRoute, lnd, parsedInvoice}, cbk) =>
     {
+      const existing = getPayment;
+
+      // Exit early when payment is already pending or finished
+      if (!!existing && (!!existing.is_pending || !!existing.is_confirmed)) {
+        return cbk();
+      }
+
       return payViaRoutes({
         lnd,
         id: parsedInvoice.id,
@@ -399,24 +473,35 @@ module.exports = ({cache, invoice, key, network, script, transaction}, cbk) => {
       'fundingUtxos',
       'getChainTip',
       'getFeeRate',
+      'getPayment',
       'getSweepAddress',
       'payInvoice',
       ({
         fundingUtxos,
         getChainTip,
         getFeeRate,
+        getPayment,
         getSweepAddress,
         payInvoice,
       },
       cbk) =>
     {
+      const existingPayment = getPayment || {};
+
+      const {secret} = payInvoice || existingPayment.payment || {};
+
+      // Exit early when the preimage is not yet known
+      if (!secret) {
+        return cbk();
+      }
+
       try {
         return cbk(null, claimTransaction({
           network,
           current_block_height: getChainTip.height,
           destination: getSweepAddress.address,
           fee_tokens_per_vbyte: getFeeRate.fee_tokens_per_vbyte,
-          preimage: payInvoice.secret,
+          preimage: secret,
           private_key: key,
           utxos: fundingUtxos.matching_outputs,
         }));
@@ -427,33 +512,51 @@ module.exports = ({cache, invoice, key, network, script, transaction}, cbk) => {
 
     // Broadcast the claim transaction
     broadcastTransaction: ['claimTransaction', ({claimTransaction}, cbk) => {
+      // Exit early when there is no claim tx to broadcast
+      if (!claimTransaction) {
+        return cbk();
+      }
+
       return broadcastTransaction({
         network,
-        priority: 0,
+        priority: highestPriority,
         transaction: claimTransaction.transaction
       },
-      cbk);
+      err => {
+        // Ignore broadcast errors
+        return cbk();
+      });
     }],
 
     // Return the details of the completed swap
     completedSwap: [
-      'broadcastTransaction',
+      'claimTransaction',
       'fundingUtxos',
+      'getPayment',
       'parsedInvoice',
       'payInvoice',
       ({
-        broadcastTransaction,
+        claimTransaction,
         fundingUtxos,
+        getPayment,
         parsedInvoice,
         payInvoice,
       },
       cbk) =>
     {
+      const existingPayment = getPayment || {};
+
+      const {secret} = payInvoice || existingPayment.payment || {};
+
+      if (!secret) {
+        return cbk([503, 'CompleteSwapPaymentStillPending']);
+      }
+
       return cbk(null, {
         funding_utxos: fundingUtxos.matching_outputs,
         invoice_id: parsedInvoice.id,
-        payment_secret: payInvoice.secret,
-        transaction_id: broadcastTransaction.id,
+        payment_secret: secret,
+        transaction_id: claimTransaction.id,
       });
     }],
   },

@@ -11,6 +11,7 @@ const getCurrentHeight = require('./get_current_height');
 const getFullBlock = require('./get_full_block');
 const getMempool = require('./get_mempool');
 const getTransaction = require('./get_transaction');
+const getUtxo = require('./get_utxo');
 const parseTokenValue = require('./parse_token_value');
 const stopChainDaemon = require('./stop_chain_daemon');
 
@@ -28,7 +29,7 @@ module.exports = {
   getFullBlock,
   getMempool,
   getTransaction,
+  getUtxo,
   parseTokenValue,
   stopChainDaemon,
 };
-

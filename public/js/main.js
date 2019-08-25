@@ -270,11 +270,11 @@ App.checkSwap = ({button, id, quote}) => {
       break;
 
     case 'bitcoin':
-      txUrl = `https://smartbit.com.au/tx/${res.transaction_id}`;
+      txUrl = `https://blockstream.info/tx/${res.transaction_id}`;
       break;
 
     case 'testnet':
-      txUrl = `https://testnet.smartbit.com.au/tx/${res.transaction_id}`;
+      txUrl = `https://blockstream.info/testnet/tx/${res.transaction_id}`;
       break;
 
     case 'ltc':
@@ -946,12 +946,12 @@ App.presentCompletedSwap = args => {
     break;
 
   case 'bitcoin':
-    href = `https://smartbit.com.au/tx/${args.transaction_id}`;
+    href = `https://blockstream.info/tx/${args.transaction_id}`;
     onChainCurrency = 'BTC';
     break;
 
   case 'testnet':
-    href = `https://testnet.smartbit.com.au/tx/${args.transaction_id}`;
+    href = `https://blockstream.info/testnet/tx/${args.transaction_id}`;
     onChainCurrency = 'tBTC';
     break;
 
@@ -1547,11 +1547,11 @@ App.submitSignWithRefundDetails = function(e) {
       break;
 
     case 'bitcoin':
-      txUrl = `https://smartbit.com.au/tx/${details.id}`;
+      txUrl = `https://blockstream.info/tx/${details.id}`;
       break;
 
     case 'testnet':
-      txUrl = `https://testnet.smartbit.com.au/tx/${details.id}`;
+      txUrl = `https://blockstream.info/testnet/tx/${details.id}`;
       break;
 
     case 'ltc':

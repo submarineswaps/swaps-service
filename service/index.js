@@ -7,6 +7,7 @@ const getExchangeRates = require('./get_exchange_rates');
 const getInvoiceDetails = require('./get_invoice_details');
 const getSwapStatus = require('./get_swap_status');
 const isConfigured = require('./is_configured');
+const serverSwapKeyPair = require('./server_swap_key_pair');
 const swapParameters = require('./swap_parameters');
 
 /** Service methods for providing results to swap API calls
@@ -20,6 +21,6 @@ module.exports = {
   getExchangeRates,
   getInvoiceDetails,
   isConfigured,
+  serverSwapKeyPair,
   swapParameters,
 };
-

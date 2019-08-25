@@ -5,7 +5,7 @@ const {networks} = require('./../tokenslib');
 const bytesPerKb = 1e3;
 const cmd = estimateSmartFee;
 const defaultFee = 10;
-const defaultBlockCount = 6;
+const defaultBlockCount = 30;
 const divisibility = 1e8;
 const noRbfMultiplier = 10;
 
