@@ -14,14 +14,10 @@ const getPastBlocks = require('./get_past_blocks');
 const {getRecentChainTip} = require('./../blocks');
 const {setJsonInCache} = require('./../cache');
 
-const cacheBlockEmissionMs = 1000 * 60 * 60;
 const currentBlockHash = {};
 const emitDelayMs = 10;
-const notFound = -1;
-const manyTxCount = 50;
-const pollingDelayMs = 3000;
+const pollingDelayMs = 5000;
 const priority = 0;
-const type = 'emitted_block';
 
 /** Poll the chain for blocks. Transactions in blocks are emitted.
 
@@ -78,23 +74,6 @@ module.exports = ({cache, network}) => {
         return getPastBlocks({network, current: getCurrentHash.hash}, cbk);
       }],
 
-      // Get blocks that were already emitted
-      getEmittedBlocks: ['getPastBlocks', ({getPastBlocks}, cbk) => {
-        if (!getPastBlocks) {
-          return cbk();
-        }
-
-        return asyncMap(getPastBlocks.blocks, ({id}, cbk) => {
-          return getJsonFromCache({
-            cache,
-            type,
-            key: [id, network].join(),
-          },
-          cbk);
-        },
-        cbk);
-      }],
-
       // Look in transaction ids to see if we have any special ones
       getInterestingTx: ['getPastBlocks', ({getPastBlocks}, cbk) => {
         if (!getPastBlocks) {
@@ -120,8 +99,6 @@ module.exports = ({cache, network}) => {
               return cbk(err);
             }
 
-            return cbk(null, false);
-
             return cbk(null, !!res && !!res.id);
           });
         },
@@ -131,32 +108,19 @@ module.exports = ({cache, network}) => {
       // Tell subscribers about recent transaction ids
       emitTransactions: [
         'getCurrentHash',
-        'getEmittedBlocks',
         'getInterestingTx',
         'getPastBlocks',
-        ({
-          emitTransactions,
-          getEmittedBlocks,
-          getInterestingTx,
-          getPastBlocks,
-        },
-        cbk) =>
+        ({emitTransactions, getInterestingTx, getPastBlocks}, cbk) =>
       {
         if (!getPastBlocks) {
           return cbk(null, []);
         }
 
-        const emitted = {};
-
-        getEmittedBlocks.filter(n => !!n).forEach(({id}) => emitted[id] = id);
-
-        const newBlocks = getPastBlocks.blocks.filter(({id}) => !emitted[id]);
-
         getInterestingTx.forEach(({block, id}) => {
           return listener.emit('transaction', {block, id});
         });
 
-        return asyncMapSeries(newBlocks, (block, cbk) => {
+        return asyncMapSeries(getPastBlocks.blocks, (block, cbk) => {
           return asyncEachSeries(block.transaction_ids, (id, cbk) => {
             listener.emit('transaction', {id, block: block.id});
 
@@ -173,27 +137,8 @@ module.exports = ({cache, network}) => {
         cbk);
       }],
 
-      // Cache the fact that block transactions were already emitted
-      setBlocksAsEmitted: ['emitTransactions', ({emitTransactions}, cbk) => {
-        return asyncEach(emitTransactions, ({id}, cbk) => {
-          return setJsonInCache({
-            cache,
-            type,
-            key: [id, network].join(),
-            ms: cacheBlockEmissionMs,
-            value: {id}
-          },
-          cbk);
-        },
-        cbk);
-      }],
-
       // Wait a bit before triggering another poll
-      delayForNextPoll: [
-        'getCurrentHash',
-        'setBlocksAsEmitted',
-        ({getCurrentHash}, cbk) =>
-      {
+      delayForNextPoll: ['emitTransactions', ({emitTransactions}, cbk) => {
         return setTimeout(cbk, pollingDelayMs);
       }],
     },
