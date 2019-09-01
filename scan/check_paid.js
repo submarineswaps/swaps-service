@@ -12,7 +12,6 @@ const {getTransaction} = require('./../blocks');
 const {getUtxo} = require('./../chain');
 const {lightningDaemon} = require('./../lightning');
 const {serverSwapKeyPair} = require('./../service');
-const {subscribeToChainSpend} = require('ln-service');
 const {swapParameters} = require('./../service');
 const {swapScriptDetails} = require('./../swaps');
 const {swapScriptInTransaction} = require('./../swaps');
