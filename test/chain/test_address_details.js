@@ -65,6 +65,18 @@ const fixtures = {
     network: 'testnet',
   },
 
+  testnet_p2wsh: {
+    address: 'tb1q2fh3rsch82tqc5y0e7w8ssamxq6ks25y4rwfxh69xh4vpkt2nawq3929gq',
+    expected: {
+      data: '526f11c3173a960c508fcf9c7843bb3035682a84a8dc935f4535eac0d96a9f5c',
+      hash: null,
+      prefix: 'tb',
+      type: 'p2wsh',
+      version: null,
+    },
+    network: 'testnet',
+  },
+
   mainnet_p2sh: {
     address: '37GG3YV3xPRupqnLoLTXTcigCjuUuNbedx',
     expected: {

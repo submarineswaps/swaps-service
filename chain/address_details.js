@@ -5,6 +5,7 @@ const {address} = require('./../tokenslib');
 const {networks} = require('./../tokenslib');
 
 const publicKeyHashLength = 20;
+const witnessScriptHashLength = 32;
 
 /** Derive address details
 
