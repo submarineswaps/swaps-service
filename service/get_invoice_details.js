@@ -25,7 +25,6 @@ const fiatCurrency = 'USD';
 const pathfindingTimeoutMs = 1000 * 25;
 const probeLimit = 5;
 const probeTimeoutMs = 25000 * 1000;
-const tokensConfidenceMultiplier = 2;
 
 /** Get invoice details in the context of a swap
 
@@ -154,7 +153,7 @@ module.exports = ({cache, check, invoice, network}, cbk) => {
         is_adjusted_for_past_failures: true,
         max_fee: getSwapFee.converted_fee,
         routes: parsedInvoice.routes,
-        tokens: parsedInvoice.tokens * tokensConfidenceMultiplier,
+        tokens: parsedInvoice.tokens,
       },
       (err, res) => {
         if (!!err) {
