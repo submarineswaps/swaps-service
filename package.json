@@ -17,8 +17,8 @@
     "cors": "2.8.5",
     "dotenv": "8.2.0",
     "express": "4.17.1",
-    "helmet": "3.21.1",
-    "ln-service": "46.5.0",
+    "helmet": "3.21.2",
+    "ln-service": "46.5.2",
     "lodash": "4.17.15",
     "morgan": "1.9.1",
     "node-cache": "4.2.1",
@@ -35,7 +35,7 @@
   "devDependencies": {
     "prompt": "1.0.0",
     "rimraf": "3.0.0",
-    "tap": "14.7.1"
+    "tap": "14.8.2"
   },
   "directories": {
     "doc": "docs",
