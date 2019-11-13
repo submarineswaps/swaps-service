@@ -171,6 +171,6 @@ module.exports = async ({cache, network}, cbk) => {
 
     return cbk();
   } catch (err) {
-    return cbk([500, 'FailedToExecuteCheckPayment', {err}]);
+    return cbk([500, 'FailedToExecuteCheckPayment', {err, network}]);
   }
 };
