@@ -13,14 +13,7 @@ module.exports = ({key}, cbk) => {
 
   const cache = memoryCache({});
 
-  cache.del(key, (err) => {
-    if (!!err) {
-      return cbk([500, 'UnexpectedDelFromMemoryCacheError', err]);
-    }
+  cache.del(key);
 
-    return cbk();
-  });
-
-  return;
+  return cbk();
 };
-

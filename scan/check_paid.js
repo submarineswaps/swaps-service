@@ -96,16 +96,20 @@ module.exports = async ({cache, network}, cbk) => {
         }],
       });
 
-      await Promise.all(swaps.filter(n => n.type === 'funding').map(found => {
-        return getSwapStatus({
-          cache,
-          id,
-          block: utxo.block,
-          invoice: found.invoice,
-          network: swap.network,
-          script: found.script,
-        });
-      }));
+      try {
+        await Promise.all(swaps.filter(n => n.type === 'funding').map(found => {
+          return getSwapStatus({
+            cache,
+            id,
+            block: utxo.block,
+            invoice: found.invoice,
+            network: swap.network,
+            script: found.script,
+          });
+        }));
+      } catch (err) {
+        // Ignore errors in getting swap status
+      }
 
       let payment;
 
@@ -147,6 +151,7 @@ module.exports = async ({cache, network}, cbk) => {
         lnd: chainLnd,
       });
 
+      // Form the claim transaction
       const claim = claimTransaction({
         preimage,
         current_block_height: swap.height,
@@ -157,12 +162,14 @@ module.exports = async ({cache, network}, cbk) => {
         utxos: fundingUtxos.matching_outputs,
       });
 
+      // Send out the claim transaction
       try {
         await broadcastChainTransaction({
           lnd: chainLnd,
           transaction: claim.transaction,
         });
       } catch (err) {
+        // Ignore errors on broadcast, double spend errors are expected
         return;
       }
 

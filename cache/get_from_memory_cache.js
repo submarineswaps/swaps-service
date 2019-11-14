@@ -16,14 +16,7 @@ module.exports = ({key}, cbk) => {
 
   const cache = memoryCache({});
 
-  cache.get(key, (err, value) => {
-    if (!!err) {
-      return cbk([500, 'UnexpectedGetFromMemoryCacheError', err]);
-    }
+  const value = cache.get(key);
 
-    return cbk(null, value || undefined);
-  });
-
-  return;
+  return cbk(null, value || undefined);
 };
-

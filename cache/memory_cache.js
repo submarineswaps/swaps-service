@@ -16,7 +16,7 @@ module.exports = ({}) => {
     return memoryCache;
   }
 
-  const cache = new NodeCache();
+  const cache = new NodeCache({});
 
   // Eliminate cache on flush
   cache.on('flush', () => {
@@ -29,4 +29,3 @@ module.exports = ({}) => {
 
   return cache;
 };
-
