@@ -57,9 +57,9 @@ module.exports = ({network}) => {
 
   return {
     host: url.hostname,
-    pass: url.password,
+    pass: decodeURIComponent(url.password),
     port: parseInt(url.port, decBase),
-    user: url.username,
+    user: decodeURIComponent(url.username),
   };
 };
 
