@@ -57,7 +57,7 @@ module.exports = ({network}) => {
   // This subscription allows opportunistic reconnecting on remote restarts.
   daemons[network].sub.on('invoice_updated', () => {});
   daemons[network].sub.on('end', () => daemons[network] = null);
-  daemons[network].sub.on('error', ({}) => daemons[network] = null);
+  daemons[network].sub.on('error', () => daemons[network] = null);
   daemons[network].sub.on('status', () => {});
 
   return lnd;

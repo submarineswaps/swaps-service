@@ -1,5 +1,5 @@
 const removeDir = require('rimraf');
-const uuidv4 = require('uuid/v4');
+const uuidv4 = require('uuid').v4;
 
 const bcoinTypeDaemon = require('./bcoin_type_daemon');
 const bitcoincoreTypeDaemon = require('./bitcoincore_type_daemon')

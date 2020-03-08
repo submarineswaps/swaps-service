@@ -7,7 +7,7 @@ const {payViaPaymentRequest} = require('ln-service');
 const {payViaRoutes} = require('ln-service');
 const {returnResult} = require('asyncjs-util');
 const {subscribeToProbe} = require('ln-service');
-const uuidv4 = require('uuid/v4');
+const uuidv4 = require('uuid').v4;
 
 const addDetectedSwap = require('./../pool/add_detected_swap');
 const {addressDetails} = require('./../chain');

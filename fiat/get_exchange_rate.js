@@ -1,16 +1,16 @@
 const asyncAuto = require('async/auto');
 const asyncRetry = require('async/retry');
 const {includes} = require('lodash');
-const request = require('request');
+const request = require('@alexbosworth/request');
 const {returnResult} = require('asyncjs-util');
 
 const {getJsonFromCache} = require('./../cache');
 const {setJsonInCache} = require('./../cache');
 
-const api = 'https://apiv2.bitcoinaverage.com/';
+const api = 'https://api.coinbase.com/v2/prices';
 const centsPerUnit = 100;
-const decBase = 10;
 const divisibilityFactor = 1e8;
+const {floor} = Math;
 const interval = retryCount => 50 * Math.pow(2, retryCount); // Retry backoff
 const rateCacheTimeMs = 1000 * 60 * 10;
 const remoteServiceTimeoutMs = 1000 * 20;
@@ -89,18 +89,18 @@ module.exports = ({cache, network}, cbk) => {
         return request({
           json: true,
           timeout: remoteServiceTimeoutMs,
-          url: `${api}indices/global/ticker/${currencyCode}USD`,
+          url: `${api}/${currencyCode}-USD/spot`
         },
         (err, r, body) => {
           if (!!err) {
             return cbk([503, 'FailedToGetExchangeRate', err]);
           }
 
-          if (!body || !body.last) {
+          if (!body || !body.data || !body.data.amount) {
             return cbk([500, 'ExpectedExchangeRateData', body]);
           }
 
-          const cents = parseInt(body.last * centsPerUnit, decBase);
+          const cents = floor(parseFloat(body.data.amount) * centsPerUnit);
           const time = Date.now();
 
           return cbk(null, {cents, time});

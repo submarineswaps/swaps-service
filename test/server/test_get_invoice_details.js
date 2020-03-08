@@ -3,7 +3,7 @@ const {log} = console;
 const asyncAuto = require('async/auto');
 const {generateMnemonic} = require('bip39');
 const {parsePaymentRequest} = require('ln-service');
-const request = require('request');
+const request = require('@alexbosworth/request');
 const {test} = require('tap');
 
 const apiRouter = require('./../../routers/api');

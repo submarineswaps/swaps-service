@@ -8,7 +8,7 @@ const {createSeed} = require('ln-service');
 const {createWallet} = require('ln-service');
 const {getWalletInfo} = require('ln-service');
 const {unauthenticatedLndGrpc} = require('ln-service');
-const uuidv4 = require('uuid/v4');
+const uuidv4 = require('uuid').v4;
 
 const {generateKeyPair} = require('./../../chain');
 const spawnChainDaemon = require('./spawn_chain_daemon');
