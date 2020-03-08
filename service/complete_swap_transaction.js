@@ -194,7 +194,6 @@ module.exports = (args, cbk) => {
         cltv_delta: parsedInvoice.cltv_delta,
         destination: parsedInvoice.destination,
         max_fee: getSwapFee.converted_fee,
-        max_timeout_height: swapDetails.timelock_block_height - bufferBlocks,
         routes: parsedInvoice.routes,
         tokens: parsedInvoice.tokens,
       });
