@@ -6,7 +6,7 @@ const {getPayment} = require('ln-service');
 const {payViaPaymentRequest} = require('ln-service');
 const {payViaRoutes} = require('ln-service');
 const {returnResult} = require('asyncjs-util');
-const {subscribeToProbe} = require('ln-service');
+const {subscribeToProbeForRoute} = require('ln-service');
 const uuidv4 = require('uuid').v4;
 
 const addDetectedSwap = require('./../pool/add_detected_swap');
@@ -189,13 +189,16 @@ module.exports = (args, cbk) => {
       const result = {};
       const swapDetails = swapScriptDetails({network, script});
 
-      const sub = subscribeToProbe({
+      const sub = subscribeToProbeForRoute({
         lnd,
         cltv_delta: parsedInvoice.cltv_delta,
         destination: parsedInvoice.destination,
+        features: parsedInvoice.features,
         max_fee: getSwapFee.converted_fee,
+        payment: parsedInvoice.payment,
         routes: parsedInvoice.routes,
         tokens: parsedInvoice.tokens,
+        total_mtokens: parsedInvoice.mtokens,
       });
 
       const timeout = setTimeout(() => {
@@ -480,7 +483,19 @@ module.exports = (args, cbk) => {
         id: parsedInvoice.id,
         routes: [getRoute.route],
       },
-      cbk);
+      (err, res) => {
+        if (!!err) {
+          // Try a regular pay via payment request if the routes pay fails
+          return payViaPaymentRequest({
+            lnd,
+            max_timeout_height: getRoute.route.timeout,
+            request: invoice,
+          },
+          cbk);
+        }
+
+        return cbk(null, res);
+      });
     }],
 
     // Create a claim transaction to sweep the swap to the destination address

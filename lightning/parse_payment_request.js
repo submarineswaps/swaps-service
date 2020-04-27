@@ -16,9 +16,14 @@ const {parsePaymentRequest} = require('ln-service');
     [description]: <Description String>
     destination: <Public Key String>
     expires_at: <ISO 8601 Date String>
+    [features]: [{
+      bit: <Feature Bit Number>
+    }]
     id: <Payment Request Hash String>
     is_expired: <Invoice is Expired Bool>
+    [mtokens]: <Requested Millitokens String>
     network: <Network Name String>
+    payment: <Payment Identifier Hex String>
     routes: <Routes Object>
     timeout: <CLTV Final Delta Number>
     [tokens]: <Requested Chain Tokens Number>
@@ -55,8 +60,11 @@ module.exports = ({request}) => {
     description: details.description,
     destination: details.destination,
     expires_at: details.expires_at,
+    features: details.features,
     id: details.id,
     is_expired: details.is_expired,
+    mtokens: details.mtokens,
+    payment: details.payment,
     routes: details.routes,
     timeout: details.cltv_delta,
     tokens: details.tokens,
