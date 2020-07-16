@@ -20,7 +20,7 @@
     "express": "4.17.1",
     "helmet": "3.21.3",
     "ln-service": "47.15.2",
-    "lodash": "4.17.15",
+    "lodash": "4.17.19",
     "morgan": "1.9.1",
     "node-cache": "5.1.0",
     "pug": "2.0.4",
