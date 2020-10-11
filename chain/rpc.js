@@ -68,8 +68,7 @@ module.exports = ({cmd, host, params, pass, port, timeout, user}, cbk) => {
 
   req.write(post);
 
-  req.end()
+  req.end();
 
   return;
 };
-

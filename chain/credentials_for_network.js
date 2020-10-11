@@ -3,6 +3,7 @@ const {URL} = require('url');
 const chainServer = require('./conf/chain_server_defaults');
 
 const decBase = 10;
+const defaultPort = 80;
 const dummyScheme = 'http';
 
 /** Get credentials for a given network's chain daemon
@@ -47,10 +48,6 @@ module.exports = ({network}) => {
     throw new Error('MissingPassForChainApi');
   }
 
-  if (!url.port) {
-    throw new Error('MissingPortForChainApi');
-  }
-
   if (!url.username) {
     throw new Error('MissingUserForChainApi');
   }
@@ -58,7 +55,7 @@ module.exports = ({network}) => {
   return {
     host: url.hostname,
     pass: decodeURIComponent(url.password),
-    port: parseInt(url.port, decBase),
+    port: parseInt(url.port || defaultPort, decBase),
     user: decodeURIComponent(url.username),
   };
 };
