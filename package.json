@@ -23,7 +23,7 @@
     "lodash": "4.17.20",
     "morgan": "1.10.0",
     "node-cache": "5.1.2",
-    "pug": "3.0.0",
+    "pug": "3.0.1",
     "pushdata-bitcoin": "1.0.1",
     "random-lib": "3.0.0",
     "redis": "3.0.2",
