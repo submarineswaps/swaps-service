@@ -26,7 +26,7 @@
     "pug": "3.0.1",
     "pushdata-bitcoin": "1.0.1",
     "random-lib": "3.0.0",
-    "redis": "3.0.2",
+    "redis": "3.1.1",
     "serve-favicon": "2.5.0",
     "uuid": "8.3.1",
     "varuint-bitcoin": "1.1.2"
