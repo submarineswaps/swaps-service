@@ -3,6 +3,7 @@ const {readFileSync} = require('fs');
 const {spawn} = require('child_process');
 
 const asyncAuto = require('async/auto');
+const asyncRetry = require('async/retry');
 const {authenticatedLndGrpc} = require('ln-service');
 const {createSeed} = require('ln-service');
 const {createWallet} = require('ln-service');
@@ -24,7 +25,7 @@ const chainDaemonUsername = 'x';
 const chainRpcCertName = 'rpc.cert';
 const invoiceMacaroonFileName = 'invoice.macaroon';
 const lightningDaemonExecFileName = 'lnd';
-const lightningDaemonIp = '127.0.0.1';
+const lightningDaemonIp = 'localhost';
 const lightningDaemonLogPath = 'logs/';
 const lightningDaemonPort = 29351;
 const lightningDaemonRestPort = 29350;
@@ -108,7 +109,7 @@ module.exports = ({}, cbk) => {
       let isReady = false;
 
       daemon.stdout.on('data', data => {
-        if (!isReady && /password.RPC.server.listening/.test(data+'')) {
+        if (!isReady && /RPC.server.listening/.test(data+'')) {
           isReady = true;
 
           return cbk(null, {daemon});
@@ -140,9 +141,12 @@ module.exports = ({}, cbk) => {
 
     // Create seed
     createSeed: ['nonAuthenticatedLnd', ({nonAuthenticatedLnd}, cbk) => {
-      return createSeed({
-        lnd: nonAuthenticatedLnd,
-        passphrase: lightningSeedPassphrase,
+      return asyncRetry({times: 100, interval: 100}, cbk => {
+        return createSeed({
+          lnd: nonAuthenticatedLnd,
+          passphrase: lightningSeedPassphrase,
+        },
+        cbk);
       },
       cbk);
     }],

@@ -205,7 +205,7 @@ module.exports = ({block, cache, id, network}, cbk) => {
         if (!!txInBlock) {
           return cbk(null, {transaction: txInBlock});
         } else {
-          const {transaction} = getFreshTx || getCachedTx;
+          const {transaction} = getFreshTx || getCachedTx || {};
 
           return cbk(null, {transaction});
         }

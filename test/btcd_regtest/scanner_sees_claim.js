@@ -1,3 +1,4 @@
+const config = require('dotenv').config();
 const {test} = require('tap');
 
 const {scanForSwap} = require('./../macros');

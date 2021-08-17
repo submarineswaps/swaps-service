@@ -68,7 +68,6 @@ module.exports = ({block, cache, id, network}, cbk) => {
       if (!!getCachedSwaps) {
         return cbk();
       }
-
       // This will get the transaction from the chain. Avoid caching mempool
       // transactions as they could be pretty numerous.
       return getTransaction({
