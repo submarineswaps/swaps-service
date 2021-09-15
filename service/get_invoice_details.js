@@ -3,7 +3,7 @@ const {nextTick} = process;
 const asyncAuto = require('async/auto');
 const asyncTimeout = require('async/timeout');
 const {getPendingChannels} = require('ln-service');
-const {getRoutes} = require('ln-service');
+const {getRouteToDestination} = require('ln-service');
 const {probeForRoute} = require('ln-service');
 const {returnResult} = require('asyncjs-util');
 const {subscribeToProbe} = require('ln-service');
@@ -146,9 +146,9 @@ module.exports = ({cache, check, invoice, network}, cbk) => {
     {
       const net = parsedInvoice.network.toUpperCase();
 
-      return getRoutes({
+      return getRouteToDestination({
         lnd,
-        cltv_delta: parsedInvoice.cltv_delta,
+        cltv_delta: parsedInvoice.timeout,
         destination: parsedInvoice.destination,
         is_adjusted_for_past_failures: true,
         max_fee: getSwapFee.converted_fee,
@@ -163,8 +163,8 @@ module.exports = ({cache, check, invoice, network}, cbk) => {
         const configuredMaxHops = process.env[`SSS_LN_${net}_MAX_HOPS`];
 
         const maxHops = parseInt(configuredMaxHops || defaultMaxHops, decBase);
-
-        const routes = res.routes.filter(({hops}) => hops.length <= maxHops);
+        
+        const routes = res.route.hops.length <= maxHops ? res.route.hops : null;
 
         return cbk(null, {routes});
       });
