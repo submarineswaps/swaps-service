@@ -148,7 +148,7 @@ module.exports = ({cache, check, invoice, network}, cbk) => {
 
       return getRouteToDestination({
         lnd,
-        cltv_delta: parsedInvoice.timeout,
+        cltv_delta: parsedInvoice.cltv_delta,
         destination: parsedInvoice.destination,
         is_adjusted_for_past_failures: true,
         max_fee: getSwapFee.converted_fee,
@@ -163,7 +163,7 @@ module.exports = ({cache, check, invoice, network}, cbk) => {
         const configuredMaxHops = process.env[`SSS_LN_${net}_MAX_HOPS`];
 
         const maxHops = parseInt(configuredMaxHops || defaultMaxHops, decBase);
-        
+
         const routes = res.route.hops.length <= maxHops ? res.route.hops : null;
 
         return cbk(null, {routes});
