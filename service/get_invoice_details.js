@@ -160,13 +160,21 @@ module.exports = ({cache, check, invoice, network}, cbk) => {
           return cbk(err);
         }
 
+        // Exit early when there are no routes to the destination
+        if (!res.route) {
+          return cbk(null, {routes: []});
+        }
+
         const configuredMaxHops = process.env[`SSS_LN_${net}_MAX_HOPS`];
 
         const maxHops = parseInt(configuredMaxHops || defaultMaxHops, decBase);
 
-        const routes = res.route.hops.length <= maxHops ? res.route.hops : [];
+        // Exit early when the route is too long
+        if (res.route.hops.length >= maxHops) {
+          return cbk(null, {routes: []});
+        }
 
-        return cbk(null, {routes});
+        return cbk(null, {routes: [res.route]});
       });
     }],
 
