@@ -164,7 +164,7 @@ module.exports = ({cache, check, invoice, network}, cbk) => {
 
         const maxHops = parseInt(configuredMaxHops || defaultMaxHops, decBase);
 
-        const routes = res.route.hops.length <= maxHops ? res.route.hops : null;
+        const routes = res.route.hops.length <= maxHops ? res.route.hops : [];
 
         return cbk(null, {routes});
       });
