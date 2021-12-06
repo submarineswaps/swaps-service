@@ -42,7 +42,7 @@
     "test": "test"
   },
   "engines": {
-    "node": ">=12.20"
+    "node": "16.13.0"
   },
   "license": "MIT",
   "main": "server.js",
