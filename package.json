@@ -2,8 +2,8 @@
   "author": "Alex Bosworth",
   "dependencies": {
     "@alexbosworth/request": "2.88.3",
-    "async": "3.2.1",
-    "asyncjs-util": "1.2.6",
+    "async": "3.2.2",
+    "asyncjs-util": "1.2.7",
     "bchaddrjs": "0.5.2",
     "bip32": "2.0.6",
     "bip39": "3.0.4",
@@ -19,7 +19,7 @@
     "dotenv": "10.0.0",
     "express": "4.17.1",
     "helmet": "4.6.0",
-    "ln-service": "52.3.0",
+    "ln-service": "53.1.2",
     "lodash": "4.17.21",
     "morgan": "1.10.0",
     "node-cache": "5.1.2",
@@ -35,14 +35,14 @@
   "devDependencies": {
     "prompt": "1.2.0",
     "rimraf": "3.0.2",
-    "tap": "15.0.9"
+    "tap": "15.1.5"
   },
   "directories": {
     "doc": "docs",
     "test": "test"
   },
   "engines": {
-    "node": ">=12"
+    "node": ">=12.20"
   },
   "license": "MIT",
   "main": "server.js",
