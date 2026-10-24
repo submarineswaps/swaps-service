@@ -278,11 +278,11 @@ App.checkSwap = ({button, id, quote}) => {
       break;
 
     case 'ltc':
-      txUrl = `https://chain.so/tx/LTC/${res.transaction_id}`;
+      txUrl = `https://sochain.com/ltc/tx/${res.transaction_id}`;
       break;
 
     case 'ltctestnet':
-      txUrl = `https://chain.so/tx/LTCTEST/${res.transaction_id}`;
+      txUrl = `https://sochain.com/ltctest/tx/${res.transaction_id}`;
       break;
 
     default:
@@ -956,12 +956,12 @@ App.presentCompletedSwap = args => {
     break;
 
   case 'ltc':
-    href = `https://chain.so/tx/LTC/${args.transaction_id}`;
+    href = `https://sochain.com/ltc/tx/${args.transaction_id}`;
     onChainCurrency = 'LTC';
     break;
 
   case 'ltctestnet':
-    href = `https://chain.so/tx/LTCTEST/${args.transaction_id}`;
+    href = `https://sochain.com/ltctest/tx/${args.transaction_id}`;
     onChainCurrency = 'tLTC';
     break;
 
@@ -1372,29 +1372,29 @@ App.submitRefundRecovery = function(event) {
     case 'ltctestnet':
       const lNet = details.network === 'ltc' ? 'LTC' : 'LTCTEST';
 
-      fetch(`https://chain.so/api/v2/get_tx_received/${lNet}/${address}`)
+      fetch(`https://sochain.com/api/v3/unspent_outputs/${lNet}/${address}`)
         .then(r => r.json())
         .then(details => {
-          if (!details || !details.data || !Array.isArray(details.data.txs)) {
+          if (!details || !details.data || !Array.isArray(details.data.outputs)) {
             return;
           }
 
-          if (!details.data.txs.length) {
+          if (!details.data.outputs.length) {
             return;
           }
 
-          const [tx] = details.data.txs;
+          const [tx] = details.data.outputs;
 
           if (!tx) {
             return;
           }
 
-          if (!!tx.txid && !$('.refund-transaction-id').val()) {
-            $('.refund-transaction-id').val(tx.txid);
+          if (!!tx.hash && !$('.refund-transaction-id').val()) {
+            $('.refund-transaction-id').val(tx.hash);
           }
 
-          if (tx.output_no !== undefined && !$('.refund-tx-vout').val()) {
-            $('.refund-tx-vout').val(tx.output_no);
+          if (tx.index !== undefined && !$('.refund-tx-vout').val()) {
+            $('.refund-tx-vout').val(tx.index);
           }
 
           return;
@@ -1555,11 +1555,11 @@ App.submitSignWithRefundDetails = function(e) {
       break;
 
     case 'ltc':
-      txUrl = `https://chain.so/tx/LTC/${details.id}`;
+      txUrl = `https://sochain.com/ltc/tx/${details.id}`;
       break;
 
     case 'ltctestnet':
-      txUrl = `https://chain.so/tx/LTCTEST/${details.id}`;
+      txUrl = `https://sochain.com/ltctest/tx/${details.id}`;
       break;
     }
 
